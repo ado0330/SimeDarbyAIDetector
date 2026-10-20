@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv/
+.venv/
+env/
+venv/
+*.egg-info/
+.eggs/
+
+# SQLite & Data
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/uploads/*
+backend/data/frames/*
+!backend/data/uploads/.gitkeep
+!backend/data/frames/.gitkeep
+*.db
+/tmp/tg_*.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+build/
+dist/
+.DS_Store
+*.local
+.env
+!.env.example
