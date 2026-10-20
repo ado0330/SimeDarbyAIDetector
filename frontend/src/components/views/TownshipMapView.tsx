@@ -1,0 +1,501 @@
+import React, { useState } from "react";
+import {
+  Incident,
+  Location,
+  Camera as CameraType,
+} from "@/types";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import {
+  getPriorityStyles,
+  getStatusStyles,
+  formatCategory,
+  formatTimeAgo,
+} from "@/lib/utils";
+import {
+  MapPin,
+  Camera,
+  Layers,
+  AlertTriangle,
+  Shield,
+  Eye,
+  Maximize2,
+  Info,
+  CheckCircle2,
+} from "lucide-react";
+
+interface TownshipMapViewProps {
+  incidents: Incident[];
+  locations: Location[];
+  cameras: CameraType[];
+  onSelectIncident: (id: string) => void;
+}
+
+// Coordinate definitions for our 6 canonical township zones (normalized 0-1000 x 0-600 SVG canvas)
+const ZONE_LAYOUTS: Record<
+  string,
+  {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    name: string;
+    type: "residential" | "park" | "commercial" | "infrastructure";
+    labelX: number;
+    labelY: number;
+  }
+> = {
+  zone_entrance: {
+    x: 40,
+    y: 220,
+    width: 220,
+    height: 180,
+    name: "Main Entrance & Guardhouse",
+    type: "infrastructure",
+    labelX: 150,
+    labelY: 310,
+  },
+  zone_residence_a: {
+    x: 300,
+    y: 50,
+    width: 280,
+    height: 220,
+    name: "Maple Residences (Precinct A)",
+    type: "residential",
+    labelX: 440,
+    labelY: 160,
+  },
+  zone_lake_park: {
+    x: 300,
+    y: 300,
+    width: 320,
+    height: 240,
+    name: "Central Lake & Recreational Park",
+    type: "park",
+    labelX: 460,
+    labelY: 420,
+  },
+  zone_commercial: {
+    x: 650,
+    y: 50,
+    width: 300,
+    height: 220,
+    name: "Commercial Hub & Retail Strip",
+    type: "commercial",
+    labelX: 800,
+    labelY: 160,
+  },
+  zone_residence_b: {
+    x: 650,
+    y: 300,
+    width: 300,
+    height: 140,
+    name: "Oakwood Residences (Precinct B)",
+    type: "residential",
+    labelX: 800,
+    labelY: 370,
+  },
+  zone_sports_complex: {
+    x: 650,
+    y: 460,
+    width: 300,
+    height: 110,
+    name: "Township Sports & Community Complex",
+    type: "infrastructure",
+    labelX: 800,
+    labelY: 515,
+  },
+};
+
+// Coordinate mapping for 10 CCTV Cameras
+const CAMERA_COORDINATES: Record<string, { x: number; y: number; zoneId: string }> = {
+  cam_gate_01: { x: 90, y: 310, zoneId: "zone_entrance" },
+  cam_gate_02: { x: 210, y: 310, zoneId: "zone_entrance" },
+  cam_res_a1: { x: 380, y: 130, zoneId: "zone_residence_a" },
+  cam_res_a2: { x: 490, y: 180, zoneId: "zone_residence_a" },
+  cam_park_01: { x: 370, y: 400, zoneId: "zone_lake_park" },
+  cam_park_02: { x: 520, y: 430, zoneId: "zone_lake_park" },
+  cam_comm_01: { x: 740, y: 130, zoneId: "zone_commercial" },
+  cam_comm_02: { x: 860, y: 180, zoneId: "zone_commercial" },
+  cam_res_b1: { x: 780, y: 360, zoneId: "zone_residence_b" },
+  cam_sports_01: { x: 790, y: 510, zoneId: "zone_sports_complex" },
+};
+
+export function TownshipMapView({
+  incidents,
+  locations,
+  cameras,
+  onSelectIncident,
+}: TownshipMapViewProps) {
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("zone_lake_park");
+  const [showCameras, setShowCameras] = useState(true);
+  const [showIncidents, setShowIncidents] = useState(true);
+
+  // Active incidents
+  const activeIncidents = incidents.filter(
+    (inc) => !["resolved", "false_positive", "closed"].includes(inc.status)
+  );
+
+  // Incidents in selected zone
+  const zoneIncidents = activeIncidents.filter(
+    (inc) => inc.location_id === selectedZoneId
+  );
+
+  // Cameras in selected zone
+  const zoneCameras = cameras.filter(
+    (cam) => cam.location_id === selectedZoneId
+  );
+
+  const selectedZone = locations.find((l) => l.id === selectedZoneId) || {
+    id: selectedZoneId,
+    name: ZONE_LAYOUTS[selectedZoneId]?.name || selectedZoneId,
+    description: "Sime Darby Property master-planned community sector.",
+    zone_type: ZONE_LAYOUTS[selectedZoneId]?.type || "general",
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Map Header Toolbar */}
+      <div className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center space-x-2">
+          <Layers className="w-4 h-4 text-teal-700" />
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            Township Security GIS & Schematic Operations Map
+          </h3>
+          <span className="text-[11px] text-slate-400">&bull; City of Elmina Operations Sector</span>
+        </div>
+
+        <div className="flex items-center space-x-2 text-xs">
+          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+            <input
+              type="checkbox"
+              checked={showCameras}
+              onChange={(e) => setShowCameras(e.target.checked)}
+              className="rounded text-teal-600 focus:ring-teal-500"
+            />
+            <span className="text-[11px] font-medium">Show 10 Cameras</span>
+          </label>
+
+          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+            <input
+              type="checkbox"
+              checked={showIncidents}
+              onChange={(e) => setShowIncidents(e.target.checked)}
+              className="rounded text-rose-600 focus:ring-rose-500"
+            />
+            <span className="text-[11px] font-medium">Show Active Pins ({activeIncidents.length})</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Main Map & Zone Inspector Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* SVG Interactive Canvas */}
+        <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 p-3 overflow-hidden shadow-sm relative">
+          {/* Map Compass & Legend */}
+          <div className="absolute top-5 left-5 z-10 bg-slate-950/80 backdrop-blur-xs border border-slate-700/80 rounded px-2.5 py-1.5 text-[10px] text-slate-300 space-y-1">
+            <div className="font-semibold text-teal-400">TOWNSHIP SECTOR A</div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-rose-500" />
+              <span>Critical Alert</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-400 ml-1" />
+              <span>High Alert</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-teal-400 ml-1" />
+              <span>Online CCTV</span>
+            </div>
+          </div>
+
+          <svg
+            viewBox="0 0 1000 600"
+            className="w-full h-auto select-none"
+            style={{ minHeight: "440px" }}
+          >
+            {/* Grid Pattern Background */}
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" strokeWidth="0.8" />
+              </pattern>
+            </defs>
+            <rect width="1000" height="600" fill="#0f172a" />
+            <rect width="1000" height="600" fill="url(#grid)" />
+
+            {/* Road Networks */}
+            <g stroke="#334155" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none">
+              {/* Main Arterial Boulevard */}
+              <path d="M 0 310 Q 200 310 280 310 T 630 280 L 1000 280" />
+              {/* North-South Spine */}
+              <path d="M 615 0 L 615 600" />
+              {/* Perimeter Ring Access */}
+              <path d="M 280 50 L 280 550" />
+            </g>
+            <g stroke="#64748b" strokeWidth="2" strokeDasharray="6 6" fill="none">
+              <path d="M 0 310 L 1000 280" />
+              <path d="M 615 0 L 615 600" />
+            </g>
+
+            {/* Central Lake Body */}
+            <ellipse
+              cx="460"
+              cy="420"
+              rx="120"
+              ry="75"
+              fill="#0e7490"
+              fillOpacity="0.3"
+              stroke="#0891b2"
+              strokeWidth="2"
+            />
+            <text x="460" y="425" fill="#38bdf8" fontSize="12" textAnchor="middle" fontWeight="600" opacity="0.8">
+              ELMINA CENTRAL LAKE
+            </text>
+
+            {/* Township Zones */}
+            {Object.entries(ZONE_LAYOUTS).map(([zoneKey, layout]) => {
+              const isSelected = selectedZoneId === zoneKey;
+              const hasAlerts = activeIncidents.some((i) => i.location_id === zoneKey);
+              const hasCritical = activeIncidents.some(
+                (i) => i.location_id === zoneKey && i.priority_level === "critical"
+              );
+
+              let fillColor = "#1e293b";
+              let strokeColor = "#475569";
+              if (layout.type === "park") {
+                fillColor = "#064e3b";
+                strokeColor = "#059669";
+              } else if (layout.type === "commercial") {
+                fillColor = "#1e1b4b";
+                strokeColor = "#4338ca";
+              } else if (layout.type === "infrastructure") {
+                fillColor = "#172554";
+                strokeColor = "#2563eb";
+              }
+
+              return (
+                <g
+                  key={zoneKey}
+                  onClick={() => setSelectedZoneId(zoneKey)}
+                  className="cursor-pointer transition-opacity"
+                >
+                  <rect
+                    x={layout.x}
+                    y={layout.y}
+                    width={layout.width}
+                    height={layout.height}
+                    rx="8"
+                    fill={fillColor}
+                    fillOpacity={isSelected ? 0.8 : 0.45}
+                    stroke={
+                      isSelected
+                        ? "#14b8a6"
+                        : hasCritical
+                        ? "#f43f5e"
+                        : hasAlerts
+                        ? "#f59e0b"
+                        : strokeColor
+                    }
+                    strokeWidth={isSelected ? 3 : 1.5}
+                    strokeDasharray={isSelected ? "none" : hasAlerts ? "4 4" : "none"}
+                  />
+                  <text
+                    x={layout.labelX}
+                    y={layout.labelY}
+                    fill="#f1f5f9"
+                    fontSize="11"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="select-none pointer-events-none"
+                  >
+                    {layout.name}
+                  </text>
+                  <text
+                    x={layout.labelX}
+                    y={layout.labelY + 16}
+                    fill="#94a3b8"
+                    fontSize="9"
+                    textAnchor="middle"
+                    className="select-none pointer-events-none uppercase tracking-wider"
+                  >
+                    {layout.type}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Cameras Markers */}
+            {showCameras &&
+              Object.entries(CAMERA_COORDINATES).map(([camId, coords]) => {
+                const isUnderSelectedZone = coords.zoneId === selectedZoneId;
+                return (
+                  <g key={camId} className="cursor-pointer">
+                    <circle
+                      cx={coords.x}
+                      cy={coords.y}
+                      r={isUnderSelectedZone ? 7 : 5}
+                      fill="#0f172a"
+                      stroke="#2dd4bf"
+                      strokeWidth="2"
+                    />
+                    <circle cx={coords.x} cy={coords.y} r="2.5" fill="#2dd4bf" />
+                    <text
+                      x={coords.x}
+                      y={coords.y - 9}
+                      fill="#99f6e4"
+                      fontSize="8"
+                      fontWeight="600"
+                      textAnchor="middle"
+                    >
+                      {camId}
+                    </text>
+                  </g>
+                );
+              })}
+
+            {/* Active Incident Urgency Pins */}
+            {showIncidents &&
+              activeIncidents.map((inc) => {
+                // Find location coords
+                let coords = { x: 500, y: 300 };
+                if (inc.camera_id && CAMERA_COORDINATES[inc.camera_id]) {
+                  coords = CAMERA_COORDINATES[inc.camera_id];
+                } else if (inc.location_id && ZONE_LAYOUTS[inc.location_id]) {
+                  coords = {
+                    x: ZONE_LAYOUTS[inc.location_id].labelX,
+                    y: ZONE_LAYOUTS[inc.location_id].labelY + 28,
+                  };
+                }
+
+                const isCrit = inc.priority_level === "critical";
+                const isHigh = inc.priority_level === "high";
+                const pinColor = isCrit ? "#f43f5e" : isHigh ? "#f59e0b" : "#3b82f6";
+
+                return (
+                  <g
+                    key={inc.id}
+                    onClick={() => onSelectIncident(inc.id)}
+                    className="cursor-pointer transition-transform hover:scale-110"
+                  >
+                    {/* Pulsing ring for critical/high */}
+                    {(isCrit || isHigh) && (
+                      <circle
+                        cx={coords.x}
+                        cy={coords.y}
+                        r="16"
+                        fill="none"
+                        stroke={pinColor}
+                        strokeWidth="1.5"
+                        opacity="0.6"
+                      />
+                    )}
+                    <circle cx={coords.x} cy={coords.y} r="9" fill={pinColor} />
+                    <circle cx={coords.x} cy={coords.y} r="4" fill="#ffffff" />
+                    <text
+                      x={coords.x}
+                      y={coords.y + 19}
+                      fill="#ffffff"
+                      fontSize="9"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      stroke="#0f172a"
+                      strokeWidth="2"
+                      paintOrder="stroke"
+                    >
+                      {inc.priority_score.toFixed(0)}
+                    </text>
+                  </g>
+                );
+              })}
+          </svg>
+        </div>
+
+        {/* Right Column: Zone Inspector */}
+        <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center space-x-1.5 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+                <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                <span>Selected Sector</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mt-1">
+                {selectedZone.name}
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 leading-normal">
+                {selectedZone.description || "Designated zone in Sime Darby Property township plan."}
+              </p>
+            </div>
+
+            {/* Zone Active Incidents */}
+            <div>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
+                <span>Active Incidents in Sector</span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px]">
+                  {zoneIncidents.length}
+                </span>
+              </div>
+
+              {zoneIncidents.length === 0 ? (
+                <div className="py-4 text-center text-xs text-slate-500">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+                  No active incidents in this sector.
+                </div>
+              ) : (
+                <div className="space-y-2 mt-2 max-h-52 overflow-y-auto pr-1">
+                  {zoneIncidents.map((inc) => {
+                    const prio = getPriorityStyles(inc.priority_level);
+                    return (
+                      <div
+                        key={inc.id}
+                        onClick={() => onSelectIncident(inc.id)}
+                        className="p-2.5 rounded border border-slate-200 hover:border-slate-300 hover:bg-slate-50 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-0.2 rounded text-[10px] font-bold uppercase ${prio.pill}`}>
+                            {prio.label} ({inc.priority_score.toFixed(0)})
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {formatTimeAgo(inc.detected_at)}
+                          </span>
+                        </div>
+                        <div className="text-xs font-semibold text-slate-900 mt-1 truncate">
+                          {inc.title}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Zone Assigned Cameras */}
+            <div>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
+                <span>Assigned CCTV Feeds</span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px]">
+                  {zoneCameras.length}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                {zoneCameras.map((cam) => (
+                  <div key={cam.id} className="p-2 bg-slate-50 rounded border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-800 text-[11px]">{cam.id}</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="Online" />
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                      {cam.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-200">
+            <p className="text-[10px] text-slate-400 leading-tight">
+              Interactive schematic aligned with Sime Darby Property digital masterplan framework.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

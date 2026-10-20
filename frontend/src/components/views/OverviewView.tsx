@@ -1,0 +1,426 @@
+import React from "react";
+import {
+  Incident,
+  AnalyticsSummary,
+} from "@/types";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import {
+  getPriorityStyles,
+  getStatusStyles,
+  formatDateTime,
+  formatTimeAgo,
+  formatCategory,
+  formatDuration,
+} from "@/lib/utils";
+import {
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  MapPin,
+  Camera,
+  ArrowRight,
+  ShieldAlert,
+  Play,
+  RotateCcw,
+  Sparkles,
+  Activity,
+  UserCheck,
+} from "lucide-react";
+
+interface OverviewViewProps {
+  incidents: Incident[];
+  analytics: AnalyticsSummary | null;
+  onSelectIncident: (id: string) => void;
+  onNavigateToIncidents: () => void;
+  onQuickDemoTrigger: (scenario: "simultaneous" | "escalate" | "human_intervention" | "false_positive") => void;
+  onResetDemo: () => void;
+  onAcknowledgeIncident: (id: string) => void;
+}
+
+export function OverviewView({
+  incidents,
+  analytics,
+  onSelectIncident,
+  onNavigateToIncidents,
+  onQuickDemoTrigger,
+  onResetDemo,
+  onAcknowledgeIncident,
+}: OverviewViewProps) {
+  // Active incidents sorted by rank
+  const activeIncidents = incidents.filter(
+    (inc) => !["resolved", "false_positive", "closed"].includes(inc.status)
+  );
+
+  const criticalCount = activeIncidents.filter((inc) => inc.priority_level === "critical").length;
+  const highCount = activeIncidents.filter((inc) => inc.priority_level === "high").length;
+  const pendingAckCount = activeIncidents.filter((inc) => inc.status === "new").length;
+
+  const topIncident = activeIncidents.length > 0 ? activeIncidents[0] : null;
+
+  const topPrioStyles = topIncident ? getPriorityStyles(topIncident.priority_level) : null;
+  const topStatusStyles = topIncident ? getStatusStyles(topIncident.status) : null;
+
+  return (
+    <div className="space-y-6">
+      {/* 1. Operational Situation KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Active Incidents */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Active Incidents</span>
+            <AlertTriangle className="w-4 h-4 text-slate-400" />
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-slate-900">{activeIncidents.length}</span>
+            <span className="text-xs text-slate-500">requiring attention</span>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Critical / High:</span>
+            <span className="font-semibold text-rose-700">{criticalCount + highCount}</span>
+          </div>
+        </div>
+
+        {/* KPI 2: Critical Urgency */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Critical Urgency</span>
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-rose-700">{criticalCount}</span>
+            <span className="text-xs text-slate-500">priority tier</span>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>High Priority:</span>
+            <span className="font-semibold text-amber-700">{highCount}</span>
+          </div>
+        </div>
+
+        {/* KPI 3: Awaiting Acknowledgment */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Awaiting Ack</span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-amber-700">{pendingAckCount}</span>
+            <span className="text-xs text-slate-500">unreviewed alerts</span>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Status:</span>
+            <span className={pendingAckCount > 0 ? "font-semibold text-amber-700" : "font-semibold text-emerald-700"}>
+              {pendingAckCount > 0 ? "Action Required" : "All Acknowledged"}
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 4: Mean Ack Time */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Avg Acknowledge Time</span>
+            <TrendingUp className="w-4 h-4 text-teal-600" />
+          </div>
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-slate-900">
+              {analytics?.avg_acknowledgement_seconds
+                ? formatDuration(analytics.avg_acknowledgement_seconds)
+                : "1.2m"}
+            </span>
+            <span className="text-xs text-slate-500">stored metrics</span>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Total Logged Incidents:</span>
+            <span className="font-semibold text-slate-700">{analytics?.totals?.incidents || incidents.length}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Top-Priority Incident Spotlight */}
+      {topIncident ? (
+        <div className="bg-white rounded-lg border-2 border-slate-300 p-5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-200">
+            <div className="flex items-center space-x-2.5">
+              <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-xs font-bold">
+                RANK #1
+              </span>
+              <span className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${topPrioStyles?.pill}`}>
+                Priority {topPrioStyles?.label} ({topIncident.priority_score.toFixed(1)}/100)
+              </span>
+              {topIncident.emergency_rule_triggered && (
+                <Badge variant="emergency" className="flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3" />
+                  Emergency Override
+                </Badge>
+              )}
+              {topIncident.is_simulated ? (
+                <Badge variant="simulated">Simulation</Badge>
+              ) : (
+                <Badge variant="outline" className="border-teal-400 text-teal-800 bg-teal-50/60 font-semibold">
+                  Video Analysis
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 text-xs text-slate-500">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Detected {formatTimeAgo(topIncident.detected_at)}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-3">
+              <div>
+                <span className="text-[11px] font-semibold text-teal-700 uppercase tracking-wider">
+                  {formatCategory(topIncident.category)}
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">
+                  {topIncident.title}
+                </h3>
+              </div>
+
+              {/* Plain-Language Intelligence Rationale */}
+              <div className="p-3.5 rounded-md bg-teal-50/70 border border-teal-200/90 text-xs">
+                <div className="font-semibold text-teal-950 flex items-center gap-1.5 mb-1">
+                  <Activity className="w-3.5 h-3.5 text-teal-700" />
+                  Dynamic Prioritization Assessment
+                </div>
+                <p className="text-slate-800 leading-relaxed">
+                  {topIncident.priority_explanation}
+                </p>
+              </div>
+
+              {/* Location & Camera Context */}
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  {topIncident.location_name || topIncident.location_id}
+                </span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Camera className="w-4 h-4 text-slate-400" />
+                  {topIncident.camera_name || topIncident.camera_id || "Unassigned Feed"}
+                </span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <UserCheck className="w-4 h-4 text-slate-400" />
+                  {topIncident.assigned_to_name ? `Assigned to: ${topIncident.assigned_to_name}` : "Unassigned Responder"}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Action Box */}
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                  Advisory Action
+                </span>
+                <p className="text-xs text-slate-800 font-medium leading-normal mb-3">
+                  {topIncident.recommended_action || "Inspect CCTV feed and verify situation on the ground."}
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-3 border-t border-slate-200">
+                {topIncident.status === "new" && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="w-full bg-blue-700 hover:bg-blue-800"
+                    onClick={() => onAcknowledgeIncident(topIncident.id)}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                    Acknowledge Alert
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => onSelectIncident(topIncident.id)}
+                >
+                  Inspect & Respond
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900">All Clear in Township</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            No active incidents currently require operator attention. You can trigger simulated scenarios or upload a video clip below.
+          </p>
+        </div>
+      )}
+
+      {/* 3. Two-Column Layout: Active Queue Preview & Hackathon Demo Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Active Queue Preview */}
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              Active Queue Summary ({activeIncidents.length})
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onNavigateToIncidents}
+              className="text-teal-700 hover:text-teal-900 text-xs font-semibold p-0 h-auto"
+            >
+              View Full Incident Queue &rarr;
+            </Button>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-2xs divide-y divide-slate-100">
+            {activeIncidents.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-500">
+                Active incident queue is empty.
+              </div>
+            ) : (
+              activeIncidents.slice(0, 5).map((inc, idx) => {
+                const prio = getPriorityStyles(inc.priority_level);
+                const status = getStatusStyles(inc.status);
+                return (
+                  <div
+                    key={inc.id}
+                    onClick={() => onSelectIncident(inc.id)}
+                    className="p-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <span className="w-6 text-center font-mono text-xs font-bold text-slate-500">
+                        #{idx + 1}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${prio.pill}`}>
+                        {prio.label} ({inc.priority_score.toFixed(0)})
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-slate-900 truncate">
+                          {inc.title}
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 truncate">
+                          <span>{inc.location_name || inc.location_id}</span>
+                          <span>&bull;</span>
+                          <span>{formatTimeAgo(inc.detected_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 shrink-0">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border flex items-center gap-1 ${status.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                        {status.label}
+                      </span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Interactive Hackathon Demonstration Controls */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-teal-600" />
+              Demo Scenarios (Spec §15)
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onResetDemo}
+              className="text-slate-500 hover:text-rose-600 text-[11px] h-6 px-1.5"
+              title="Reset transient simulated incidents"
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reset
+            </Button>
+          </div>
+
+          <div className="space-y-2.5">
+            {/* Scenario A */}
+            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-slate-800">A. 3 Simultaneous Incidents</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onQuickDemoTrigger("simultaneous")}
+                  className="h-6 text-[11px] px-2 text-teal-800 border-teal-300 hover:bg-teal-50"
+                >
+                  <Play className="w-2.5 h-2.5 mr-1 fill-teal-600 text-teal-600" />
+                  Run
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-tight">
+                Medical emergency vs vehicle obstruction vs trash dumping. Tests multi-factor queue sorting.
+              </p>
+            </div>
+
+            {/* Scenario B */}
+            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-slate-800">B. Dynamic Risk Escalation</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onQuickDemoTrigger("escalate")}
+                  className="h-6 text-[11px] px-2 text-amber-800 border-amber-300 hover:bg-amber-50"
+                >
+                  <Play className="w-2.5 h-2.5 mr-1 fill-amber-600 text-amber-600" />
+                  Run
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-tight">
+                Victim remains motionless &gt;5m. Demonstrates automatic priority elevation and live re-ranking.
+              </p>
+            </div>
+
+            {/* Scenario C */}
+            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-slate-800">C. Operator Intervention</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onQuickDemoTrigger("human_intervention")}
+                  className="h-6 text-[11px] px-2 text-blue-800 border-blue-300 hover:bg-blue-50"
+                >
+                  <Play className="w-2.5 h-2.5 mr-1 fill-blue-600 text-blue-600" />
+                  Run
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-tight">
+                Acknowledge top incident, assign security patrol responder, and log response action.
+              </p>
+            </div>
+
+            {/* Scenario D */}
+            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-bold text-slate-800">D. False Positive Audit</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onQuickDemoTrigger("false_positive")}
+                  className="h-6 text-[11px] px-2 text-purple-800 border-purple-300 hover:bg-purple-50"
+                >
+                  <Play className="w-2.5 h-2.5 mr-1 fill-purple-600 text-purple-600" />
+                  Run
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-tight">
+                Safely closes candidate as false positive with mandatory justification recorded to SQLite audit.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

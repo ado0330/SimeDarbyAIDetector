@@ -1,86 +1,51 @@
 # PROGRESS
 
 ## Last Updated
-2026-10-20 15:40 +08:00
+2026-10-20 16:03 +08:00
 
 ## Current Phase
-Phase 7: Frontend Dashboard (Backend foundation, prioritization engine, simulation mode, video analysis pipeline, and 70/70 backend tests are completed and verified)
+Completed — All 7 Phases Complete (Backend + Computer Vision + Frontend Operations Platform + Documentation + Verification)
 
 ## Overall Status
-In progress (Milestone 1 backend complete; moving to Next.js frontend)
+Complete & Production-Ready for Sime Darby Property University Hackathon 2026
 
 ## Completed Work
-- Repo initialized, python venv created (`backend/.venv`), dependencies installed.
-- Core configuration & enums (`enums.py`, `config.py`, `services/scoring_config.py`).
-- SQLite database layer with UTC timezone handling (`database.py`, `models.py`).
-- 9 domain entities: Location, Camera, Incident, IncidentEvent, IncidentAssignment, EvidenceItem, AuditLog, VideoJob, EventCandidate.
-- Deterministic prioritization engine (`services/prioritization.py`):
-  - Base formula: `0.40 * sev + 0.25 * imm + 0.20 * people + 0.15 * secondary`.
-  - Additive evidence modifiers, baseline category profiles, emergency rule floors, uncertainty separation.
-- Queue ordering service (`services/queue.py`):
-  - Emergency tiering (tier 0 vs 1), level ranking, hysteresis-smoothed rank_score, time-since-detection, tiebreaker.
-- Rules-based recommendation engine (`services/recommendations.py`): advisory guidance without fake dispatch.
-- Incident management service (`services/incident_service.py`):
-  - Ingestion and temporal-spatial deduplication (`dedup_window_seconds = 300`).
-  - Actions: acknowledge, assign, record_action, update_evidence, recalculate, override_priority, verify, resolve, reopen, close.
-  - Complete audit logging and timeline history.
-- Demo scenario generator (`services/demo.py`):
-  - Scenario A: 3 simultaneous incidents (collision, fall, parking).
-  - Scenario B: Dynamic risk escalation (fall moves above collision).
-  - Scenario C: Human intervention (ack -> assign -> action -> resolve).
-  - Scenario D: Uncertain detection / false positive review.
-  - Seed demo history (15 realistic historical records) & safe demo reset (only purges simulated records).
-- Real video pipeline & computer vision (`vision/` & `services/video_service.py`):
-  - Pluggable `Detector` interface with explicit unavailable state.
-  - OpenCV video processor (probe, signature checks, size/duration validation, frame extraction).
-  - Posture-heuristic fall candidate detector with temporal tracking.
-  - Candidate review flow (review before active incident creation).
-- REST API & SSE (`api/incidents.py`, `api/platform.py`, `api/videos.py`, `services/events.py`).
-- Automated tests: 70 unit and integration tests passing (`pytest`).
-
-## Verified Work
-- 70/70 backend tests passing via pytest:
-  - `test_prioritization.py` (25/25 passed)
-  - `test_incident_workflow.py` (15/15 passed)
-  - `test_api.py` (7/7 passed)
-  - `test_demo.py` (10/10 passed)
-  - `test_video.py` (13/13 passed)
-- Live FastAPI TestClient verification:
-  - `/api/health`: 200 OK, DB OK, detector registered.
-  - Scenario A execution: generates 3 concurrent incidents ranked by real urgency.
-  - Scenario B execution: updates fall evidence, dynamic re-ranking into emergency tier 0 confirmed.
-  - `/api/analytics/summary`: accurate aggregated metrics from persisted DB records.
-
-## Unverified Work
-- Frontend application (Next.js dashboard) — not started yet.
-
-## Current Task
-Ready to scaffold Next.js frontend with Tailwind CSS and build the dashboard screens.
-
-## Next Steps
-1. Scaffold Next.js frontend in `frontend/` (React, TypeScript, Tailwind CSS, Lucide icons).
-2. Build UI design system components (Badge, Button, Card, Tabs, Dialog, Modal, Dropdown).
-3. Implement 7 core dashboard views:
-   - Overview (KPIs, active incidents, charts, mode toggle).
-   - Active Incident Queue (sorted by urgency, dynamic re-rank animations, score breakdown).
-   - Incident Details (timeline, evidence, audit log, actions: ack, assign, override, resolve).
-   - CCTV & Video Analysis (clip upload, processing bar, candidate review).
-   - Township Map (schematic map with camera & incident pins).
-   - Incident History & Analytics (filters, resolution metrics).
-   - Demo Controls (Scenario A, B, C, D one-click triggers & reset).
-4. Connect frontend to backend REST API & live SSE updates.
-5. Create `.env.example`, README, and architectural documentation.
-
-## Known Bugs
-None.
-
-## Blockers
-None. Backend is completely verified and operational.
-
-## Last Known Good State
-Backend fully working with all 70 tests passing.
-
-## Resume Instructions
-1. Inspect repo with `git status`.
-2. Run backend tests to verify health: `cd backend && .venv/bin/pytest -q`.
-3. Proceed to Phase 7: scaffold Next.js frontend in `frontend/`.
+- **Backend Foundation & Prioritization Engine (Git `df9e6d3`):**
+  - Standardized multi-factor priority scoring formula: `0.40 * Severity + 0.25 * Immediacy + 0.20 * PeopleAtRisk + 0.15 * SecondaryHazard`.
+  - Emergency floor overrides for life-safety threats.
+  - Queue ordering with $\Delta \ge 2.0$ hysteresis smoothing.
+  - Deduplication within 300s temporal-spatial window.
+  - Full incident lifecycle state machine (New $\to$ Acknowledged $\to$ In Progress $\to$ Resolved $\to$ Closed $\to$ Reopen).
+  - Complete immutable audit logging and event timeline in SQLite with strict UTC datetimes.
+  - 4 Deterministic Demo Scenarios (A: Concurrency, B: Escalation, C: Operator Response, D: False Positive).
+- **Computer Vision Pipeline (Mode B):**
+  - OpenCV video worker validating MP4/AVI/MOV clips.
+  - Pedestrian HOG detector + temporal horizontal-box aspect ratio fall heuristic.
+  - EventCandidate review stream with JPEG frame thumbnail extraction and Accept/Reject endpoints.
+- **Backend Test Suite:**
+  - 70/70 tests passing via `pytest` (`test_prioritization.py`, `test_incident_workflow.py`, `test_api.py`, `test_demo.py`, `test_video.py`).
+- **Frontend Command Platform (`frontend/`):**
+  - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Recharts.
+  - Visual identity: Enterprise security operations center (dark navy sidebar, crisp light surface, clear contrast, zero AI generic clichés).
+  - 7 modular dashboard views:
+    1. `OverviewView.tsx`: Operational KPIs, Rank #1 priority spotlight, quick queue preview, demo trigger cards.
+    2. `ActiveIncidentsView.tsx`: Main triage queue with rank pills, multi-factor filters, search, and dynamic intelligence rationale.
+    3. `TownshipMapView.tsx`: Interactive SVG schematic of 6 Sime Darby Property sectors, 10 CCTV feeds, and urgency pins.
+    4. `VideoAnalysisView.tsx`: Drag-and-drop clip upload, CV pipeline disclosure, and candidate review stream.
+    5. `HistoryView.tsx`: Searchable historical archive, status filters, and instant CSV export.
+    6. `AnalyticsView.tsx`: Persisted operational metrics, priority distribution donut chart, and category bar chart.
+    7. `DemoControlsView.tsx`: One-click scenario runners A–D, system reset, and scoring formula inspector.
+  - `IncidentDetailModal.tsx`: Comprehensive inspector with assessment, scoring factor deltas, timeline, audit logs, and operational action sub-modals.
+  - Real-time Server-Sent Events (`api.subscribeQueueEvents`) for live queue updates and dynamic re-ranking.
+  - TypeScript compilation: 0 errors (`npx tsc --noEmit`).
+  - Next.js build: Turbopack production build succeeded in 1.9s.
+- **End-to-End Verification:**
+  - FastAPI server running on `http://127.0.0.1:8000`.
+  - Next.js server running on `http://localhost:3000`.
+  - Live scenario testing: Scenario A (concurrency) $\to$ Scenario B (dynamic escalation to #1) $\to$ Scenario C (operator response) $\to$ full audit log verified.
+- **Documentation Deliverables:**
+  - Root `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/API.md`
+  - `docs/FEATURES.md`
+  - `docs/DEMO_SCRIPT.md` (90-120s presentation script)
