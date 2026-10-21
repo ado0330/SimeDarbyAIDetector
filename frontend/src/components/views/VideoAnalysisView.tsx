@@ -42,6 +42,13 @@ export interface SampleClip {
 
 export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   {
+    id: "sample-person-fall",
+    name: "Person Fall",
+    filename: "sample_person_fall.mp4",
+    url: "/samples/sample_person_fall.mp4",
+    size: "4.0 MB",
+  },
+  {
     id: "sample-fallen-tree",
     name: "Fallen Tree",
     filename: "sample_fallen_tree.mp4",
@@ -178,7 +185,7 @@ export function VideoAnalysisView({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {SAMPLE_VIDEO_CLIPS.map((clip) => (
             <div
               key={clip.id}
