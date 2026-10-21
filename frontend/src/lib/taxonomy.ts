@@ -1,8 +1,8 @@
 /**
- * GLOBAL EYE — Expandable Incident Taxonomy and Classification System
+ * GLOBAL EYE — Comprehensive Multi-Source Township Incident Taxonomy
  *
- * Defines the comprehensive township safety, security, wildlife, infrastructure,
- * environmental, utility, traffic, property, and operational incident catalogue.
+ * Defines the expandable incident catalogue covering human safety, security,
+ * wildlife, fire, utilities, flooding, traffic, smart infrastructure, and operational domains.
  */
 
 export type IncidentDomain =
@@ -26,17 +26,16 @@ export type DetectionMethod =
   | "manual_entry";
 
 export type IncidentLifecycleState =
-  | "detected"          // Evidence supports a potential incident
-  | "suspected"         // Event may be occurring but needs verification
-  | "sensor_reported"   // IoT / Sensor reported abnormal telemetry
-  | "human_reported"    // Resident, staff, or operator submitted report
-  | "confirmed"         // Authorised human operator verified the incident
-  | "false_positive";   // Authorised reviewer determined alert is not genuine
+  | "detected"
+  | "suspected"
+  | "sensor_reported"
+  | "human_reported"
+  | "confirmed"
+  | "false_positive";
 
 export interface TaxonomyCategory {
   id: string;
   name: string;
-  nameZh?: string;
   domain: IncidentDomain;
   domainName: string;
   description: string;
@@ -67,7 +66,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   person_fall: {
     id: "person_fall",
     name: "Person Fall / Motionless",
-    nameZh: "人员跌倒 / 倒地不起",
     domain: "human_safety",
     domainName: "Human Safety & Medical",
     description: "Pedestrian slip, trip, collapse, or unresponsive posture on walkway, road, or stairs.",
@@ -86,7 +84,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   medical_emergency: {
     id: "medical_emergency",
     name: "Acute Medical Emergency",
-    nameZh: "突发医疗急救",
     domain: "human_safety",
     domainName: "Human Safety & Medical",
     description: "Cardiac arrest, seizure, heatstroke, or acute physical distress in township public spaces.",
@@ -105,7 +102,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   drowning_water_distress: {
     id: "drowning_water_distress",
     name: "Water Distress / Drowning Risk",
-    nameZh: "溺水与水域险情",
     domain: "human_safety",
     domainName: "Human Safety & Medical",
     description: "Person struggling in retention pond, lake, swimming pool, or deep drainage canal.",
@@ -126,7 +122,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   restricted_area_intrusion: {
     id: "restricted_area_intrusion",
     name: "Restricted Danger Zone (Rooftop / Height)",
-    nameZh: "高危禁区/天台屋顶闯入",
     domain: "security_access",
     domainName: "Security & Restricted Access",
     description: "Unauthorized person on commercial rooftop ledge, electrical substation, construction fence, or water treatment perimeter.",
@@ -145,7 +140,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   physical_altercation: {
     id: "physical_altercation",
     name: "Physical Altercation / Public Affray",
-    nameZh: "肢体冲突与群殴斗殴",
     domain: "security_access",
     domainName: "Security & Restricted Access",
     description: "Violent confrontation, assault, brawl, or menacing behavior in commercial squares or parks.",
@@ -164,7 +158,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   unauthorized_trespass: {
     id: "unauthorized_trespass",
     name: "Perimeter Security Breach",
-    nameZh: "周界安防入侵破坏",
     domain: "security_access",
     domainName: "Security & Restricted Access",
     description: "Breach of residential gated perimeter fence, unauthorized vehicle tailgating, or forced entry.",
@@ -185,7 +178,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   wildlife_intrusion: {
     id: "wildlife_intrusion",
     name: "Wildlife Intrusion (Wild Animal)",
-    nameZh: "野生动物闯入 (野猪/猴/蛇)",
     domain: "wildlife_nature",
     domainName: "Wildlife & Animal Hazards",
     description: "Wild boars, aggressive macaques, venomous snakes (cobras/vipers), or large monitor lizards in residential roads or parks.",
@@ -206,7 +198,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   fire_smoke: {
     id: "fire_smoke",
     name: "Suspected Fire / Smoke Plume",
-    nameZh: "疑似火灾与浓烟",
     domain: "fire_hazards",
     domainName: "Fire, Smoke & Explosions",
     description: "Open flames, expanding smoke plume, wild grass fire, or electrical fire hazard.",
@@ -225,7 +216,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   gas_leak_explosion_risk: {
     id: "gas_leak_explosion_risk",
     name: "Gas Leak / Explosion Risk",
-    nameZh: "可燃气体泄漏与爆炸隐患",
     domain: "fire_hazards",
     domainName: "Fire, Smoke & Explosions",
     description: "LPG / natural gas concentration alarm or strong odor reported near commercial kitchens or residences.",
@@ -246,7 +236,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   pipe_burst_leakage: {
     id: "pipe_burst_leakage",
     name: "Water Main Pipe Burst / High-Pressure Leak",
-    nameZh: "供水主管道爆裂漏水",
     domain: "water_utilities",
     domainName: "Water, Drainage & Utilities",
     description: "Subsurface main water pipe rupture causing gushing surface water, pressure drop, and road subsidence risk.",
@@ -266,7 +255,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   drainage_blockage: {
     id: "drainage_blockage",
     name: "Drainage / Culvert Blockage",
-    nameZh: "排水涵洞堵塞溢流",
     domain: "water_utilities",
     domainName: "Water, Drainage & Utilities",
     description: "Debris, tree branches, or silt blocking primary stormwater monsoon drain before heavy rain.",
@@ -286,7 +274,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   flash_flood: {
     id: "flash_flood",
     name: "Flash Flooding / Retention Surge",
-    nameZh: "路面积水与城市内涝",
     domain: "weather_flooding",
     domainName: "Flooding & Natural Hazards",
     description: "Rapid stormwater inundation of township roadway underpasses, parking aprons, or retention lake spillway surge.",
@@ -305,7 +292,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   fallen_tree_storm_damage: {
     id: "fallen_tree_storm_damage",
     name: "Fallen Tree / Severe Storm Obstruction",
-    nameZh: "树木倒塌与风暴道路阻断",
     domain: "weather_flooding",
     domainName: "Flooding & Natural Hazards",
     description: "Uprooted trees or massive branches blocking main entry boulevards or striking power lines after thunderstorm.",
@@ -326,7 +312,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   road_collision: {
     id: "road_collision",
     name: "Road Collision / Vehicle Crash",
-    nameZh: "交通事故与车辆相撞",
     domain: "traffic_mobility",
     domainName: "Traffic, Mobility & Parking",
     description: "Two-vehicle collision, motorcycle skid, or vehicle impact with pedestrian or roadside guardrail.",
@@ -345,7 +330,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   parking_obstruction: {
     id: "parking_obstruction",
     name: "Parking / Emergency Route Obstruction",
-    nameZh: "违章停放占用消防应急通道",
     domain: "traffic_mobility",
     domainName: "Traffic, Mobility & Parking",
     description: "Vehicle parked illegally across fire hydrant, emergency ambulance gate, or double-parked blocking egress.",
@@ -366,7 +350,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   lift_entrapment: {
     id: "lift_entrapment",
     name: "Elevator Passenger Entrapment",
-    nameZh: "电梯故障与人员被困",
     domain: "smart_infrastructure",
     domainName: "Smart Infra, Lifts & Energy",
     description: "Commercial or residential elevator halted between floors with occupants inside.",
@@ -385,7 +368,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   power_outage_electrical: {
     id: "power_outage_electrical",
     name: "Substation Trip / Streetlight Blackout",
-    nameZh: "变电站跳闸与大面积路灯停电",
     domain: "smart_infrastructure",
     domainName: "Smart Infra, Lifts & Energy",
     description: "Medium voltage electrical failure causing blackout along main boulevards or exposed wiring risk.",
@@ -406,7 +388,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   illegal_dumping: {
     id: "illegal_dumping",
     name: "Illegal Waste Dumping / Pollution",
-    nameZh: "非法倾倒垃圾与环境污染",
     domain: "environment_sanitation",
     domainName: "Waste & Environment",
     description: "Commercial lorry dumping construction debris, toxic drums, or bulk garbage in undeveloped township reserve.",
@@ -427,7 +408,6 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
   custom_safety_hazard: {
     id: "custom_safety_hazard",
     name: "Administrator-Defined Safety Hazard",
-    nameZh: "自定义与综合安全隐患",
     domain: "operational_general",
     domainName: "Operational & Other",
     description: "Novel, multi-source, or operator-entered township incident not matching pre-existing automated categories.",
@@ -446,7 +426,7 @@ export const TAXONOMY_CATALOGUE: Record<string, TaxonomyCategory> = {
 };
 
 /**
- * Format category label with Chinese / English context.
+ * Retrieve category definition by id.
  */
 export function getTaxonomyCategory(id: string): TaxonomyCategory {
   return (

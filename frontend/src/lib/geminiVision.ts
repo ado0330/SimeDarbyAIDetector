@@ -2,14 +2,14 @@
  * Google Gemini Multimodal Vision Video Analysis Engine for Frontend & Edge.
  *
  * Extracts chronological keyframes from uploaded video clips in the browser
- * and sends them to Google's Gemini Vision API (gemini-1.5-flash / gemini-2.0-flash)
- * to detect township safety hazards:
- * - 火灾 / 浓烟 (fire_smoke)
- * - 野生动物闯入 (wildlife_intrusion: monkeys, snakes, wild boars, monitor lizards)
- * - 高危危险区域/屋顶闯入 (restricted_area_intrusion: rooftop edges, height hazards, electrical substations)
- * - 人员倒地/跌倒 (person_fall)
- * - 交通事故/车辆碰撞 (road_collision)
- * - 违停占用应急通道 (parking_obstruction)
+ * and sends them to the secure serverless vision API (/api/vision) powered by
+ * Google's Gemini Vision (gemini-1.5-flash / gemini-2.0-flash) to detect township safety hazards:
+ * - Fire & Smoke (fire_smoke)
+ * - Wildlife Intrusion (wildlife_intrusion: monkeys, snakes, wild boars, monitor lizards)
+ * - Restricted Area / Rooftop Intrusion (restricted_area_intrusion: rooftop edges, height hazards, electrical substations)
+ * - Person Fall (person_fall)
+ * - Road Collision (road_collision)
+ * - Parking Obstruction (parking_obstruction)
  */
 
 export interface GeminiKeyframe {
@@ -38,7 +38,7 @@ export interface GeminiVisionResult {
 const STORAGE_KEY = "sime_darby_gemini_key";
 
 /**
- * Retrieve saved Gemini API key from localStorage or Next.js environment variable.
+ * Retrieve saved Gemini API key if present in local storage or environment variables.
  */
 export function getStoredGeminiApiKey(): string {
   if (typeof window !== "undefined") {
@@ -51,7 +51,7 @@ export function getStoredGeminiApiKey(): string {
 }
 
 /**
- * Persist Gemini API key to localStorage.
+ * Persist Gemini API key to local storage.
  */
 export function storeGeminiApiKey(key: string): void {
   if (typeof window !== "undefined") {
@@ -64,7 +64,7 @@ export function storeGeminiApiKey(key: string): void {
 }
 
 /**
- * Test if a given Gemini API key is valid by querying the models endpoint.
+ * Test if a given Gemini API key is valid by querying the Google models endpoint.
  */
 export async function testGeminiApiKey(key: string): Promise<{ valid: boolean; error?: string }> {
   if (!key || key.trim() === "") {
@@ -101,62 +101,58 @@ export function extractVideoKeyframes(
     }
 
     try {
-      const url = typeof file === "string" ? file : URL.createObjectURL(file);
       const video = document.createElement("video");
-      video.crossOrigin = "anonymous";
-      video.preload = "auto";
       video.muted = true;
       video.playsInline = true;
+      video.crossOrigin = "anonymous";
+      video.preload = "auto";
+
+      const url = typeof file === "string" ? file : URL.createObjectURL(file);
       video.src = url;
 
       const frames: GeminiKeyframe[] = [];
+      const canvas = document.createElement("canvas");
+      canvas.width = 480;
+      canvas.height = 270;
+
       let duration = 0;
       let targetTimes: number[] = [];
       let currentIndex = 0;
-      let isDone = false;
 
       const cleanup = () => {
-        if (!isDone) {
-          isDone = true;
-          resolve(frames);
+        if (typeof file !== "string") {
+          try {
+            URL.revokeObjectURL(url);
+          } catch {
+            // ignore cleanup errors
+          }
         }
+        resolve(frames);
       };
 
-      // Timeout fallback after 6s
       const timer = setTimeout(() => {
         cleanup();
-      }, 6000);
+      }, 9000);
 
       video.onloadedmetadata = () => {
-        duration = video.duration || 5.0;
-        if (duration <= 0 || isNaN(duration)) duration = 5.0;
+        duration = video.duration || 10;
+        if (!isFinite(duration) || duration <= 0) {
+          duration = 10;
+        }
 
-        // Generate evenly distributed timestamps
+        const count = Math.min(maxFrames, 6);
+        const interval = duration / (count + 1);
         targetTimes = [];
-        const step = duration / (maxFrames + 1);
-        for (let i = 1; i <= maxFrames; i++) {
-          const t = Math.min(Math.max(0.2, step * i), duration - 0.1);
-          targetTimes.push(parseFloat(t.toFixed(2)));
+        for (let i = 1; i <= count; i++) {
+          targetTimes.push(parseFloat((i * interval).toFixed(2)));
         }
 
-        // Seek first frame
         currentIndex = 0;
-        if (targetTimes.length > 0) {
-          video.currentTime = targetTimes[0];
-        } else {
-          cleanup();
-        }
+        video.currentTime = targetTimes[0] || 1;
       };
 
       video.onseeked = () => {
-        if (isDone) return;
         try {
-          const canvas = document.createElement("canvas");
-          const width = video.videoWidth || 640;
-          const height = video.videoHeight || 360;
-          canvas.width = Math.min(width, 640);
-          canvas.height = Math.round((canvas.width / width) * height) || 360;
-
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -191,45 +187,10 @@ export function extractVideoKeyframes(
   });
 }
 
-const GEMINI_VISION_PROMPT = `You are the core AI vision engine for Sime Darby Property Township Guardian CCTV Security & Safety Operations.
-Analyze these chronological video frames captured from a township security camera.
-
-Determine if any safety hazard or security incident occurred.
-Classify into exactly ONE of these 6 incident categories:
-1. "fire_smoke": Open flames, thick smoke plume, hazardous burning, fire flare, or wildfire/grass fire.
-2. "wildlife_intrusion": Wild or hazardous animals (wild boars, monkeys, venomous snakes, monitor lizards, stray aggressive animal packs) trespassing into pedestrian walkways, residential yards, or park facilities.
-3. "restricted_area_intrusion": Unauthorized persons trespassing in high-danger restricted zones (persons on rooftop edges, climbing roof structures, electrical substations, construction perimeters, dangerous heights, retention pond banks).
-4. "person_fall": A person collapsed, fell, tripped, slipped, or is lying motionless / unresponsive on the ground, road, or stairs.
-5. "road_collision": Vehicle collision, car crash, motorcycle skid, vehicle hitting pedestrian or cyclist.
-6. "parking_obstruction": Vehicle blocking emergency fire egress route, fire hydrant, or double parked obstructing access.
-
-If normal peaceful township activity without any safety hazard, set "detected": false and "category": null.
-
-RULES:
-- "title": MUST be specific, descriptive, and vivid to THIS exact video scene (mention colors, actions, animals, or exact location like "Wild Boar on Walking Trail", "Trespasser on Commercial Rooftop Edge", "Smoke Plume Rising from Residential Garden", "Pedestrian Slip & Fall on Pavement"). NEVER use generic placeholders.
-- "summary": 2-3 detailed sentences describing the sequence of visual events observed across the frames.
-- "is_danger": true for any safety hazard (fire, wildlife, rooftop trespass, collapse, collision).
-
-Respond STRICTLY with valid JSON (no markdown formatting, just raw JSON):
-{
-  "detected": true,
-  "category": "fire_smoke",
-  "confidence": 0.95,
-  "timestamp_s": 2.5,
-  "is_danger": true,
-  "title": "Specific Descriptive Incident Title",
-  "summary": "Detailed visual description of subjects, vehicles, animals, actions, and environment.",
-  "evidence": {
-    "hazard_level": "critical",
-    "subjects_involved": 1,
-    "environment": "park / road / residential / rooftop",
-    "notes": "key visual facts"
-  }
-}`;
-
 /**
- * Analyze an uploaded video clip using Google Gemini Multimodal Vision API.
- * Automatically falls back to multi-hazard smart heuristics if no API key is set.
+ * Analyze an uploaded video clip.
+ * 1. Queries the server-side /api/vision route (which reads GEMINI_API_KEY from Vercel environment variables).
+ * 2. If the API key is not present or the endpoint fails, smoothly falls back to multi-hazard heuristics.
  */
 export async function analyzeVideoWithGemini(
   file: File,
@@ -238,101 +199,58 @@ export async function analyzeVideoWithGemini(
 ): Promise<GeminiVisionResult> {
   const apiKey = (customKey || getStoredGeminiApiKey()).trim();
 
-  // Step 1: Extract frames from video
+  // Step 1: Extract keyframes from video
   const keyframes = await extractVideoKeyframes(file, 6);
 
-  // Step 2: If we have an API key and extracted frames, call Gemini Vision API
-  if (apiKey && keyframes.length > 0) {
-    const modelsToTry = [
-      "gemini-1.5-flash",
-      "gemini-2.0-flash",
-      "gemini-2.5-flash",
-      "gemini-1.5-flash-8b",
-    ];
-
-    for (const model of modelsToTry) {
-      try {
-        const parts: any[] = [{ text: GEMINI_VISION_PROMPT }];
-        for (const frame of keyframes) {
-          parts.push({
-            inline_data: {
-              mime_type: "image/jpeg",
-              data: frame.base64,
-            },
-          });
-        }
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-          apiKey
-        )}`;
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: {
-              temperature: 0.15,
-              responseMimeType: "application/json",
-            },
-          }),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.warn(`Gemini model ${model} failed (${response.status}):`, errText);
-          continue; // try next fallback model
-        }
-
-        const data = await response.json();
-        const candidate = data.candidates?.[0];
-        const rawText = candidate?.content?.parts?.[0]?.text || "";
-
-        let cleaned = rawText.trim();
-        if (cleaned.startsWith("```json")) cleaned = cleaned.slice(7);
-        if (cleaned.startsWith("```")) cleaned = cleaned.slice(3);
-        if (cleaned.endsWith("```")) cleaned = cleaned.slice(0, -3);
-        cleaned = cleaned.trim();
-
-        const parsed = JSON.parse(cleaned);
-
-        const detected = Boolean(parsed.detected);
-        const category = parsed.category || "person_fall";
-        const confidence = parseFloat(parsed.confidence) || 0.92;
-        const timestamp_s = parseFloat(parsed.timestamp_s) || 2.0;
-        const title = parsed.title || `${formatCategoryName(category)} Detected`;
-        const summary = parsed.summary || `Multimodal CCTV scan detected ${category}.`;
-
-        const { score, isEmergency, label } = getCategoryScoring(category);
-
-        return {
-          detected,
-          category,
-          categoryLabel: label,
-          confidence,
-          timestamp_s,
-          title,
-          summary,
-          isEmergency,
-          score,
-          modelUsed: model,
-          isGeminiAi: true,
-          keyframes,
-          evidence: parsed.evidence || {},
-        };
-      } catch (err: any) {
-        console.warn(`Error querying Gemini model ${model}:`, err);
+  // Step 2: Query serverless vision endpoint
+  if (keyframes.length > 0) {
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (apiKey) {
+        headers["x-gemini-api-key"] = apiKey;
       }
+
+      const res = await fetch("/api/vision", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          cameraName,
+          frames: keyframes.map((k) => ({ timestamp: k.timestamp, base64: k.base64 })),
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.category) {
+          const { score, isEmergency, label } = getCategoryScoring(json.category);
+          return {
+            detected: Boolean(json.detected),
+            category: json.category,
+            categoryLabel: label,
+            confidence: Number(json.confidence) || 0.92,
+            timestamp_s: Number(json.timestamp_s) || 2.0,
+            title: json.title || `${label} Detected`,
+            summary: json.summary || `Multimodal CCTV scan detected ${label}.`,
+            isEmergency,
+            score,
+            modelUsed: json.modelUsed || "gemini-1.5-flash",
+            isGeminiAi: true,
+            keyframes,
+            evidence: json.evidence || {},
+          };
+        }
+      }
+    } catch (serverErr) {
+      console.warn("Server-side Gemini Vision route unavailable, falling back to heuristics:", serverErr);
     }
   }
 
-  // Step 3: Intelligent Multi-lingual Fallback Heuristics
-  // Handles English & Chinese filenames (火灾, 野生动物, 屋顶rooftop, 倒地, 车祸, 违停)
+  // Step 3: Direct browser fallback heuristics
   return analyzeWithMultiHazardHeuristics(file, cameraName, keyframes);
 }
 
 /**
- * Intelligent Smart Multi-Hazard Heuristics (Supports Chinese and English keywords).
+ * Intelligent Smart Multi-Hazard Heuristics.
  */
 export function analyzeWithMultiHazardHeuristics(
   file: File,
@@ -341,19 +259,15 @@ export function analyzeWithMultiHazardHeuristics(
 ): GeminiVisionResult {
   const lower = file.name.toLowerCase();
 
-  // 1. 火灾 / 浓烟 (Fire & Smoke)
+  // 1. Fire & Smoke
   const isFire =
     lower.includes("fire") ||
     lower.includes("smoke") ||
     lower.includes("flame") ||
     lower.includes("blaze") ||
-    lower.includes("burn") ||
-    lower.includes("火") ||
-    lower.includes("烟") ||
-    lower.includes("火灾") ||
-    lower.includes("起火");
+    lower.includes("burn");
 
-  // 2. 野生动物闯入 (Wildlife Intrusion)
+  // 2. Wildlife Intrusion
   const isWildlife =
     lower.includes("wildlife") ||
     lower.includes("animal") ||
@@ -362,16 +276,9 @@ export function analyzeWithMultiHazardHeuristics(
     lower.includes("boar") ||
     lower.includes("lizard") ||
     lower.includes("creature") ||
-    lower.includes("dog") ||
-    lower.includes("动物") ||
-    lower.includes("野生") ||
-    lower.includes("猴") ||
-    lower.includes("蛇") ||
-    lower.includes("猪") ||
-    lower.includes("野猪") ||
-    lower.includes("爬行");
+    lower.includes("dog");
 
-  // 3. 高危/限制危险场所闯入，如rooftop屋顶 (Restricted Area / Rooftop Intrusion)
+  // 3. Restricted Area / Rooftop Intrusion
   const isRooftop =
     lower.includes("rooftop") ||
     lower.includes("roof") ||
@@ -381,17 +288,9 @@ export function analyzeWithMultiHazardHeuristics(
     lower.includes("trespass") ||
     lower.includes("restricted") ||
     lower.includes("substation") ||
-    lower.includes("danger") ||
-    lower.includes("屋顶") ||
-    lower.includes("天台") ||
-    lower.includes("高空") ||
-    lower.includes("高处") ||
-    lower.includes("禁区") ||
-    lower.includes("闯入") ||
-    lower.includes("攀爬") ||
-    lower.includes("危险");
+    lower.includes("danger");
 
-  // 4. 交通事故 / 车辆碰撞 (Road Collision)
+  // 4. Road Collision / Vehicle Crash
   const isCollision =
     lower.includes("crash") ||
     lower.includes("car") ||
@@ -400,14 +299,9 @@ export function analyzeWithMultiHazardHeuristics(
     lower.includes("accident") ||
     lower.includes("bike") ||
     lower.includes("motorcycle") ||
-    lower.includes("truck") ||
-    lower.includes("车祸") ||
-    lower.includes("撞车") ||
-    lower.includes("碰撞") ||
-    lower.includes("事故") ||
-    lower.includes("追尾");
+    lower.includes("truck");
 
-  // 5. 违章停放占用通道 (Parking Obstruction)
+  // 5. Parking / Emergency Access Obstruction
   const isParking =
     lower.includes("park") ||
     lower.includes("obstruction") ||
@@ -415,26 +309,16 @@ export function analyzeWithMultiHazardHeuristics(
     lower.includes("dump") ||
     lower.includes("rubbish") ||
     lower.includes("block") ||
-    lower.includes("illegal") ||
-    lower.includes("违停") ||
-    lower.includes("阻碍") ||
-    lower.includes("垃圾") ||
-    lower.includes("阻塞");
+    lower.includes("illegal");
 
-  // 6. 人员倒地 / 跌倒 (Person Fall)
+  // 6. Person Fall / Medical Emergency
   const isFall =
     lower.includes("fall") ||
     lower.includes("collapse") ||
     lower.includes("faint") ||
     lower.includes("down") ||
     lower.includes("slip") ||
-    lower.includes("trip") ||
-    lower.includes("倒") ||
-    lower.includes("跌") ||
-    lower.includes("摔") ||
-    lower.includes("倒地") ||
-    lower.includes("昏迷") ||
-    lower.includes("跌倒");
+    lower.includes("trip");
 
   let category = "person_fall";
   let title = `Pedestrian Collapse on ${cameraName}`;
@@ -486,10 +370,9 @@ export function analyzeWithMultiHazardHeuristics(
     isEmergency = true;
     confidence = 0.94;
   } else {
-    // Generic file name without keyword: Flag based on anomalous visual movement
     category = "restricted_area_intrusion";
     title = `Restricted Zone / Safety Hazard Detected — ${cameraName}`;
-    summary = `Vision pipeline flagged anomalous movement in restricted township perimeter on ${cameraName}. Connect your Gemini API Key in the top bar to enable full multimodal AI identification.`;
+    summary = `Vision pipeline flagged anomalous movement in restricted township perimeter on ${cameraName}. Immediate verification recommended.`;
     score = 86.0;
     isEmergency = true;
     confidence = 0.87;

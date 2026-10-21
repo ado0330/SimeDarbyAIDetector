@@ -122,23 +122,23 @@ export function GeminiApiKeyModal({
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <div className="flex items-center gap-1.5 text-slate-700">
                 <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                <span><strong>火灾 (Fire & Smoke)</strong>: Flames, plumes</span>
+                <span><strong>Fire & Smoke</strong>: Flames, thick plumes</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700">
                 <Trees className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span><strong>野生动物 (Wildlife)</strong>: Boars, monkeys, snakes</span>
+                <span><strong>Wildlife Intrusion</strong>: Boars, monkeys, snakes</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700">
                 <Building className="w-3.5 h-3.5 text-violet-600 shrink-0" />
-                <span><strong>人在 Rooftop / 高危场所</strong>: Roof trespass</span>
+                <span><strong>Rooftop / Restricted Zones</strong>: Roof trespass</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700">
                 <UserX className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span><strong>人员跌倒 (Falls)</strong>: Collapsed, motionless</span>
+                <span><strong>Person Falls</strong>: Collapsed, motionless</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700">
                 <Car className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span><strong>交通事故 (Collisions)</strong>: Vehicle crash</span>
+                <span><strong>Traffic Collisions</strong>: Vehicle crash</span>
               </div>
               <div className="flex items-center gap-1.5 text-teal-800 font-medium">
                 <span>✨ Auto-prioritized to queue</span>

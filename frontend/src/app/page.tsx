@@ -26,11 +26,10 @@ import {
   createFallbackDetail,
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
-import { analyzeVideoWithGemini, getStoredGeminiApiKey } from "@/lib/geminiVision";
+import { analyzeVideoWithGemini } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
 import { IncidentDetailModal } from "@/components/modals/IncidentDetailModal";
-import { GeminiApiKeyModal } from "@/components/modals/GeminiApiKeyModal";
 import { OverviewView } from "@/components/views/OverviewView";
 import { ActiveIncidentsView } from "@/components/views/ActiveIncidentsView";
 import { TownshipMapView } from "@/components/views/TownshipMapView";
@@ -41,14 +40,6 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<NavView>("overview");
-
-  // Gemini Vision AI Key State
-  const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
-  const [hasGeminiKey, setHasGeminiKey] = useState(false);
-
-  useEffect(() => {
-    setHasGeminiKey(Boolean(getStoredGeminiApiKey()));
-  }, []);
 
   // Core Data States
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -405,7 +396,7 @@ export default function Home() {
         progress: 0.35,
         frames_analyzed: 6,
         candidate_count: 0,
-        detector_id: hasGeminiKey ? "gemini-1.5-flash-vlm" : "multi-hazard-vision-v2",
+        detector_id: "ai-vision-v2",
         detector_available: true,
         video_available: true,
         video_url: blobUrl,
@@ -414,9 +405,7 @@ export default function Home() {
 
       setVideos((prev) => [newJob, ...prev]);
       showToast(
-        hasGeminiKey
-          ? `Sampling video frames & querying Google Gemini Vision AI for "${file.name}"...`
-          : `Sampling video frames & analyzing "${file.name}" with vision pipeline...`,
+        `Sampling video frames & analyzing "${file.name}" with AI vision pipeline...`,
         "success"
       );
 
@@ -551,9 +540,9 @@ export default function Home() {
         setIncidents((prev) => [newIncident, ...prev]);
 
         showToast(
-          `${analysis.isGeminiAi ? "✨ Gemini Vision AI" : "Vision AI"}: ${analysis.categoryLabel} detected (${(
+          `AI Vision: ${analysis.categoryLabel} detected (${(
             analysis.confidence * 100
-          ).toFixed(0)}% conf). Concluded as Danger Incident ${incidentId}!`,
+          ).toFixed(0)}% conf). Incident ${incidentId} created.`,
           "success"
         );
       } catch (analysisErr: any) {
@@ -656,8 +645,6 @@ export default function Home() {
           subtitle={viewHeaders[currentView].subtitle}
           onRefresh={fetchData}
           isRefreshing={isRefreshing}
-          hasGeminiKey={hasGeminiKey}
-          onOpenGeminiModal={() => setIsGeminiModalOpen(true)}
         />
 
         {/* Global Toast Notification */}
@@ -709,8 +696,6 @@ export default function Home() {
                 onReviewCandidate={handleReviewCandidate}
                 onSelectIncident={handleSelectIncident}
                 onRefresh={fetchData}
-                hasGeminiKey={hasGeminiKey}
-                onOpenGeminiModal={() => setIsGeminiModalOpen(true)}
               />
             )}
 
@@ -756,20 +741,6 @@ export default function Home() {
         onOverridePriority={handleOverridePriority}
         onResolve={handleResolve}
         onReopen={handleReopen}
-      />
-
-      {/* Gemini Vision AI Setup Modal */}
-      <GeminiApiKeyModal
-        isOpen={isGeminiModalOpen}
-        onClose={() => setIsGeminiModalOpen(false)}
-        onKeySaved={(hasKey) => {
-          setHasGeminiKey(hasKey);
-          showToast(
-            hasKey
-              ? "✨ Google Gemini Vision AI connected! Video clips will now use multimodal AI frame analysis."
-              : "Gemini API key cleared."
-          );
-        }}
       />
     </div>
   );

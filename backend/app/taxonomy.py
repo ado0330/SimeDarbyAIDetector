@@ -13,7 +13,6 @@ from app.enums import Category, DetectionMethod, LifecycleState, PriorityLevel
 class IncidentTaxonomyEntry:
     id: str
     name: str
-    name_zh: str
     domain: str
     domain_name: str
     description: str
@@ -28,7 +27,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.PERSON_FALL.value: IncidentTaxonomyEntry(
         id=Category.PERSON_FALL.value,
         name="Person Fall / Motionless",
-        name_zh="人员跌倒 / 倒地不起",
         domain="human_safety",
         domain_name="Human Safety & Medical",
         description="Pedestrian collapse, fall, or motionless state on pavement, road, or steps.",
@@ -45,7 +43,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.WILDLIFE_INTRUSION.value: IncidentTaxonomyEntry(
         id=Category.WILDLIFE_INTRUSION.value,
         name="Wildlife Intrusion (Wild Animal)",
-        name_zh="野生动物闯入 (野猪/猴/蛇)",
         domain="wildlife_nature",
         domain_name="Wildlife & Animal Hazards",
         description="Wild animals (boars, monkeys, venomous snakes) entering residential or park areas.",
@@ -62,7 +59,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.RESTRICTED_AREA_INTRUSION.value: IncidentTaxonomyEntry(
         id=Category.RESTRICTED_AREA_INTRUSION.value,
         name="Restricted Danger Zone (Rooftop / Height)",
-        name_zh="高危禁区/天台屋顶闯入",
         domain="security_access",
         domain_name="Security & Restricted Access",
         description="Unauthorized person on commercial rooftop ledge, electrical substation, or construction fence.",
@@ -79,7 +75,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.FIRE_SMOKE.value: IncidentTaxonomyEntry(
         id=Category.FIRE_SMOKE.value,
         name="Suspected Fire / Smoke Plume",
-        name_zh="疑似火灾与浓烟",
         domain="fire_hazards",
         domain_name="Fire, Smoke & Explosions",
         description="Open flames, thick smoke plume, hazardous burning, or thermal hazard.",
@@ -96,7 +91,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.PIPE_BURST_LEAKAGE.value: IncidentTaxonomyEntry(
         id=Category.PIPE_BURST_LEAKAGE.value,
         name="Water Main Pipe Burst / Leakage",
-        name_zh="供水主管道爆裂漏水",
         domain="water_utilities",
         domain_name="Water, Drainage & Utilities",
         description="Underground water main rupture causing surface gushing and road subsidence risk.",
@@ -113,7 +107,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.FLASH_FLOOD.value: IncidentTaxonomyEntry(
         id=Category.FLASH_FLOOD.value,
         name="Flash Flooding / Inundation",
-        name_zh="路面积水与城市内涝",
         domain="weather_flooding",
         domain_name="Flooding & Natural Hazards",
         description="Monsoon storm overflow submerging roadways, underpasses, or parking aprons.",
@@ -130,7 +123,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.ROAD_COLLISION.value: IncidentTaxonomyEntry(
         id=Category.ROAD_COLLISION.value,
         name="Road Collision / Vehicle Crash",
-        name_zh="交通事故与车辆相撞",
         domain="traffic_mobility",
         domain_name="Traffic, Mobility & Parking",
         description="Vehicle impact, motorcycle skid, or vehicle collision with pedestrian/cyclist.",
@@ -147,7 +139,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.PARKING_OBSTRUCTION.value: IncidentTaxonomyEntry(
         id=Category.PARKING_OBSTRUCTION.value,
         name="Emergency Access / Parking Obstruction",
-        name_zh="违章停放占用消防应急通道",
         domain="traffic_mobility",
         domain_name="Traffic, Mobility & Parking",
         description="Vehicle or stationary object blocking fire hydrant, emergency gate, or travel lane.",
@@ -163,7 +154,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.LIFT_ENTRAPMENT.value: IncidentTaxonomyEntry(
         id=Category.LIFT_ENTRAPMENT.value,
         name="Elevator Passenger Entrapment",
-        name_zh="电梯故障与人员被困",
         domain="smart_infrastructure",
         domain_name="Smart Infra, Lifts & Energy",
         description="Elevator stalled between floors with passengers trapped inside.",
@@ -179,7 +169,6 @@ TAXONOMY_REGISTRY: Dict[str, IncidentTaxonomyEntry] = {
     Category.CUSTOM_SAFETY_HAZARD.value: IncidentTaxonomyEntry(
         id=Category.CUSTOM_SAFETY_HAZARD.value,
         name="Custom Safety Hazard",
-        name_zh="自定义安全隐患",
         domain="operational_general",
         domain_name="Operational & Other",
         description="Administrator or operator-defined township incident category.",
@@ -234,7 +223,6 @@ def get_taxonomy_entry(category_id: str) -> IncidentTaxonomyEntry:
     return IncidentTaxonomyEntry(
         id=category_id,
         name=category_id.replace("_", " ").title(),
-        name_zh="自定义隐患",
         domain="operational_general",
         domain_name="Operational & Other",
         description="Custom township incident.",
