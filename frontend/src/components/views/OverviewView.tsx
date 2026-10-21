@@ -263,7 +263,7 @@ export function OverviewView({
                 className="text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-50 text-xs font-semibold"
               >
                 <Video className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
-                Upload CCTV Clip or Try Judge Sample Videos &rarr;
+                Upload Footage or Test Sample Video &rarr;
               </Button>
             </div>
           )}
