@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { User, PlayCircle, RefreshCw } from "lucide-react";
+import { User, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface TopHeaderProps {
   title: string;
   subtitle?: string;
-  onQuickDemoTrigger: (scenario: "simultaneous" | "escalate" | "human_intervention" | "false_positive") => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
 }
@@ -13,7 +12,6 @@ interface TopHeaderProps {
 export function TopHeader({
   title,
   subtitle,
-  onQuickDemoTrigger,
   onRefresh,
   isRefreshing = false,
 }: TopHeaderProps) {
@@ -49,41 +47,6 @@ export function TopHeader({
         <div className="hidden md:flex flex-col text-right pr-3 border-r border-slate-200">
           <span className="text-xs font-mono font-medium text-slate-700">{timeStr}</span>
           <span className="text-[10px] text-slate-400">Township Ops Center</span>
-        </div>
-
-        {/* Quick Demo Controls */}
-        <div className="hidden lg:flex items-center space-x-1.5 bg-slate-50 p-1 rounded-md border border-slate-200">
-          <span className="text-[11px] font-semibold text-slate-500 px-2 flex items-center gap-1">
-            <PlayCircle className="w-3.5 h-3.5 text-teal-600" />
-            Quick Demo:
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onQuickDemoTrigger("simultaneous")}
-            className="text-xs h-7 px-2 font-medium text-slate-700 hover:bg-slate-200/70"
-            title="Create 3 simultaneous incidents"
-          >
-            A. Simultaneous
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onQuickDemoTrigger("escalate")}
-            className="text-xs h-7 px-2 font-medium text-slate-700 hover:bg-slate-200/70"
-            title="Escalate person fall evidence"
-          >
-            B. Dynamic Escalate
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onQuickDemoTrigger("human_intervention")}
-            className="text-xs h-7 px-2 font-medium text-slate-700 hover:bg-slate-200/70"
-            title="Run human intervention on top incident"
-          >
-            C. Admin Response
-          </Button>
         </div>
 
         {/* Refresh button */}

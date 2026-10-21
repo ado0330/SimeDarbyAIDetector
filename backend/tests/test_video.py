@@ -205,3 +205,17 @@ def test_reject_candidate_creates_no_incident(client, tmp_path, fake_detector):
     assert client.get("/api/incidents").json()["total"] == 0
     assert client.post("/api/candidates/99999/review", json={"decision": "accept"}).status_code == 404
     assert client.post("/api/candidates/%d/review" % cid, json={"decision": "maybe"}).status_code == 422
+
+
+def test_demo_clip_endpoints(client):
+    r_file = client.get("/api/videos/sample-file")
+    assert r_file.status_code == 200
+    assert r_file.headers["content-type"] == "video/mp4"
+
+    r_demo = client.post("/api/videos/demo-clip", data={"camera_id": "CAM-PARK-01"})
+    assert r_demo.status_code == 202
+    data = r_demo.json()
+    assert data["camera_id"] == "CAM-PARK-01"
+    assert data["status"] in ("queued", "processing", "completed")
+    assert data["original_filename"] == "sample_cctv_fall.mp4"
+

@@ -249,6 +249,12 @@ export default function Home() {
     fetchData();
   };
 
+  const handleLoadDemoClip = async (cameraId?: string) => {
+    const job = await api.uploadDemoClip(cameraId || "CAM-PARK-01");
+    showToast(`Sample CCTV clip queued for camera ${job.camera_id || "CAM-PARK-01"}.`);
+    fetchData();
+  };
+
   // Candidate Review
   const handleReviewCandidate = async (id: number, decision: "accept" | "reject", note?: string) => {
     await api.reviewCandidate(id, decision, note);
@@ -271,6 +277,17 @@ export default function Home() {
     await fetchData();
   };
 
+  const handleClearHistory = async (includeActive: boolean = false) => {
+    try {
+      const res = await api.clearIncidentHistory(includeActive);
+      showToast(res.message || "Incident history cleared successfully.");
+      await fetchData();
+    } catch (err: any) {
+      showToast(`Failed to clear history: ${err.message}`, "error");
+      throw err;
+    }
+  };
+
   // Derived counts
   const activeIncidents = incidents.filter(
     (inc) => !["resolved", "false_positive", "closed"].includes(inc.status)
@@ -280,7 +297,7 @@ export default function Home() {
   // View Header Titles
   const viewHeaders: Record<NavView, { title: string; subtitle: string }> = {
     overview: {
-      title: "Township Guardian AI — Operations Command",
+      title: "GlobalEye — Operations Command",
       subtitle: "Dynamic incident intelligence, priority ranking, and response coordination",
     },
     incidents: {
@@ -327,7 +344,6 @@ export default function Home() {
         <TopHeader
           title={viewHeaders[currentView].title}
           subtitle={viewHeaders[currentView].subtitle}
-          onQuickDemoTrigger={handleTriggerScenario}
           onRefresh={fetchData}
           isRefreshing={isRefreshing}
         />
@@ -360,6 +376,8 @@ export default function Home() {
                 onQuickDemoTrigger={handleTriggerScenario}
                 onResetDemo={handleResetDemo}
                 onAcknowledgeIncident={(id) => handleAcknowledge(id, "Acknowledged from dashboard spotlight")}
+                onNavigateToVideo={() => setCurrentView("video")}
+                onNavigateToSettings={() => setCurrentView("settings")}
               />
             )}
 
@@ -381,6 +399,7 @@ export default function Home() {
                 onReviewCandidate={handleReviewCandidate}
                 onSelectIncident={handleSelectIncident}
                 onRefresh={fetchData}
+                onLoadDemoClip={handleLoadDemoClip}
               />
             )}
 
@@ -397,6 +416,7 @@ export default function Home() {
               <HistoryView
                 incidents={incidents}
                 onSelectIncident={handleSelectIncident}
+                onClearHistory={handleClearHistory}
               />
             )}
 
@@ -413,6 +433,9 @@ export default function Home() {
                 onTriggerScenario={handleTriggerScenario}
                 onResetDemo={handleResetDemo}
                 isStreamConnected={isStreamConnected}
+                onNavigateToView={(view) => setCurrentView(view)}
+                onSelectIncident={handleSelectIncident}
+                topIncidentId={activeIncidents.length > 0 ? activeIncidents[0].id : null}
               />
             )}
           </div>

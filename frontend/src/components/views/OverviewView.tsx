@@ -28,6 +28,8 @@ import {
   Sparkles,
   Activity,
   UserCheck,
+  Video,
+  Flame,
 } from "lucide-react";
 
 interface OverviewViewProps {
@@ -35,9 +37,13 @@ interface OverviewViewProps {
   analytics: AnalyticsSummary | null;
   onSelectIncident: (id: string) => void;
   onNavigateToIncidents: () => void;
-  onQuickDemoTrigger: (scenario: "simultaneous" | "escalate" | "human_intervention" | "false_positive") => void;
+  onQuickDemoTrigger: (
+    scenario: "simultaneous" | "escalate" | "human_intervention" | "false_positive" | "low_confidence_fire"
+  ) => void;
   onResetDemo: () => void;
   onAcknowledgeIncident: (id: string) => void;
+  onNavigateToVideo?: () => void;
+  onNavigateToSettings?: () => void;
 }
 
 export function OverviewView({
@@ -48,6 +54,8 @@ export function OverviewView({
   onQuickDemoTrigger,
   onResetDemo,
   onAcknowledgeIncident,
+  onNavigateToVideo,
+  onNavigateToSettings,
 }: OverviewViewProps) {
   // Active incidents sorted by rank
   const activeIncidents = incidents.filter(
@@ -328,25 +336,27 @@ export function OverviewView({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-teal-600" />
-              Demo Scenarios (Spec §15)
+              Demo Scenarios (v2.0)
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onResetDemo}
-              className="text-slate-500 hover:text-rose-600 text-[11px] h-6 px-1.5"
-              title="Reset transient simulated incidents"
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetDemo}
+                className="text-slate-500 hover:text-rose-600 text-[11px] h-6 px-1.5"
+                title="Reset transient simulated incidents"
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Reset
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2.5">
-            {/* Scenario A */}
+            {/* Scenario 1: Multi-Sector Concurrency */}
             <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">A. 3 Simultaneous Incidents</span>
+                <span className="text-xs font-bold text-slate-800">1. Multi-Sector Concurrency</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -358,14 +368,14 @@ export function OverviewView({
                 </Button>
               </div>
               <p className="text-[11px] text-slate-500 leading-tight">
-                Medical emergency vs vehicle obstruction vs trash dumping. Tests multi-factor queue sorting.
+                Simultaneous collision (Gate 1), person down (Lakeside), and delivery van (Mall). Demonstrates 4-factor multi-tier sorting.
               </p>
             </div>
 
-            {/* Scenario B */}
+            {/* Scenario 2: Dynamic Telemetry Escalation */}
             <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">B. Dynamic Risk Escalation</span>
+                <span className="text-xs font-bold text-slate-800">2. Telemetry Escalation</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -377,14 +387,35 @@ export function OverviewView({
                 </Button>
               </div>
               <p className="text-[11px] text-slate-500 leading-tight">
-                Victim remains motionless &gt;5m. Demonstrates automatic priority elevation and live re-ranking.
+                Victim motionless &gt;90s near water. R-FALL-PERSISTENT rule triggers emergency floor (85.0) and live SSE re-rank to #1.
               </p>
             </div>
 
-            {/* Scenario C */}
+            {/* Scenario 3 & 4: Gemini Multimodal Vision & CCTV Player */}
+            {onNavigateToVideo && (
+              <div className="p-3 bg-cyan-50/50 rounded-lg border border-cyan-200 hover:border-cyan-300 transition-colors">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-cyan-900">3 & 4. Gemini AI & CCTV Player</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onNavigateToVideo}
+                    className="h-6 text-[11px] px-2 text-cyan-800 border-cyan-300 hover:bg-cyan-100"
+                  >
+                    <Video className="w-2.5 h-2.5 mr-1 text-cyan-700" />
+                    Open Lab
+                  </Button>
+                </div>
+                <p className="text-[11px] text-cyan-800 leading-tight">
+                  Analyze real video with Gemini 3.5 Flash Lite, auto-triage to queue, and jump to 24.0s detection timestamp in modal player.
+                </p>
+              </div>
+            )}
+
+            {/* Scenario 5: Operator Intervention */}
             <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">C. Operator Intervention</span>
+                <span className="text-xs font-bold text-slate-800">5. Operator Triage & Flow</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -396,28 +427,40 @@ export function OverviewView({
                 </Button>
               </div>
               <p className="text-[11px] text-slate-500 leading-tight">
-                Acknowledge top incident, assign security patrol responder, and log response action.
+                Acknowledge top alert, assign First-Aid team, log operator note, and resolve incident. Audited to SQLite.
               </p>
             </div>
 
-            {/* Scenario D */}
+            {/* Scenario 6: Safety Invariance (Low-Confidence Fire) */}
             <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">D. False Positive Audit</span>
+                <span className="text-xs font-bold text-slate-800">6. Safety Invariant (Fire)</span>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onQuickDemoTrigger("false_positive")}
-                  className="h-6 text-[11px] px-2 text-purple-800 border-purple-300 hover:bg-purple-50"
+                  onClick={() => onQuickDemoTrigger("low_confidence_fire")}
+                  className="h-6 text-[11px] px-2 text-rose-800 border-rose-300 hover:bg-rose-50"
                 >
-                  <Play className="w-2.5 h-2.5 mr-1 fill-purple-600 text-purple-600" />
+                  <Play className="w-2.5 h-2.5 mr-1 fill-rose-600 text-rose-600" />
                   Run
                 </Button>
               </div>
               <p className="text-[11px] text-slate-500 leading-tight">
-                Safely closes candidate as false positive with mandatory justification recorded to SQLite audit.
+                Residential smoke detected at 0.41 confidence. Flags needs_verification without down-ranking life safety.
               </p>
             </div>
+
+            {/* Deep Dive Link to Full Demo Tab */}
+            {onNavigateToSettings && (
+              <div className="pt-1 text-center">
+                <button
+                  onClick={onNavigateToSettings}
+                  className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  Open Full Demo Center & Prioritization Weights &rarr;
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

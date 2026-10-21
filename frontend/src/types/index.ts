@@ -62,6 +62,7 @@ export interface EvidenceItem {
   kind: "frame" | "note";
   reference?: string;
   frame_url?: string;
+  video_url?: string;
   video_job_id?: string;
   timestamp_s?: number;
   bbox?: { x: number; y: number; w: number; h: number };
@@ -130,6 +131,7 @@ export interface Incident {
   metadata: Record<string, any>;
   seconds_since_detection: number;
   queue_position?: number;
+  video_url?: string;
 }
 
 export interface IncidentDetail extends Incident {

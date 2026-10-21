@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   IncidentDetail,
   PriorityLevel,
@@ -30,6 +30,10 @@ import {
   History,
   Info,
   ShieldAlert,
+  Video,
+  Play,
+  Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 
 interface IncidentDetailModalProps {
@@ -83,7 +87,27 @@ export function IncidentDetailModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [mediaMode, setMediaMode] = useState<"video" | "snapshot">("video");
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   if (!incident) return null;
+
+  const effectiveVideoUrl =
+    incident.video_url ||
+    incident.evidence_items?.find((i) => i.video_url)?.video_url ||
+    (incident.metadata?.video_job_id ? `/api/videos/${incident.metadata.video_job_id}/file` : null);
+
+  const videoTimestamp =
+    incident.evidence_items?.find((i) => typeof i.timestamp_s === "number")?.timestamp_s ??
+    (typeof incident.metadata?.video_timestamp_s === "number" ? incident.metadata.video_timestamp_s : null);
+
+  const handleJumpToTimestamp = (sec: number) => {
+    setMediaMode("video");
+    if (videoRef.current) {
+      videoRef.current.currentTime = sec;
+      videoRef.current.play().catch(() => {});
+    }
+  };
 
   const prioStyles = getPriorityStyles(incident.priority_level);
   const statusStyles = getStatusStyles(incident.status);
@@ -351,29 +375,155 @@ export function IncidentDetailModal({
                 </div>
               </div>
 
-              {/* Evidence Frame Preview (if available) */}
-              {incident.evidence_items && incident.evidence_items.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-900 mb-2">Observed Video Evidence</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {incident.evidence_items.map((item) => (
-                      <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden bg-slate-900">
-                        {item.frame_url ? (
-                          <img
-                            src={item.frame_url}
-                            alt="Incident Evidence Frame"
-                            className="w-full h-44 object-cover"
-                          />
-                        ) : (
-                          <div className="h-32 flex items-center justify-center text-slate-400 text-xs">
-                            No visual snapshot recorded
+              {/* CCTV Video Footage & Evidence Inspector */}
+              {(effectiveVideoUrl || (incident.evidence_items && incident.evidence_items.length > 0)) && (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xs">
+                  <div className="px-4 py-3 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-7 h-7 rounded bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
+                        <Video className="w-4 h-4 text-teal-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                          CCTV Recorded Footage & Evidence
+                          {effectiveVideoUrl && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              Footage Stream Ready
+                            </span>
+                          )}
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          {incident.camera_name || incident.camera_id ? `Source: ${incident.camera_name || incident.camera_id}` : "Uploaded Surveillance Feed"}
+                          {videoTimestamp !== null && ` • Incident detected at ${videoTimestamp.toFixed(1)}s`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Media Mode Switcher */}
+                    <div className="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
+                      {effectiveVideoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setMediaMode("video")}
+                          className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                            mediaMode === "video"
+                              ? "bg-teal-600 text-white shadow-xs font-semibold"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          Watch CCTV Footage
+                        </button>
+                      )}
+                      {incident.evidence_items && incident.evidence_items.some((i) => i.frame_url) && (
+                        <button
+                          type="button"
+                          onClick={() => setMediaMode("snapshot")}
+                          className={`px-3 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                            mediaMode === "snapshot" || !effectiveVideoUrl
+                              ? "bg-teal-600 text-white shadow-xs font-semibold"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          Keyframe Evidence ({incident.evidence_items.length})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-950">
+                    {mediaMode === "video" && effectiveVideoUrl ? (
+                      <div className="space-y-3">
+                        <div className="relative rounded-lg overflow-hidden bg-black border border-slate-800 shadow-inner flex items-center justify-center">
+                          <video
+                            ref={videoRef}
+                            src={effectiveVideoUrl}
+                            controls
+                            playsInline
+                            preload="auto"
+                            className="w-full max-h-[380px] object-contain aspect-video bg-black"
+                            onLoadedMetadata={() => {
+                              if (videoRef.current && typeof videoTimestamp === "number" && videoTimestamp > 0) {
+                                videoRef.current.currentTime = videoTimestamp;
+                              }
+                            }}
+                          >
+                            Your browser does not support HTML5 video streaming.
+                          </video>
+                        </div>
+
+                        {/* Quick playback jump controls */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                          <div className="flex items-center space-x-2">
+                            {videoTimestamp !== null && (
+                              <button
+                                type="button"
+                                onClick={() => handleJumpToTimestamp(videoTimestamp)}
+                                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-medium"
+                              >
+                                <Clock className="w-3 h-3 text-teal-400" />
+                                Jump to Detection Point ({videoTimestamp.toFixed(1)}s)
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleJumpToTimestamp(0)}
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors cursor-pointer"
+                            >
+                              Rewind (0:00)
+                            </button>
                           </div>
-                        )}
-                        <div className="p-2 bg-slate-800 text-[11px] text-slate-300">
-                          {item.description || "Video analysis frame capture"}
+
+                          <a
+                            href={effectiveVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-400 hover:text-teal-300 text-[11px] flex items-center gap-1 transition-colors"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Open Clip in New Window
+                          </a>
                         </div>
                       </div>
-                    ))}
+                    ) : (
+                      /* Snapshot Keyframe Mode */
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {incident.evidence_items?.map((item) => (
+                          <div key={item.id} className="border border-slate-800 rounded-lg overflow-hidden bg-slate-900 group">
+                            {item.frame_url ? (
+                              <div className="relative">
+                                <img
+                                  src={item.frame_url}
+                                  alt="Incident Evidence Frame"
+                                  className="w-full h-48 object-cover bg-black"
+                                />
+                                {effectiveVideoUrl && typeof item.timestamp_s === "number" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleJumpToTimestamp(item.timestamp_s!)}
+                                    className="absolute bottom-2 right-2 px-2 py-1 rounded bg-slate-950/90 hover:bg-teal-600 text-white text-[10px] font-medium border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                                  >
+                                    <Play className="w-2.5 h-2.5" />
+                                    Watch Video from {item.timestamp_s.toFixed(1)}s
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="h-40 flex items-center justify-center text-slate-500 text-xs">
+                                No visual snapshot recorded
+                              </div>
+                            )}
+                            <div className="p-2.5 bg-slate-900 border-t border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+                              <span className="truncate pr-2">{item.description || "Video analysis keyframe capture"}</span>
+                              {typeof item.timestamp_s === "number" && (
+                                <span className="font-mono text-teal-400 font-semibold shrink-0">{item.timestamp_s.toFixed(1)}s</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

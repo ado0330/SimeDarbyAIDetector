@@ -9,7 +9,19 @@ import {
   PriorityLevel,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname || "127.0.0.1";
+    // Connect directly to FastAPI on port 8000 in browser to bypass Next.js proxy buffer limits
+    if (host === "localhost" || host === "127.0.0.1") {
+      return `http://${host}:8000`;
+    }
+  }
+  return "";
+};
+
+const BASE_URL = getApiBaseUrl();
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${url}`, {
@@ -129,6 +141,12 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
+  clearIncidentHistory: (includeActive: boolean = false) =>
+    fetchJson<{ deleted: number; include_active: boolean; message: string }>(
+      `/api/incidents/clear-history?include_active=${includeActive}`,
+      { method: "POST" }
+    ),
+
   // Analytics
   getAnalyticsSummary: (params?: { category?: string; priority?: string; status?: string }) => {
     const qp = new URLSearchParams();
@@ -169,6 +187,52 @@ export const api = {
 
     return res.json();
   },
+
+  uploadDemoClip: async (cameraId: string = "CAM-PARK-01"): Promise<VideoJob> => {
+    const fd = new FormData();
+    fd.append("camera_id", cameraId);
+
+    const res = await fetch(`${BASE_URL}/api/videos/demo-clip`, {
+      method: "POST",
+      body: fd,
+      headers: {
+        "X-Admin-Name": "Demo Administrator",
+      },
+    });
+
+    if (!res.ok) {
+      let err = `Demo clip upload failed (${res.status})`;
+      try {
+        const d = await res.json();
+        if (d.error?.message) err = d.error.message;
+      } catch {}
+      throw new Error(err);
+    }
+
+    return res.json();
+  },
+
+  getGeminiConfig: () =>
+    fetchJson<{
+      enabled: boolean;
+      model: string;
+      auto_promote: boolean;
+      has_key: boolean;
+      masked_key?: string | null;
+    }>("/api/config/gemini"),
+
+  setGeminiConfig: (data: { api_key?: string; model?: string; auto_promote?: boolean }) =>
+    fetchJson<{
+      message: string;
+      enabled: boolean;
+      model: string;
+      auto_promote: boolean;
+      has_key: boolean;
+      masked_key?: string | null;
+    }>("/api/config/gemini", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   getCandidates: (status?: string) => {
     const qs = status ? `?status=${status}` : "";

@@ -42,7 +42,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` completed AND verified �
 - [x] Tests: `tests/test_video.py` — 13/13 passed
 
 ## Phase 9 — Testing & integration
-- [x] Full backend test run: 70/70 tests passing via `pytest` — done & verified
+- [x] Full backend test run: 74/74 tests passing via `pytest` — done & verified
 - [x] Live end-to-end demo sequence verification via API & daemon servers — done & verified
 
 ## Phase 10 — Documentation
@@ -52,5 +52,50 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` completed AND verified �
 - [x] `docs/FEATURES.md` — done & verified
 - [x] `docs/DEMO_SCRIPT.md` (90-120s presentation script) — done & verified
 
-## Phase 11 — Final demo verification
-- [x] Run all checks, record results in PROGRESS.md — done & verified
+## Phase 11 — Post-Implementation System Polish
+- [x] Rebranded product to "GlobalEye" across backend and frontend — done & verified
+- [x] Fixed township map pin hovering jitter / flickering bug — done & verified
+- [x] Added Shift-Handover "Clear History" button with SQLite audit logging — done & verified
+- [x] Synchronized map coordinates with canonical backend reference IDs — done & verified
+- [x] Added 1-click sample CCTV clip evaluation — done & verified
+
+## Phase 12 — Multimodal AI Video Understanding & Surveillance Player
+- [x] Google Gemini REST API multimodal analyzer (`gemini-3.5-flash-lite` + fallback chain) — done & verified
+- [x] Keyframe extraction, JSON schema generation, structured evidence extraction — done & verified
+- [x] Automated candidate promotion to active incident queue with priority scoring — done & verified
+- [x] Embedded HTML5 CCTV video player in IncidentDetailModal with 1-click detection jump — done & verified
+- [x] Byte-range video streaming support in `backend/app/api/videos.py` — done & verified
+- [x] Tests: `tests/test_gemini.py` — 2/2 passed (74/74 total)
+
+## Phase 13 — Official Brand Identity & Vector Logo System
+- [x] Explored 4 brand concept directions; selected "The Horizon Apex" — done & verified
+- [x] Created 6 scalable vector SVG assets in `frontend/public/brand/` — done & verified
+- [x] Built reusable `<GlobalEyeLogo>` and `<GlobalEyeSymbol>` React component system — done & verified
+- [x] Integrated into Sidebar, Next.js metadata, and browser favicon — done & verified
+- [x] Added Brand Identity & Logo System showcase card in `DemoControlsView.tsx` — done & verified
+- [x] Next.js build verified (compiled in <1.0s with 0 errors) — done & verified
+
+## Phase 14 — Demo Scenarios Version 2.0 & Unified Evaluation Architecture
+- [x] Formulate 6-pillar Version 2.0 scenario suite (Multi-Sector Concurrency, Telemetry Escalation, Gemini Vision, Forensic CCTV Player, Operator Governance, Safety Invariant Fire) — done & verified
+- [x] Upgrade `DemoControlsView.tsx` with 6 interactive scenario cards, 90s presentation flow timeline, and navigation shortcuts — done & verified
+- [x] Upgrade `OverviewView.tsx` evaluation scenarios panel with Version 2.0 options — done & verified
+- [x] Enriched backend `demo.py` return data with `scenario_title` and `version: "2.0"` — done & verified
+- [x] Overhaul `docs/DEMO_SCRIPT.md` with complete 90-second rapid pitch, 3-minute extended judging deep-dive, and judge defense cheat-sheet — done & verified
+- [x] Test suite: 74/74 pytest tests passing (`.venv/bin/pytest -v`) — done & verified
+- [x] Frontend build: `npm run build` compiled in 427ms with 0 type errors — done & verified
+
+## Phase 15 — Video Upload Resiliency & High-Capacity Ingestion
+- [x] Diagnose HTTP 500 & socket hangup (`ECONNRESET`) caused by Next.js 16 10MB proxy limit — done & verified
+- [x] Configure `proxyClientMaxBodySize: "150mb"` in `frontend/next.config.ts` — done & verified
+- [x] Direct client-to-backend upload routing in `frontend/src/lib/api.ts` (`http://${hostname}:8000`) — done & verified
+- [x] Expand backend CORS whitelist in `backend/app/config.py` for direct frontend origins — done & verified
+- [x] Increase capacity thresholds to 150MB (`max_upload_mb = 150`) and 300s duration (`max_video_seconds = 300`) — done & verified
+- [x] Broaden MP4/MOV ISO box signature recognition (`moov`, `mdat`, `wide`, `free`, `skip`, `ftyp`) — done & verified
+- [x] Handle unindexed frame counts (`CAP_PROP_FRAME_COUNT <= 0`) and variable/invalid FPS in `probe_video` — done & verified
+- [x] Implement sequential frame extraction fallback in `gemini_analyzer.py` — done & verified
+- [x] Defensive exception wrapping in `video_service.py` to prevent 500 crashes — done & verified
+- [x] Verify high-capacity 83.58 MB upload returning HTTP 202 Accepted — done & verified
+- [x] Backend test suite: 74/74 passing (`.venv/bin/pytest -v`) — done & verified
+- [x] Frontend build: `npm run build` compiled cleanly in 364ms with 0 type errors — done & verified
+
+

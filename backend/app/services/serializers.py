@@ -17,9 +17,20 @@ def frame_url(reference: Optional[str]) -> Optional[str]:
     return "/api/media/frames/%s" % reference if reference else None
 
 
+def video_file_url(video_job_id: Optional[str]) -> Optional[str]:
+    return "/api/videos/%s/file" % video_job_id if video_job_id else None
+
+
 def incident_out(inc: Incident, positions: Optional[Dict[str, int]] = None) -> IncidentOut:
     now = utcnow()
     responder = RESPONDER_BY_ID.get(inc.assigned_to or "")
+    meta = inc.meta or {}
+    v_job_id = meta.get("video_job_id")
+    if not v_job_id and inc.evidence_items:
+        for ei in inc.evidence_items:
+            if ei.video_job_id:
+                v_job_id = ei.video_job_id
+                break
     return IncidentOut(
         id=inc.id, title=inc.title, category=inc.category,
         category_label=CATEGORY_LABELS.get(inc.category, inc.category), description=inc.description or "",
@@ -42,6 +53,7 @@ def incident_out(inc: Incident, positions: Optional[Dict[str, int]] = None) -> I
         detection_count=inc.detection_count, evidence=inc.evidence or {}, metadata=inc.meta or {},
         seconds_since_detection=max(0.0, (now - inc.detected_at).total_seconds()),
         queue_position=(positions or {}).get(inc.id) if inc.status in ACTIVE_STATUSES else None,
+        video_url=video_file_url(v_job_id),
     )
 
 
@@ -58,6 +70,7 @@ def incident_detail_out(db: Session, inc: Incident, positions: Optional[Dict[str
     for e in inc.evidence_items:
         out = EvidenceItemOut.model_validate(e)
         out.frame_url = frame_url(e.reference) if e.kind == "frame" else None
+        out.video_url = video_file_url(e.video_job_id) if e.video_job_id else None
         items.append(out)
     return IncidentDetailOut(
         **base,

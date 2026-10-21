@@ -6,6 +6,7 @@ import {
 } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
 import {
   getPriorityStyles,
   getStatusStyles,
@@ -18,6 +19,7 @@ import {
   Search,
   Filter,
   Download,
+  Trash2,
   History,
   MapPin,
   Clock,
@@ -30,13 +32,17 @@ import {
 interface HistoryViewProps {
   incidents: Incident[];
   onSelectIncident: (id: string) => void;
+  onClearHistory?: (includeActive: boolean) => Promise<void>;
 }
 
-export function HistoryView({ incidents, onSelectIncident }: HistoryViewProps) {
+export function HistoryView({ incidents, onSelectIncident, onClearHistory }: HistoryViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [includeActiveInClear, setIncludeActiveInClear] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const filtered = useMemo(() => {
     return incidents.filter((inc) => {
@@ -96,10 +102,22 @@ export function HistoryView({ incidents, onSelectIncident }: HistoryViewProps) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `township_guardian_incidents_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `globaleye_incidents_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleConfirmClear = async () => {
+    if (!onClearHistory) return;
+    setIsClearing(true);
+    try {
+      await onClearHistory(includeActiveInClear);
+      setShowClearModal(false);
+      setIncludeActiveInClear(false);
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   return (
@@ -119,16 +137,32 @@ export function HistoryView({ incidents, onSelectIncident }: HistoryViewProps) {
             />
           </div>
 
-          {/* CSV Export Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleExportCsv}
-            className="text-xs h-9 text-slate-700 hover:text-slate-900 border-slate-300"
-          >
-            <Download className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
-            Export CSV ({filtered.length} records)
-          </Button>
+          <div className="flex items-center space-x-2">
+            {/* CSV Export Button */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportCsv}
+              className="text-xs h-9 text-slate-700 hover:text-slate-900 border-slate-300"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
+              Export CSV ({filtered.length} records)
+            </Button>
+
+            {/* Clear History Button */}
+            {onClearHistory && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowClearModal(true)}
+                className="text-xs h-9 text-rose-700 hover:text-rose-800 hover:bg-rose-50 border-rose-300"
+                title="Clear incident records from history"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5 text-rose-600" />
+                Clear History
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -169,12 +203,10 @@ export function HistoryView({ incidents, onSelectIncident }: HistoryViewProps) {
             className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Categories</option>
-            <option value="person_fall">Person Fall</option>
-            <option value="vehicle_obstruction">Vehicle Obstruction</option>
-            <option value="fight_altercation">Altercation / Disturbance</option>
-            <option value="loitering_restricted">Restricted Loitering</option>
-            <option value="illegal_dumping">Illegal Dumping</option>
-            <option value="fire_smoke_hazard">Fire / Smoke</option>
+            <option value="road_collision">Road Collision</option>
+            <option value="person_fall">Person Down / Fall</option>
+            <option value="parking_obstruction">Parking Obstruction</option>
+            <option value="fire_smoke">Suspected Fire / Smoke</option>
           </select>
 
           {(searchQuery || statusFilter !== "all" || priorityFilter !== "all" || categoryFilter !== "all") && (
@@ -306,6 +338,59 @@ export function HistoryView({ incidents, onSelectIncident }: HistoryViewProps) {
           </div>
         )}
       </div>
+
+      {/* Clear History Confirmation Modal */}
+      <Modal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        title="Clear Incident History"
+        maxWidth="md"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowClearModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={handleConfirmClear}
+              loading={isClearing}
+            >
+              Confirm Clear
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-xs text-slate-600">
+          <p>
+            Are you sure you want to clear incident records? This permanently removes the selected records from the local SQLite database.
+          </p>
+
+          <div className="p-3 bg-slate-50 rounded-md border border-slate-200 space-y-2">
+            <label className="flex items-center space-x-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeActiveInClear}
+                onChange={(e) => setIncludeActiveInClear(e.target.checked)}
+                className="rounded text-rose-600 focus:ring-rose-500"
+              />
+              <span className="font-semibold text-slate-800">
+                Also purge active incidents (complete database reset)
+              </span>
+            </label>
+            <p className="text-[11px] text-slate-500 pl-6 leading-relaxed">
+              {includeActiveInClear
+                ? "Warning: All active incident queue alerts and all historical records will be permanently deleted."
+                : "Default: Only resolved, closed, and false-positive records will be cleared. Active incidents in the triage queue will remain untouched."}
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+

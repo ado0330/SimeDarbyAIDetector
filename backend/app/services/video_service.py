@@ -22,6 +22,7 @@ from app.errors import Conflict, NotFound, ServiceError, ValidationFailed
 from app.models import AuditLog, Camera, EventCandidate, EvidenceItem, VideoJob
 from app.services import incident_service as svc
 from app.services.prioritization import compute_priority
+from app.vision import gemini_analyzer
 from app.vision.base import DetectorUnavailable, FramePacket
 from app.vision.registry import get_detector
 from app.vision.video_processor import ProcessingTimeout, VideoError, check_signature, iter_sampled_frames, probe_video
@@ -82,6 +83,9 @@ def save_upload(db: Session, upload: UploadFile, camera_id: Optional[str]) -> Vi
             info = probe_video(path, s.max_video_seconds)
         except VideoError as exc:
             raise ValidationFailed(exc.message, code=exc.code)
+        except Exception as exc:
+            log.exception("Unexpected error while probing uploaded video %s", upload.filename)
+            raise ValidationFailed("Could not decode video file (%s)." % type(exc).__name__, code="unreadable_video")
     except Exception:
         path.unlink(missing_ok=True)
         raise
@@ -103,9 +107,79 @@ def process_video_job(job_id: str) -> None:
     db = SessionLocal()
     try:
         job = db.get(VideoJob, job_id)
-        if job is None:
+        if job is None or job.status == VideoStatus.COMPLETED.value:
             return
         s = get_settings()
+        path = s.upload_dir / job.stored_filename
+        if not path.is_file():
+            raise VideoError("The uploaded clip is no longer available on the server.", "video_missing")
+
+        # --- Path A: Gemini Multimodal Vision API (Zero-Shot Incident Understanding) ---
+        if s.gemini_api_key:
+            job.detector_id = f"gemini/{s.gemini_model}"
+            job.detector_version = "vlm-multimodal"
+            job.detector_available = True
+            job.detector_note = f"Google Gemini Vision Model ({s.gemini_model})"
+            job.status, job.started_at, job.progress = VideoStatus.PROCESSING.value, utcnow(), 0.2
+            db.commit()
+
+            res = gemini_analyzer.analyze_video_with_gemini(path, s.gemini_api_key, s.gemini_model)
+            job.frames_analyzed = 12
+            job.progress = 0.85
+            db.commit()
+
+            if res.detected and res.category:
+                s.frames_dir.mkdir(parents=True, exist_ok=True)
+                ref = _frame_filename(job.id, 1)
+                if res.evidence_frame is not None:
+                    cv2.imwrite(str(s.frames_dir / ref), res.evidence_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+                else:
+                    ref = None
+
+                scored = compute_priority(res.category, res.evidence, res.confidence)
+                preview = scored.to_dict()
+                preview["explanation"] = scored.explanation
+
+                cand = EventCandidate(
+                    video_job_id=job.id,
+                    category=res.category,
+                    timestamp_s=res.timestamp_s,
+                    end_timestamp_s=res.timestamp_s,
+                    confidence=res.confidence,
+                    bbox={"x": 0.05, "y": 0.05, "w": 0.9, "h": 0.9},
+                    evidence=res.evidence,
+                    details={
+                        "method": f"Gemini VLM ({res.model_used}) multimodal video analysis",
+                        "title": res.title,
+                        "summary": res.summary,
+                    },
+                    frame_reference=ref,
+                    model_id=f"gemini/{res.model_used}",
+                    model_version="multimodal-vlm",
+                    preview=preview,
+                    status=CandidateStatus.PENDING.value,
+                    created_at=utcnow(),
+                )
+                db.add(cand)
+                db.flush()
+
+                if s.gemini_auto_promote:
+                    review_candidate(
+                        db,
+                        cand.id,
+                        decision="accept",
+                        note=f"Auto-promoted by Gemini AI ({res.model_used}): {res.summary}",
+                        actor=f"Gemini AI ({res.model_used})",
+                    )
+
+            job.frames_analyzed = 12
+            job.progress = 1.0
+            job.status, job.completed_at = VideoStatus.COMPLETED.value, utcnow()
+            job.error = res.error if not res.detected and res.error else None
+            db.commit()
+            return
+
+        # --- Path B: Local OpenCV Heuristic Detector (Baseline / Offline) ---
         detector = get_detector()
         ok, note = detector.availability()
         job.detector_id, job.detector_version = detector.id, detector.version
@@ -115,9 +189,6 @@ def process_video_job(job_id: str) -> None:
         if not ok:
             raise DetectorUnavailable(note)
 
-        path = s.upload_dir / job.stored_filename
-        if not path.is_file():
-            raise VideoError("The uploaded clip is no longer available on the server.", "video_missing")
         total = max(1, int((job.duration_s or 1) / max(0.1, s.frame_sample_interval_seconds)) + 1)
         counter = {"n": 0}
 
@@ -216,12 +287,19 @@ def review_candidate(db: Session, candidate_id: int, decision: str, note: Option
         if cand.frame_reference:
             items.append(dict(kind="frame", reference=cand.frame_reference, video_job_id=job.id, timestamp_s=ts,
                               bbox=cand.bbox, description="Evidence frame from clip '%s' at %.1f s" % (job.original_filename, ts)))
+        details = dict(cand.details or {})
+        ai_title = details.get("title")
+        ai_summary = details.get("summary")
+        description = ai_summary if ai_summary else (
+            "Video-analysis candidate from clip '%s' at %.1f s (%s). Heuristic detection — human verification required."
+            % (job.original_filename, ts, details.get("method", "detector output"))
+        )
         ncand = svc.NormalizedCandidate(
             category=cand.category, camera_id=job.camera_id, source_type=SourceType.VIDEO_UPLOAD.value,
+            title=ai_title,
             source_reference="video:%s@%.1fs" % (job.id, ts), confidence=cand.confidence,
             evidence=dict(cand.evidence or {}),
-            description=("Video-analysis candidate from clip '%s' at %.1f s (%s). Heuristic detection — human "
-                         "verification required." % (job.original_filename, ts, (cand.details or {}).get("method", "detector output"))),
+            description=description,
             metadata={"video_job_id": job.id, "video_timestamp_s": ts, "model_id": cand.model_id,
                       "model_version": cand.model_version, "details": cand.details, "reviewed_by": actor},
             evidence_items=items)

@@ -1,6 +1,6 @@
 """Incident REST endpoints (thin: validation → service → serialisation)."""
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -64,6 +64,24 @@ def create_incident(body: IncidentCreate, actor: str = Depends(current_actor),
         event_timestamp=body.event_timestamp, confidence=body.detection_confidence,
         evidence=body.evidence.model_dump(exclude_none=True), metadata=body.metadata)
     return _mutation(db, svc.ingest_candidate(db, cand, actor))
+
+
+@router.post("/clear-history")
+def clear_history_post(
+    include_active: bool = Query(False, description="Whether to also clear active incidents"),
+    actor: str = Depends(current_actor),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    return svc.clear_incident_history(db, include_active, actor)
+
+
+@router.delete("/history")
+def clear_history_delete(
+    include_active: bool = Query(False, description="Whether to also clear active incidents"),
+    actor: str = Depends(current_actor),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    return svc.clear_incident_history(db, include_active, actor)
 
 
 @router.get("/{incident_id}", response_model=IncidentDetailOut)

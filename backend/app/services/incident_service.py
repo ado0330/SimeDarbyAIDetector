@@ -609,3 +609,48 @@ def list_incidents(
 
 def queue_positions(db: Session) -> Dict[str, int]:
     return {i.id: n + 1 for n, i in enumerate(active_incidents(db))}
+
+
+def clear_incident_history(db: Session, include_active: bool = False, actor: str = "Administrator") -> Dict[str, Any]:
+    """Permanently deletes historical incidents and their cascaded records.
+
+    If include_active is False: deletes all terminal incidents (resolved, false_positive, closed).
+    If include_active is True: deletes all incidents in the database.
+    """
+    q = db.query(Incident)
+    if not include_active:
+        q = q.filter(Incident.status.in_(TERMINAL_STATUSES))
+    rows = q.all()
+    count = len(rows)
+
+    deleted_ids = [r.id for r in rows]
+    if deleted_ids:
+        # Clear any candidate reference pointing to deleted incidents
+        from app.models import EventCandidate
+        db.query(EventCandidate).filter(EventCandidate.incident_id.in_(deleted_ids)).update(
+            {EventCandidate.incident_id: None}, synchronize_session=False
+        )
+
+    for inc in rows:
+        db.delete(inc)
+
+    db.add(AuditLog(
+        entity_type="system",
+        entity_id="incidents",
+        action="clear_history",
+        actor=actor,
+        old_value={"deleted_count": count, "include_active": include_active},
+        new_value=None,
+        is_simulated=False,
+        reason="Operator cleared incident history",
+    ))
+    db.commit()
+
+    # Notify connected clients via SSE stream
+    broker.publish({"type": "queue_changed", "reason": "clear_history", "ranking_changed": True})
+    return {
+        "deleted": count,
+        "include_active": include_active,
+        "message": f"Successfully cleared {count} incident record(s).",
+    }
+

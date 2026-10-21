@@ -178,12 +178,10 @@ export function ActiveIncidentsView({
             className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Incident Categories</option>
-            <option value="person_fall">Person Fall / Medical</option>
-            <option value="vehicle_obstruction">Vehicle Obstruction</option>
-            <option value="fight_altercation">Altercation / Disturbance</option>
-            <option value="loitering_restricted">Restricted Area Loitering</option>
-            <option value="illegal_dumping">Illegal Dumping</option>
-            <option value="fire_smoke_hazard">Smoke / Fire Hazard</option>
+            <option value="road_collision">Road Collision</option>
+            <option value="person_fall">Person Down / Fall</option>
+            <option value="parking_obstruction">Parking Obstruction</option>
+            <option value="fire_smoke">Suspected Fire / Smoke</option>
           </select>
 
           {/* Source Filter */}

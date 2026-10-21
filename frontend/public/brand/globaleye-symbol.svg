@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" width="100%" height="100%" aria-label="GlobalEye Symbol">
+  <defs>
+    <linearGradient id="ge-sym-arc" x1="8" y1="32" x2="56" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="50%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+    <linearGradient id="ge-sym-iris" x1="20" y1="20" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Upper Orbital Wing (Surveillance Canopy / Upper Eye Contour) -->
+  <path d="M 8,32 C 8,18 19,9 32,9 C 45,9 56,18 56,32 C 50.5,21 42,15.5 32,15.5 C 22,15.5 13.5,21 8,32 Z" fill="url(#ge-sym-arc)" />
+
+  <!-- Lower Orbital Wing (Protective Horizon / Lower Eye Cradle) -->
+  <path d="M 8,32 C 8,46 19,55 32,55 C 45,55 56,46 56,32 C 50.5,43 42,48.5 32,48.5 C 22,48.5 13.5,43 8,32 Z" fill="url(#ge-sym-arc)" />
+
+  <!-- Central Precision Iris Ring (Vigilant Awareness) -->
+  <circle cx="32" cy="32" r="10.5" fill="none" stroke="url(#ge-sym-iris)" stroke-width="3" stroke-linecap="round" />
+
+  <!-- Central 4-Point Priority Triage Reticle (Intelligent Incident Focus) -->
+  <path d="M 32,25.5 L 37.5,32 L 32,38.5 L 26.5,32 Z" fill="#38BDF8" />
+
+  <!-- Epicenter Pupil Node -->
+  <circle cx="32" cy="32" r="2.2" fill="#FFFFFF" />
+</svg>

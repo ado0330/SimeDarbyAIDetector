@@ -13,6 +13,8 @@ def _env(tmp_path, monkeypatch):
     monkeypatch.setenv("TG_DATABASE_URL", "sqlite://")
     monkeypatch.setenv("TG_SEED_DEMO_HISTORY", "false")
     monkeypatch.setenv("TG_DETECTOR", "hog_posture")
+    monkeypatch.setenv("TG_GEMINI_API_KEY", "")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     reset_settings_cache()
     yield
     reset_settings_cache()

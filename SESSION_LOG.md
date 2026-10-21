@@ -59,3 +59,111 @@
    - `docs/API.md`
    - `docs/FEATURES.md`
    - `docs/DEMO_SCRIPT.md` (90-120s presentation script)
+
+---
+
+## Session 3 — 2026-10-21 (09:00 – 11:15 +08:00)
+**Objectives:** Product re-branding to GlobalEye, fix map pin hover jitter, implement incident history governance, integrate Google Gemini multimodal AI video understanding, build in-modal CCTV surveillance video player with instant timestamp seeking, and design an official scalable vector brand identity & logo system.
+**Work performed:**
+1. **Commercial Rebranding & Layout Polish:**
+   - Standardized application name to **GlobalEye** across frontend and backend.
+   - Removed redundant quick demo bar from top header for an authentic SOC layout.
+   - Fixed township map pin hovering jitter / flickering bug by replacing CSS scale transforms on SVG `<g>` elements with stable, invisible `r="22"` hit-target circles.
+   - Added shift-handover "Clear History" button with mandatory SQLite audit logging in `HistoryView.tsx`.
+   - Synchronized map coordinates to canonical backend sector and camera IDs (`LOC-GATE..SCH`, `CAM-GATE-01..SCH-01`).
+   - Added pre-packaged 1-click CCTV sample footage evaluation.
+2. **Multimodal AI Video Understanding (Google Gemini 3.5 Flash Lite):**
+   - Built `backend/app/vision/gemini_analyzer.py` supporting chronological keyframe sampling and direct REST communication with Google Generative Language API.
+   - Enforced structured JSON output schema detecting road collisions, pedestrian falls, fire/smoke, and parking obstructions.
+   - Implemented automatic fallback chain: `[gemini-3.5-flash-lite, gemini-2.0-flash-lite, gemini-1.5-flash, gemini-2.0-flash]`.
+   - Built automatic candidate promotion pipeline: detected events are instantly ingested as active incidents with multi-factor risk priority scoring and broadcast via SSE.
+   - Loaded user's API key securely via `backend/.env` (git-ignored) and hid technical AI configuration cards from the operator UI for a clean enterprise interface.
+3. **In-Modal CCTV Surveillance Video Player:**
+   - Integrated an HTML5 surveillance video player directly inside `IncidentDetailModal.tsx`.
+   - Supports native video controls, video scrubbing, fullscreen, and audio mute.
+   - Built 1-click "Jump to Detection Point (XX.Xs)" button that immediately seeks to the exact second where the collision or incident occurred.
+   - Enabled mode switching between live CCTV video playback and AI-annotated keyframe evidence.
+   - Updated `backend/app/api/videos.py` to support `HEAD` requests, byte-range streaming, and MIME type mappings (`video/mp4`, `video/quicktime`, etc.).
+   - Linked `video_url` across `IncidentOut` and `EvidenceItemOut`.
+4. **Official GlobalEye Brand Identity & Scalable Vector Logo System:**
+   - Formulated 4 creative concepts and selected "The Horizon Apex": dual sweeping orbital crescent arcs (panoramic surveillance & global township scope) enclosing a precision circular iris with a centered 4-point priority diamond reticle (triage & focus).
+   - Generated 6 clean vector SVG assets in `frontend/public/brand/`:
+     - `globaleye-logo.svg` (Primary dark lockup)
+     - `globaleye-logo-dark.svg` (Dark surface lockup)
+     - `globaleye-logo-light.svg` (Light surface lockup)
+     - `globaleye-symbol.svg` (Standalone emblem)
+     - `globaleye-symbol-mono.svg` (Monochrome vector glyph)
+     - `favicon.svg` (16x16 / 32x32 high-contrast favicon)
+   - Created reusable `<GlobalEyeLogo>` and `<GlobalEyeSymbol>` React component system (`frontend/src/components/brand/GlobalEyeLogo.tsx`).
+   - Integrated into Sidebar (`Sidebar.tsx`), Next.js layout metadata (`layout.tsx`), and browser icon (`icon.svg`, `favicon.svg`).
+   - Added interactive Brand Identity & Logo System showcase card in `DemoControlsView.tsx`.
+5. **Testing & Quality Assurance:**
+   - Backend pytest suite: **74/74 passing** in 1.62s (`.venv/bin/pytest -v`).
+   - Frontend build: `npm run build` compiled in <1.0s with 0 errors.
+   - Both daemons operational: Backend on `http://127.0.0.1:8000`, Frontend on `http://localhost:3000`.
+   - All changes maintained strictly on local machine (no git push).
+
+---
+
+## Session 4 — 2026-10-21: Demo Scenarios Version 2.0 & Unified Evaluation Architecture
+
+### Focus & Objectives
+Upgrade the platform demonstration scenarios from the legacy Version 1.0 (synthetic-only mock events) to **Version 2.0**, reflecting all newly engineered capabilities: Google Gemini 3.5 Flash Lite Multimodal Video Intelligence, in-modal CCTV surveillance video streaming with 1-click 24.0s seek, City of Elmina spatial GIS sector mapping, shift handover compliance governance, and safety invariance.
+
+### Accomplishments
+1. **Demo Scenarios Version 2.0 Suite Formulation:**
+   - Designed 6 cohesive scenarios bridging AI vision, prioritization math, forensic playback, and human governance:
+     - **Scenario 1:** Multi-Sector Concurrency (The Morning Rush across City of Elmina sectors)
+     - **Scenario 2:** Dynamic Telemetry Escalation (Life-Safety Floor & Live SSE Queue Re-ranking)
+     - **Scenario 3:** Gemini 3.5 Flash Lite Multimodal Video Intelligence & Auto-Triage
+     - **Scenario 4:** In-Modal CCTV Surveillance Video Player & 1-Click Forensic Seek (`24.0s`)
+     - **Scenario 5:** Operator Triage, Emergency Override & Shift Handover Governance
+     - **Scenario 6:** Safety Invariance & Uncertainty Handling (Low-Confidence Fire)
+2. **Frontend Demonstration Controls Upgrade:**
+   - Completely revamped `DemoControlsView.tsx`: added 6 interactive scenario cards, a 90-second pitch flow timeline, direct navigation shortcuts, and preserved the vector brand identity showcase.
+   - Upgraded `OverviewView.tsx` quick demo runner cards to Version 2.0 with Gemini Lab and Low-Confidence Fire options.
+3. **Backend Service Polish:**
+   - Enriched `backend/app/services/demo.py` return dictionary with `scenario_title` and `version: "2.0"` while maintaining 100% test compatibility.
+4. **Hackathon Presentation & Live Demo Script Overhaul:**
+   - Rewrote `docs/DEMO_SCRIPT.md` into an authoritative Version 2.0 guide: 90-second rapid pitch walkthrough, 3-minute extended deep-dive for technical judges, and judge defense cheat-sheet.
+5. **Quality Assurance & Verification:**
+   - Backend pytest suite: **74/74 passing** in 1.60s (`.venv/bin/pytest -v`).
+   - Frontend build: `npm run build` compiled cleanly in 427ms with 0 type errors.
+   - Both background servers active and running on local ports 8000 and 3000.
+   - All work kept strictly local on developer machine.
+
+---
+
+## Session 5 — 2026-10-21: High-Capacity Video Upload & Resilient Ingestion Pipeline
+
+### Focus & Objectives
+Diagnose and resolve the intermittent video upload failure ("keep processing and says upload fail 500. some video can some video cannot"), expand video upload capacity to 150MB / 5 minutes, and harden the OpenCV video container parser and Gemini keyframe extractor against real-world video encoding quirks.
+
+### Root Cause Analysis
+1. **Next.js 16 Reverse Proxy Body Limit (10MB):** Next.js App Router dev server proxies `/api/videos` to FastAPI with an unconfigured default body ceiling of 10MB. Files over 10MB resulted in `Request body exceeded 10MB for /api/videos... Failed to proxy http://127.0.0.1:8000/api/videos Error: socket hang up { code: 'ECONNRESET' }`, returning HTTP 500 to the browser.
+2. **Container Header & Metadata Sensitivities:** Real-world CCTV and mobile clips (including those trimmed via online video cutters or messaging apps) frequently omit standard `CAP_PROP_FRAME_COUNT` headers (`count <= 0`), report non-standard FPS values, or locate the `moov`/`mdat` box before `ftyp`. This triggered OpenCV decoding exceptions or rejected valid MP4 magic bytes.
+3. **Unprotected Probe Exceptions:** Unhandled OpenCV errors during probing in `create_video_job` cascaded into unhandled 500 internal server errors.
+
+### Accomplishments
+1. **Direct Ingestion & Proxy Limit Expansion:**
+   - Updated `frontend/next.config.ts` with `experimental: { proxyClientMaxBodySize: "150mb" }`.
+   - Updated `frontend/src/lib/api.ts` so browser clients upload directly to FastAPI on port 8000 (`http://${hostname}:8000`), streaming multipart data directly into Uvicorn and avoiding Node.js proxy socket hangups.
+   - Expanded backend CORS origins in `backend/app/config.py` to allow direct browser uploads.
+2. **Capacity Limit Expansion:**
+   - Raised `max_upload_mb = 150` and `max_video_seconds = 300` (5 minutes) in `backend/app/config.py`.
+   - Updated UI helper text in `VideoAnalysisView.tsx` to display "MP4, MOV, AVI, MKV, WebM up to 150MB (max 5 minutes)".
+3. **Robust Magic Bytes & Container Probing:**
+   - In `backend/app/vision/video_processor.py`, updated `_SIGNATURES[".mp4"]` and `_SIGNATURES[".mov"]` to support `ftyp`, `moov`, `mdat`, `wide`, `free`, and `skip` atoms across the first 32 bytes.
+   - Handled containers with `CAP_PROP_FRAME_COUNT <= 0` gracefully using `CAP_PROP_POS_AVI_RATIO` duration fallback instead of throwing `unreadable_video`.
+   - Clamped invalid, negative, NaN, or infinite FPS values to a reliable 25.0 FPS default.
+4. **Resilient Keyframe Extraction:**
+   - In `backend/app/vision/gemini_analyzer.py`, implemented sequential frame reading fallback when `total_frames <= 0` to ensure keyframe sampling succeeds for unindexed streams.
+5. **Defensive Error Handling:**
+   - Wrapped `probe_video` in `video_service.py` to convert any unexpected OpenCV exceptions into clean `ValidationFailed` (HTTP 422) responses with descriptive error messages instead of 500 server crashes.
+6. **Testing & Verification:**
+   - Generated an 83.58 MB test video; verified that both direct port 8000 upload and port 3000 proxy upload returned **HTTP 202 Accepted**.
+   - Backend pytest suite: **74/74 passing** (`.venv/bin/pytest -v`).
+   - Frontend build: `npm run build` compiled cleanly in 364ms with 0 type errors.
+   - Both daemons remain active and healthy. All changes strictly local (no git push).
+
+

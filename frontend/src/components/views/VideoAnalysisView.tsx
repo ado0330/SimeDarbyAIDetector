@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   VideoJob,
   VideoCandidate,
@@ -11,6 +11,7 @@ import {
   formatTimeAgo,
   formatCategory,
 } from "@/lib/utils";
+import { api } from "@/lib/api";
 import {
   Video,
   Upload,
@@ -27,6 +28,8 @@ import {
   Info,
   Loader2,
   Filter,
+  Play,
+  Download,
 } from "lucide-react";
 
 interface VideoAnalysisViewProps {
@@ -37,6 +40,7 @@ interface VideoAnalysisViewProps {
   onReviewCandidate: (id: number, decision: "accept" | "reject", note?: string) => Promise<void>;
   onSelectIncident: (id: string) => void;
   onRefresh: () => void;
+  onLoadDemoClip?: (cameraId?: string) => Promise<void>;
 }
 
 export function VideoAnalysisView({
@@ -47,14 +51,23 @@ export function VideoAnalysisView({
   onReviewCandidate,
   onSelectIncident,
   onRefresh,
+  onLoadDemoClip,
 }: VideoAnalysisViewProps) {
-  const [selectedCameraId, setSelectedCameraId] = useState<string>("cam_park_01");
+  const [selectedCameraId, setSelectedCameraId] = useState<string>(cameras[0]?.id || "CAM-PARK-01");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+
+  // Sync selected camera when cameras load
+  useEffect(() => {
+    if (cameras.length > 0 && (!selectedCameraId || !cameras.some((c) => c.id === selectedCameraId))) {
+      setSelectedCameraId(cameras[0].id);
+    }
+  }, [cameras, selectedCameraId]);
 
   // File selection handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,11 +79,30 @@ export function VideoAnalysisView({
     setUploadSuccess(null);
 
     try {
-      await onUploadVideo(file, selectedCameraId);
+      const effectiveCam = selectedCameraId || (cameras.length > 0 ? cameras[0].id : "CAM-PARK-01");
+      await onUploadVideo(file, effectiveCam);
       setUploadSuccess(`Uploaded "${file.name}" successfully. Frame extraction & CV analysis queued.`);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: any) {
       setUploadError(err.message || "Failed to upload video clip");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleTriggerDemoClip = async () => {
+    setIsUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      const effectiveCam = selectedCameraId || (cameras.length > 0 ? cameras[0].id : "CAM-PARK-01");
+      if (onLoadDemoClip) {
+        await onLoadDemoClip(effectiveCam);
+      }
+      setUploadSuccess('Pre-packaged CCTV clip "sample_cctv_fall.mp4" queued for analysis.');
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to load sample clip");
     } finally {
       setIsUploading(false);
     }
@@ -100,7 +132,8 @@ export function VideoAnalysisView({
 
   return (
     <div className="space-y-6">
-      {/* 1. Computer Vision Pipeline Disclosure Banner */}
+
+      {/* 2. Computer Vision Pipeline Disclosure Banner */}
       <div className="bg-slate-900 rounded-lg border border-slate-800 p-4.5 text-slate-200 shadow-xs">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1 max-w-2xl">
@@ -110,7 +143,7 @@ export function VideoAnalysisView({
                 Video Analysis Pipeline — Mode B (Live Computer Vision)
               </h3>
               <span className="px-2 py-0.2 rounded bg-teal-950 text-teal-300 border border-teal-800 text-[10px] font-mono">
-                OpenCV HOG + Temporal Aspect-Ratio Heuristic
+                OpenCV Frame Sampling + Multimodal VLM
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -195,10 +228,31 @@ export function VideoAnalysisView({
                   Click to select CCTV video clip
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  MP4, AVI, MOV up to 100MB (max 120s duration)
+                  MP4, AVI, MOV, WebM up to 150MB (max 300s duration)
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Quick Demo Action & Sample Download */}
+          <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={handleTriggerDemoClip}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded text-[11px] font-semibold cursor-pointer disabled:opacity-50 transition-colors"
+            >
+              <Play className="w-3 h-3 fill-teal-700 text-teal-700" />
+              <span>1-Click Test: Load Sample Clip</span>
+            </button>
+            <a
+              href="/samples/sample_cctv_fall.mp4"
+              download="sample_cctv_fall.mp4"
+              className="inline-flex items-center space-x-1 text-[11px] text-slate-500 hover:text-teal-700 underline cursor-pointer"
+            >
+              <Download className="w-3 h-3" />
+              <span>Download Sample (.mp4)</span>
+            </a>
           </div>
         </div>
 

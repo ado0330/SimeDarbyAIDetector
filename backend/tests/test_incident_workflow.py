@@ -204,3 +204,23 @@ def test_invalid_input_rejected(db):
         svc.ingest_candidate(db, svc.NormalizedCandidate(category="meteor_strike"), "t")
     with pytest.raises(ValidationFailed):
         svc.ingest_candidate(db, cand(conf=1.5), "t")
+
+
+def test_clear_incident_history(db):
+    inc1 = svc.ingest_candidate(db, cand("person_fall", "CAM-PROM-01", {}), "t").incident
+    inc2 = svc.ingest_candidate(db, cand("road_collision", "CAM-GATE-01", {}), "t").incident
+    # Resolve inc1
+    svc.acknowledge(db, inc1.id, "t")
+    svc.resolve(db, inc1.id, "t", "resolved", "handled")
+
+    # Clear history (only terminal by default)
+    res = svc.clear_incident_history(db, include_active=False, actor="Test")
+    assert res["deleted"] == 1
+    assert db.query(Incident).filter(Incident.id == inc1.id).first() is None
+    assert db.query(Incident).filter(Incident.id == inc2.id).first() is not None
+
+    # Clear all (including active)
+    res2 = svc.clear_incident_history(db, include_active=True, actor="Test")
+    assert res2["deleted"] == 1
+    assert db.query(Incident).count() == 0
+

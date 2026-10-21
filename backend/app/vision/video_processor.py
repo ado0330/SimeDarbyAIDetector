@@ -5,13 +5,14 @@ from pathlib import Path
 from typing import Iterator, Optional
 
 import cv2
+import numpy as np
 
 from app.vision.base import FramePacket
 
 # Magic-byte signatures (extension alone is not trusted).
 _SIGNATURES = {
-    ".mp4": lambda h: h[4:8] == b"ftyp",
-    ".mov": lambda h: h[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free"),
+    ".mp4": lambda h: (len(h) >= 8 and h[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip")) or b"ftyp" in h[:32],
+    ".mov": lambda h: (len(h) >= 8 and h[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free")) or b"ftyp" in h[:32] or b"moov" in h[:32],
     ".avi": lambda h: h[:4] == b"RIFF" and h[8:12] == b"AVI ",
     ".mkv": lambda h: h[:4] == b"\x1a\x45\xdf\xa3",
     ".webm": lambda h: h[:4] == b"\x1a\x45\xdf\xa3",
@@ -47,25 +48,43 @@ def check_signature(ext: str, header: bytes) -> bool:
 
 
 def probe_video(path: Path, max_seconds: int) -> VideoInfo:
-    cap = cv2.VideoCapture(str(path))
+    try:
+        cap = cv2.VideoCapture(str(path))
+    except Exception as exc:
+        raise VideoError("The file could not be opened as a video (%s)." % exc, "unreadable_video")
     try:
         if not cap.isOpened():
             raise VideoError("The file could not be opened as a video (unsupported codec or corrupted file).", "unreadable_video")
-        fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
-        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+
         ok, frame = cap.read()
         if not ok or frame is None:
             raise VideoError("No frames could be decoded from this file (corrupted or unsupported codec).", "unreadable_video")
-        if fps <= 0 or fps > 240:
-            raise VideoError("The video reports an invalid frame rate.", "unreadable_video")
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+
+        fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+        if fps <= 0 or fps > 240 or np.isnan(fps) or np.isinf(fps):
+            fps = 25.0
+
+        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
         if count <= 0:
-            raise VideoError("The video reports no frames.", "unreadable_video")
-        duration = count / fps
+            cap.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
+            duration_probe = float(cap.get(cv2.CAP_PROP_POS_MSEC) or 0.0) / 1000.0
+            if duration_probe > 0:
+                duration = duration_probe
+                count = max(1, int(duration * fps))
+            else:
+                duration = 10.0
+                count = max(1, int(duration * fps))
+        else:
+            duration = count / fps
+
         if duration > max_seconds:
             raise VideoError("Video is %.0f s long; the limit is %d s." % (duration, max_seconds), "video_too_long")
-        return VideoInfo(fps=fps, frame_count=count, duration_s=round(duration, 2), width=width, height=height)
+        return VideoInfo(fps=round(fps, 2), frame_count=count, duration_s=round(duration, 2), width=width, height=height)
+    except cv2.error as exc:
+        raise VideoError("OpenCV decoding error: %s" % exc, "unreadable_video")
     finally:
         cap.release()
 

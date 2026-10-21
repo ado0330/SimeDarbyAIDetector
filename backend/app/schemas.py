@@ -210,6 +210,7 @@ class EvidenceItemOut(ApiModel):
     kind: str
     reference: Optional[str]
     frame_url: Optional[str] = None
+    video_url: Optional[str] = None
     video_job_id: Optional[str]
     timestamp_s: Optional[float]
     bbox: Optional[Dict[str, Any]]
@@ -278,6 +279,7 @@ class IncidentOut(BaseModel):
     metadata: Dict[str, Any]
     seconds_since_detection: float
     queue_position: Optional[int] = None
+    video_url: Optional[str] = None
 
 
 class IncidentDetailOut(IncidentOut):

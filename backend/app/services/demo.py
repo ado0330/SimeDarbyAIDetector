@@ -136,11 +136,16 @@ def run_scenario(db: Session, scenario: str, now: Optional[datetime] = None) -> 
         results.append(svc.ingest_candidate(db, _candidate(LOW_CONF_FIRE, now), DEMO_ACTOR, now))
         message = ("A low-confidence smoke detection was created. Note that low confidence does NOT lower its priority; "
                    "it is flagged for verification instead.")
-    else:
-        raise ServiceError("Unknown scenario '%s'" % scenario, code="unknown_scenario")
+    scenario_titles = {
+        "simultaneous": "Scenario 1: Multi-Sector Concurrency (The Morning Rush)",
+        "escalate": "Scenario 2: Dynamic Telemetry Escalation (Life-Safety Floor)",
+        "human_intervention": "Scenario 5: Operator Triage & Lifecycle Response",
+        "false_positive": "Scenario 5b: False-Positive Review & Audit Trail",
+        "low_confidence_fire": "Scenario 6: Safety Invariance & Uncertainty Handling",
+    }
 
-    return {"scenario": scenario, "message": message, "results": _results(results),
-            "queue": _queue_snapshot(db), "simulated": True}
+    return {"scenario": scenario, "scenario_title": scenario_titles.get(scenario, scenario), "version": "2.0",
+            "message": message, "results": _results(results), "queue": _queue_snapshot(db), "simulated": True}
 
 
 def _find_active_simulated(db: Session, category: str, camera_id: str) -> Optional[Incident]:

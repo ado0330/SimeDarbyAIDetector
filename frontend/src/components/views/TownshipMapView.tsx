@@ -45,80 +45,98 @@ const ZONE_LAYOUTS: Record<
     labelY: number;
   }
 > = {
-  zone_entrance: {
+  "LOC-GATE": {
     x: 40,
     y: 220,
     width: 220,
     height: 180,
-    name: "Main Entrance & Guardhouse",
+    name: "Main Gate Roundabout",
     type: "infrastructure",
     labelX: 150,
-    labelY: 310,
+    labelY: 300,
   },
-  zone_residence_a: {
+  "LOC-SCH": {
     x: 300,
-    y: 50,
+    y: 40,
     width: 280,
-    height: 220,
-    name: "Maple Residences (Precinct A)",
-    type: "residential",
+    height: 150,
+    name: "Sentosa School Drop-off",
+    type: "infrastructure",
     labelX: 440,
-    labelY: 160,
+    labelY: 105,
   },
-  zone_lake_park: {
-    x: 300,
-    y: 300,
+  "LOC-RESA": {
+    x: 640,
+    y: 40,
     width: 320,
-    height: 240,
-    name: "Central Lake & Recreational Park",
+    height: 210,
+    name: "Residensi Aman (Block A)",
+    type: "residential",
+    labelX: 800,
+    labelY: 135,
+  },
+  "LOC-PARK": {
+    x: 300,
+    y: 220,
+    width: 300,
+    height: 170,
+    name: "Central Park Playground",
+    type: "park",
+    labelX: 450,
+    labelY: 295,
+  },
+  "LOC-PROM": {
+    x: 300,
+    y: 410,
+    width: 320,
+    height: 160,
+    name: "Lakeside Promenade",
     type: "park",
     labelX: 460,
-    labelY: 420,
+    labelY: 480,
   },
-  zone_commercial: {
+  "LOC-MALL": {
     x: 650,
-    y: 50,
-    width: 300,
-    height: 220,
-    name: "Commercial Hub & Retail Strip",
+    y: 280,
+    width: 310,
+    height: 280,
+    name: "Harmoni Mall - Parking Deck B",
     type: "commercial",
-    labelX: 800,
-    labelY: 160,
+    labelX: 805,
+    labelY: 410,
   },
-  zone_residence_b: {
-    x: 650,
-    y: 300,
-    width: 300,
-    height: 140,
-    name: "Oakwood Residences (Precinct B)",
-    type: "residential",
-    labelX: 800,
-    labelY: 370,
-  },
-  zone_sports_complex: {
-    x: 650,
-    y: 460,
-    width: 300,
-    height: 110,
-    name: "Township Sports & Community Complex",
-    type: "infrastructure",
-    labelX: 800,
-    labelY: 515,
-  },
+  // Backward-compatibility aliases for legacy keys
+  zone_entrance: { x: 40, y: 220, width: 220, height: 180, name: "Main Gate Roundabout", type: "infrastructure", labelX: 150, labelY: 300 },
+  zone_residence_a: { x: 640, y: 40, width: 320, height: 210, name: "Residensi Aman (Block A)", type: "residential", labelX: 800, labelY: 135 },
+  zone_lake_park: { x: 300, y: 220, width: 300, height: 170, name: "Central Park Playground", type: "park", labelX: 450, labelY: 295 },
+  zone_commercial: { x: 650, y: 280, width: 310, height: 280, name: "Harmoni Mall - Parking Deck B", type: "commercial", labelX: 805, labelY: 410 },
+  zone_residence_b: { x: 640, y: 40, width: 320, height: 210, name: "Residensi Aman (Block A)", type: "residential", labelX: 800, labelY: 135 },
+  zone_sports_complex: { x: 300, y: 410, width: 320, height: 160, name: "Lakeside Promenade", type: "park", labelX: 460, labelY: 480 },
 };
 
-// Coordinate mapping for 10 CCTV Cameras
+// Coordinate mapping for 10 CCTV Cameras (matches backend reference data)
 const CAMERA_COORDINATES: Record<string, { x: number; y: number; zoneId: string }> = {
-  cam_gate_01: { x: 90, y: 310, zoneId: "zone_entrance" },
-  cam_gate_02: { x: 210, y: 310, zoneId: "zone_entrance" },
-  cam_res_a1: { x: 380, y: 130, zoneId: "zone_residence_a" },
-  cam_res_a2: { x: 490, y: 180, zoneId: "zone_residence_a" },
-  cam_park_01: { x: 370, y: 400, zoneId: "zone_lake_park" },
-  cam_park_02: { x: 520, y: 430, zoneId: "zone_lake_park" },
-  cam_comm_01: { x: 740, y: 130, zoneId: "zone_commercial" },
-  cam_comm_02: { x: 860, y: 180, zoneId: "zone_commercial" },
-  cam_res_b1: { x: 780, y: 360, zoneId: "zone_residence_b" },
-  cam_sports_01: { x: 790, y: 510, zoneId: "zone_sports_complex" },
+  "CAM-GATE-01": { x: 100, y: 310, zoneId: "LOC-GATE" },
+  "CAM-GATE-02": { x: 200, y: 310, zoneId: "LOC-GATE" },
+  "CAM-SCH-01": { x: 440, y: 145, zoneId: "LOC-SCH" },
+  "CAM-RESA-01": { x: 740, y: 130, zoneId: "LOC-RESA" },
+  "CAM-RESA-02": { x: 860, y: 180, zoneId: "LOC-RESA" },
+  "CAM-PARK-01": { x: 450, y: 320, zoneId: "LOC-PARK" },
+  "CAM-PROM-01": { x: 390, y: 490, zoneId: "LOC-PROM" },
+  "CAM-PROM-02": { x: 530, y: 490, zoneId: "LOC-PROM" },
+  "CAM-MALL-01": { x: 750, y: 360, zoneId: "LOC-MALL" },
+  "CAM-MALL-02": { x: 860, y: 440, zoneId: "LOC-MALL" },
+  // Backward-compatibility aliases
+  cam_gate_01: { x: 100, y: 310, zoneId: "LOC-GATE" },
+  cam_gate_02: { x: 200, y: 310, zoneId: "LOC-GATE" },
+  cam_res_a1: { x: 740, y: 130, zoneId: "LOC-RESA" },
+  cam_res_a2: { x: 860, y: 180, zoneId: "LOC-RESA" },
+  cam_park_01: { x: 450, y: 320, zoneId: "LOC-PARK" },
+  cam_park_02: { x: 530, y: 490, zoneId: "LOC-PROM" },
+  cam_comm_01: { x: 750, y: 360, zoneId: "LOC-MALL" },
+  cam_comm_02: { x: 860, y: 440, zoneId: "LOC-MALL" },
+  cam_res_b1: { x: 860, y: 180, zoneId: "LOC-RESA" },
+  cam_sports_01: { x: 390, y: 490, zoneId: "LOC-PROM" },
 };
 
 export function TownshipMapView({
@@ -127,7 +145,7 @@ export function TownshipMapView({
   cameras,
   onSelectIncident,
 }: TownshipMapViewProps) {
-  const [selectedZoneId, setSelectedZoneId] = useState<string>("zone_lake_park");
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("LOC-PARK");
   const [showCameras, setShowCameras] = useState(true);
   const [showIncidents, setShowIncidents] = useState(true);
 
@@ -249,105 +267,109 @@ export function TownshipMapView({
             </text>
 
             {/* Township Zones */}
-            {Object.entries(ZONE_LAYOUTS).map(([zoneKey, layout]) => {
-              const isSelected = selectedZoneId === zoneKey;
-              const hasAlerts = activeIncidents.some((i) => i.location_id === zoneKey);
-              const hasCritical = activeIncidents.some(
-                (i) => i.location_id === zoneKey && i.priority_level === "critical"
-              );
+            {Object.entries(ZONE_LAYOUTS)
+              .filter(([k]) => k.startsWith("LOC-"))
+              .map(([zoneKey, layout]) => {
+                const isSelected = selectedZoneId === zoneKey;
+                const hasAlerts = activeIncidents.some((i) => i.location_id === zoneKey);
+                const hasCritical = activeIncidents.some(
+                  (i) => i.location_id === zoneKey && i.priority_level === "critical"
+                );
 
-              let fillColor = "#1e293b";
-              let strokeColor = "#475569";
-              if (layout.type === "park") {
-                fillColor = "#064e3b";
-                strokeColor = "#059669";
-              } else if (layout.type === "commercial") {
-                fillColor = "#1e1b4b";
-                strokeColor = "#4338ca";
-              } else if (layout.type === "infrastructure") {
-                fillColor = "#172554";
-                strokeColor = "#2563eb";
-              }
+                let fillColor = "#1e293b";
+                let strokeColor = "#475569";
+                if (layout.type === "park") {
+                  fillColor = "#064e3b";
+                  strokeColor = "#059669";
+                } else if (layout.type === "commercial") {
+                  fillColor = "#1e1b4b";
+                  strokeColor = "#4338ca";
+                } else if (layout.type === "infrastructure") {
+                  fillColor = "#172554";
+                  strokeColor = "#2563eb";
+                }
 
-              return (
-                <g
-                  key={zoneKey}
-                  onClick={() => setSelectedZoneId(zoneKey)}
-                  className="cursor-pointer transition-opacity"
-                >
-                  <rect
-                    x={layout.x}
-                    y={layout.y}
-                    width={layout.width}
-                    height={layout.height}
-                    rx="8"
-                    fill={fillColor}
-                    fillOpacity={isSelected ? 0.8 : 0.45}
-                    stroke={
-                      isSelected
-                        ? "#14b8a6"
-                        : hasCritical
-                        ? "#f43f5e"
-                        : hasAlerts
-                        ? "#f59e0b"
-                        : strokeColor
-                    }
-                    strokeWidth={isSelected ? 3 : 1.5}
-                    strokeDasharray={isSelected ? "none" : hasAlerts ? "4 4" : "none"}
-                  />
-                  <text
-                    x={layout.labelX}
-                    y={layout.labelY}
-                    fill="#f1f5f9"
-                    fontSize="11"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    className="select-none pointer-events-none"
-                  >
-                    {layout.name}
-                  </text>
-                  <text
-                    x={layout.labelX}
-                    y={layout.labelY + 16}
-                    fill="#94a3b8"
-                    fontSize="9"
-                    textAnchor="middle"
-                    className="select-none pointer-events-none uppercase tracking-wider"
-                  >
-                    {layout.type}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Cameras Markers */}
-            {showCameras &&
-              Object.entries(CAMERA_COORDINATES).map(([camId, coords]) => {
-                const isUnderSelectedZone = coords.zoneId === selectedZoneId;
                 return (
-                  <g key={camId} className="cursor-pointer">
-                    <circle
-                      cx={coords.x}
-                      cy={coords.y}
-                      r={isUnderSelectedZone ? 7 : 5}
-                      fill="#0f172a"
-                      stroke="#2dd4bf"
-                      strokeWidth="2"
+                  <g
+                    key={zoneKey}
+                    onClick={() => setSelectedZoneId(zoneKey)}
+                    className="cursor-pointer transition-opacity"
+                  >
+                    <rect
+                      x={layout.x}
+                      y={layout.y}
+                      width={layout.width}
+                      height={layout.height}
+                      rx="8"
+                      fill={fillColor}
+                      fillOpacity={isSelected ? 0.8 : 0.45}
+                      stroke={
+                        isSelected
+                          ? "#14b8a6"
+                          : hasCritical
+                            ? "#f43f5e"
+                            : hasAlerts
+                              ? "#f59e0b"
+                              : strokeColor
+                      }
+                      strokeWidth={isSelected ? 3 : 1.5}
+                      strokeDasharray={isSelected ? "none" : hasAlerts ? "4 4" : "none"}
                     />
-                    <circle cx={coords.x} cy={coords.y} r="2.5" fill="#2dd4bf" />
                     <text
-                      x={coords.x}
-                      y={coords.y - 9}
-                      fill="#99f6e4"
-                      fontSize="8"
-                      fontWeight="600"
+                      x={layout.labelX}
+                      y={layout.labelY}
+                      fill="#f1f5f9"
+                      fontSize="11"
+                      fontWeight="bold"
                       textAnchor="middle"
+                      className="select-none pointer-events-none"
                     >
-                      {camId}
+                      {layout.name}
+                    </text>
+                    <text
+                      x={layout.labelX}
+                      y={layout.labelY + 16}
+                      fill="#94a3b8"
+                      fontSize="9"
+                      textAnchor="middle"
+                      className="select-none pointer-events-none uppercase tracking-wider"
+                    >
+                      {layout.type}
                     </text>
                   </g>
                 );
               })}
+
+            {/* Cameras Markers */}
+            {showCameras &&
+              Object.entries(CAMERA_COORDINATES)
+                .filter(([k]) => k.startsWith("CAM-"))
+                .map(([camId, coords]) => {
+                  const isUnderSelectedZone = coords.zoneId === selectedZoneId;
+                  return (
+                    <g key={camId} className="cursor-pointer">
+                      <circle
+                        cx={coords.x}
+                        cy={coords.y}
+                        r={isUnderSelectedZone ? 7 : 5}
+                        fill="#0f172a"
+                        stroke="#2dd4bf"
+                        strokeWidth="2"
+                      />
+                      <circle cx={coords.x} cy={coords.y} r="2.5" fill="#2dd4bf" />
+                      <text
+                        x={coords.x}
+                        y={coords.y - 9}
+                        fill="#99f6e4"
+                        fontSize="8"
+                        fontWeight="600"
+                        textAnchor="middle"
+                      >
+                        {camId}
+                      </text>
+                    </g>
+                  );
+                })}
 
             {/* Active Incident Urgency Pins */}
             {showIncidents &&
@@ -371,8 +393,26 @@ export function TownshipMapView({
                   <g
                     key={inc.id}
                     onClick={() => onSelectIncident(inc.id)}
-                    className="cursor-pointer transition-transform hover:scale-110"
+                    className="cursor-pointer group"
                   >
+                    <title>{`${inc.title} — Priority ${inc.priority_score.toFixed(0)} (${inc.priority_level.toUpperCase()})`}</title>
+                    {/* Invisible stable hit target to completely prevent jittering/flicker */}
+                    <circle
+                      cx={coords.x}
+                      cy={coords.y}
+                      r="22"
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
+                    {/* Hover Glow Aura (highlights smoothly without shifting coordinates) */}
+                    <circle
+                      cx={coords.x}
+                      cy={coords.y}
+                      r="15"
+                      fill={pinColor}
+                      opacity="0"
+                      className="pointer-events-none transition-opacity duration-150 group-hover:opacity-40"
+                    />
                     {/* Pulsing ring for critical/high */}
                     {(isCrit || isHigh) && (
                       <circle
@@ -383,10 +423,19 @@ export function TownshipMapView({
                         stroke={pinColor}
                         strokeWidth="1.5"
                         opacity="0.6"
+                        className="pointer-events-none"
                       />
                     )}
-                    <circle cx={coords.x} cy={coords.y} r="9" fill={pinColor} />
-                    <circle cx={coords.x} cy={coords.y} r="4" fill="#ffffff" />
+                    <circle
+                      cx={coords.x}
+                      cy={coords.y}
+                      r="9"
+                      fill={pinColor}
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                      className="pointer-events-none transition-all duration-150 group-hover:stroke-2"
+                    />
+                    <circle cx={coords.x} cy={coords.y} r="3.5" fill="#ffffff" className="pointer-events-none" />
                     <text
                       x={coords.x}
                       y={coords.y + 19}
@@ -397,6 +446,7 @@ export function TownshipMapView({
                       stroke="#0f172a"
                       strokeWidth="2"
                       paintOrder="stroke"
+                      className="pointer-events-none select-none"
                     >
                       {inc.priority_score.toFixed(0)}
                     </text>

@@ -1,4 +1,5 @@
 """Video analysis endpoints."""
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, UploadFile
@@ -49,15 +50,80 @@ def _job_dict(j: VideoJob, include_candidates: bool = True) -> Dict[str, Any]:
     return d
 
 
+class GeminiConfigRequest(BaseModel):
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    auto_promote: Optional[bool] = None
+
+
+@router.get("/config/gemini")
+def get_gemini_config() -> Dict[str, Any]:
+    s = get_settings()
+    masked = (s.gemini_api_key[:4] + "..." + s.gemini_api_key[-4:]) if s.gemini_api_key and len(s.gemini_api_key) > 8 else ("configured" if s.gemini_api_key else None)
+    return {
+        "enabled": bool(s.gemini_api_key),
+        "model": s.gemini_model,
+        "auto_promote": s.gemini_auto_promote,
+        "has_key": bool(s.gemini_api_key),
+        "masked_key": masked,
+    }
+
+
+@router.post("/config/gemini")
+def set_gemini_config(req: GeminiConfigRequest) -> Dict[str, Any]:
+    from app.config import update_gemini_settings
+    s = update_gemini_settings(api_key=req.api_key, model=req.model, auto_promote=req.auto_promote)
+    masked = (s.gemini_api_key[:4] + "..." + s.gemini_api_key[-4:]) if s.gemini_api_key and len(s.gemini_api_key) > 8 else ("configured" if s.gemini_api_key else None)
+    return {
+        "message": "Gemini configuration updated successfully",
+        "enabled": bool(s.gemini_api_key),
+        "model": s.gemini_model,
+        "auto_promote": s.gemini_auto_promote,
+        "has_key": bool(s.gemini_api_key),
+        "masked_key": masked,
+    }
+
+
 @router.get("/video/status")
 def video_status() -> Dict[str, Any]:
     s = get_settings()
-    return {"detector": detector_status(), "limits": {"max_upload_mb": s.max_upload_mb,
-                                                       "max_video_seconds": s.max_video_seconds,
-                                                       "allowed_extensions": s.allowed_video_extensions},
-            "supported_events": ["person_fall (heuristic: person-sized box stays horizontal and still)"],
-            "note": "Only the listed event type is implemented. Detections are heuristic candidates requiring human review. "
-                    "Other event types are available only through clearly-labelled simulation."}
+    if s.gemini_api_key:
+        det = {
+            "id": f"gemini/{s.gemini_model}",
+            "version": "multimodal-vlm",
+            "description": f"Google Gemini Vision Model ({s.gemini_model}) for zero-shot incident understanding.",
+            "available": True,
+            "note": f"Active: Google Gemini Flash ({s.gemini_model}) with auto-triage.",
+            "supported_categories": ["road_collision", "person_fall", "parking_obstruction", "fire_smoke"],
+            "configured": s.gemini_model,
+        }
+        supported = [
+            "road_collision (car accidents, vehicle crashes, motorcycle slides)",
+            "person_fall (collapsed/motionless persons, medical distress)",
+            "parking_obstruction (illegal parking, blocked emergency access)",
+            "fire_smoke (smoke plumes, flames, suspected fire)",
+        ]
+        note = f"Active Vision Engine: Google Gemini ({s.gemini_model}). Analyzes CCTV video and automatically triages incidents."
+    else:
+        det = detector_status()
+        supported = ["person_fall (heuristic: person-sized box stays horizontal and still)"]
+        note = "Local OpenCV heuristic active. Configure a Gemini API key to enable multi-incident video detection (car crashes, smoke, etc.)."
+
+    return {
+        "detector": det,
+        "limits": {
+            "max_upload_mb": s.max_upload_mb,
+            "max_video_seconds": s.max_video_seconds,
+            "allowed_extensions": s.allowed_video_extensions,
+        },
+        "supported_events": supported,
+        "note": note,
+        "gemini": {
+            "enabled": bool(s.gemini_api_key),
+            "model": s.gemini_model,
+            "auto_promote": s.gemini_auto_promote,
+        },
+    }
 
 
 @router.post("/videos", status_code=202)
@@ -67,6 +133,29 @@ def upload_video(background: BackgroundTasks, file: UploadFile = File(...), came
     job = vs.save_upload(db, file, camera_id or None)
     background.add_task(vs.process_video_job, job.id)
     return _job_dict(job, include_candidates=False)
+
+
+@router.post("/videos/demo-clip", status_code=202)
+def upload_demo_clip(background: BackgroundTasks, camera_id: Optional[str] = Form("CAM-PARK-01"),
+                     db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """Queue pre-bundled sample CCTV footage for evaluation without requiring local file upload."""
+    sample_path = Path(__file__).resolve().parent.parent.parent / "samples" / "sample_cctv_fall.mp4"
+    if not sample_path.is_file():
+        raise NotFound("Sample demo clip is not available on server")
+    with open(sample_path, "rb") as f:
+        file_obj = UploadFile(filename="sample_cctv_fall.mp4", file=f, headers={"content-type": "video/mp4"})
+        job = vs.save_upload(db, file_obj, camera_id or "CAM-PARK-01")
+        background.add_task(vs.process_video_job, job.id)
+        return _job_dict(job, include_candidates=False)
+
+
+@router.get("/videos/sample-file")
+def get_sample_video_file():
+    """Download the bundled sample CCTV clip."""
+    sample_path = Path(__file__).resolve().parent.parent.parent / "samples" / "sample_cctv_fall.mp4"
+    if not sample_path.is_file():
+        raise NotFound("Sample demo clip is not available on server")
+    return FileResponse(sample_path, media_type="video/mp4", filename="sample_cctv_fall.mp4")
 
 
 @router.get("/videos")
@@ -81,12 +170,22 @@ def get_video(job_id: str, db: Session = Depends(get_db)) -> Dict[str, Any]:
 
 
 @router.get("/videos/{job_id}/file")
+@router.head("/videos/{job_id}/file")
 def get_video_file(job_id: str, db: Session = Depends(get_db)):
     job = vs.get_job(db, job_id)
     path = get_settings().upload_dir / job.stored_filename
     if job.video_deleted or not path.is_file():
         raise NotFound("The clip is no longer retained on the server")
-    return FileResponse(path)
+    ext = path.suffix.lower()
+    media_types = {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".webm": "video/webm",
+        ".avi": "video/x-msvideo",
+        ".mkv": "video/x-matroska",
+    }
+    media_type = media_types.get(ext, "video/mp4")
+    return FileResponse(path, media_type=media_type)
 
 
 @router.delete("/videos/{job_id}")
