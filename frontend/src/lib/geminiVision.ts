@@ -371,6 +371,8 @@ function getCategoryScoring(category: string): {
       return { score: 88.0, isEmergency: true, label: "Wildlife Intrusion (Wild Animal)" };
     case "road_collision":
       return { score: 84.0, isEmergency: false, label: "Road Collision / Vehicle Crash" };
+    case "fallen_tree_storm_damage":
+      return { score: 79.0, isEmergency: false, label: "Fallen Tree / Severe Storm Obstruction" };
     case "parking_obstruction":
       return { score: 42.0, isEmergency: false, label: "Emergency Access Obstruction" };
     default:
@@ -385,6 +387,7 @@ export function formatCategoryName(cat: string): string {
     restricted_area_intrusion: "Restricted / Rooftop Danger Zone",
     person_fall: "Person Fall / Down",
     road_collision: "Road Collision",
+    fallen_tree_storm_damage: "Fallen Tree & Storm Damage",
     parking_obstruction: "Parking Obstruction",
   };
   return map[cat] || cat.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

@@ -29,6 +29,7 @@ import {
   Loader2,
   Filter,
   Download,
+  Sparkles,
 } from "lucide-react";
 
 export interface SampleClip {
@@ -41,17 +42,24 @@ export interface SampleClip {
 
 export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   {
-    id: "sample-1",
-    name: "Sample Video 1",
-    filename: "sample_pedestrian_fall.mp4",
-    url: "/samples/sample_pedestrian_fall.mp4",
-    size: "174 KB",
+    id: "sample-fallen-tree",
+    name: "Fallen Tree",
+    filename: "sample_fallen_tree.mp4",
+    url: "/samples/sample_fallen_tree.mp4",
+    size: "2.7 MB",
   },
   {
-    id: "sample-2",
-    name: "Sample Video 2",
-    filename: "sample_car_collision.mp4",
-    url: "/samples/sample_car_collision.mp4",
+    id: "sample-wildlife-intrusion",
+    name: "Wildlife Intrusion",
+    filename: "sample_wildlife_intrusion.mp4",
+    url: "/samples/sample_wildlife_intrusion.mp4",
+    size: "1.8 MB",
+  },
+  {
+    id: "sample-car-accident",
+    name: "Car accident",
+    filename: "sample_car_accident.mp4",
+    url: "/samples/sample_car_accident.mp4",
     size: "5.4 MB",
   },
 ];
@@ -77,6 +85,7 @@ export function VideoAnalysisView({
 }: VideoAnalysisViewProps) {
   const [selectedCameraId, setSelectedCameraId] = useState<string>(cameras[0]?.id || "CAM-PARK-01");
   const [isUploading, setIsUploading] = useState(false);
+  const [analyzingClipId, setAnalyzingClipId] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -89,6 +98,26 @@ export function VideoAnalysisView({
       setSelectedCameraId(cameras[0].id);
     }
   }, [cameras, selectedCameraId]);
+
+  // Direct one-click sample analysis
+  const handleAnalyzeSample = async (clip: SampleClip) => {
+    setAnalyzingClipId(clip.id);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      const res = await fetch(clip.url);
+      if (!res.ok) throw new Error(`Could not load ${clip.filename} (${res.status})`);
+      const blob = await res.blob();
+      const file = new File([blob], clip.filename, { type: blob.type || "video/mp4" });
+      const effectiveCam = selectedCameraId || (cameras.length > 0 ? cameras[0].id : "CAM-PARK-01");
+      await onUploadVideo(file, effectiveCam);
+      setUploadSuccess(`Loaded and analyzed "${clip.name}" successfully.`);
+    } catch (err: any) {
+      setUploadError(err.message || `Failed to analyze ${clip.name}`);
+    } finally {
+      setAnalyzingClipId(null);
+    }
+  };
 
   // File selection handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,11 +178,11 @@ export function VideoAnalysisView({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {SAMPLE_VIDEO_CLIPS.map((clip) => (
             <div
               key={clip.id}
-              className="p-3 rounded-lg bg-slate-50/80 border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-100/70 transition-colors"
+              className="p-3 rounded-lg bg-slate-50/80 border border-slate-200 flex flex-col justify-between gap-2.5 hover:bg-slate-100/70 transition-colors"
             >
               <div className="min-w-0">
                 <span className="text-xs font-bold text-slate-900 block truncate">
@@ -166,20 +195,38 @@ export function VideoAnalysisView({
                 )}
               </div>
 
-              <a
-                href={clip.url}
-                download={clip.filename}
-                className="inline-flex items-center justify-center h-8 px-3 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-2xs shrink-0"
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5 text-slate-600" />
-                Download
-              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={Boolean(analyzingClipId) || isUploading}
+                  onClick={() => handleAnalyzeSample(clip)}
+                  className="inline-flex items-center justify-center h-8 flex-1 px-2.5 rounded border border-teal-300 bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-semibold transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                  title="Load and analyze this sample with Multimodal AI"
+                >
+                  {analyzingClipId === clip.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-700" />
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 mr-1 text-teal-600" />
+                      Analyze
+                    </>
+                  )}
+                </button>
+                <a
+                  href={clip.url}
+                  download={clip.filename}
+                  className="inline-flex items-center justify-center h-8 px-3 rounded border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors shadow-2xs shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1 text-slate-600" />
+                  Download
+                </a>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      <SimulatedLiveCctv cameras={cameras} onUploadVideo={onUploadVideo} />
+      <SimulatedLiveCctv cameras={cameras} />
 
       {/* 2. Video Upload Section & Processing Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

@@ -1,22 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Camera } from "@/types";
-import { Button } from "@/components/ui/Button";
 import {
-  Play,
-  Square,
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-  Sparkles,
-  Activity,
-  Layers,
   Video,
-  ShieldAlert,
+  Layers,
+  Activity,
+  Maximize2,
+  Minimize2,
+  Radio,
+  CheckCircle2,
 } from "lucide-react";
 
 interface SimulatedLiveCctvProps {
   cameras: Camera[];
-  onUploadVideo: (file: File, cameraId?: string) => Promise<void>;
+  onUploadVideo?: (file: File, cameraId?: string) => Promise<void>;
 }
 
 const LIVE_STREAM_CONFIG = {
@@ -25,35 +21,28 @@ const LIVE_STREAM_CONFIG = {
   locationName: "Main Gate Roundabout & Urban Access Corridor",
   defaultCameraId: "CAM-GATE-01",
   videoUrl: "/samples/cctv_live_stream.mp4",
-  fileName: "cctv_live_stream.mp4",
   resolution: "1280x720 HD",
   fps: 30,
   bitrate: "3.8 Mbps",
   latency: "24ms",
 };
 
-type Phase = "monitoring" | "countdown" | "analyzing" | "detected";
-
 /**
  * Continuous Live CCTV Surveillance Terminal.
- * Streams continuous video immediately on mount with authentic CCTV HUD telemetry.
- * Operators can link to the live camera feed and trigger an automated AI Threat Sweep
- * to detect incidents without manual file uploads.
+ * Displays real-time camera tracking and telemetry from City of Elmina's camera network.
  */
-export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvProps) {
+export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
   const [selectedCameraId, setSelectedCameraId] = useState<string>(
     cameras.find((c) => c.id === LIVE_STREAM_CONFIG.defaultCameraId)?.id || cameras[0]?.id || "CAM-GATE-01"
   );
-  const [delaySeconds, setDelaySeconds] = useState<number>(6);
-  const [phase, setPhase] = useState<Phase>("monitoring");
-  const [remaining, setRemaining] = useState<number>(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [clock, setClock] = useState<Date | null>(null);
   const [showTelemetryGrid, setShowTelemetryGrid] = useState<boolean>(true);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const playerContainerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const camName = cameras.find((c) => c.id === selectedCameraId)?.name || LIVE_STREAM_CONFIG.locationName;
+  const selectedCamera = cameras.find((c) => c.id === selectedCameraId);
+  const camName = selectedCamera?.name || LIVE_STREAM_CONFIG.locationName;
 
   // Real-time CCTV digital clock (MYT / Asia/Kuala_Lumpur)
   useEffect(() => {
@@ -63,53 +52,22 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
     return () => clearInterval(t);
   }, []);
 
-  // Cleanup timers on unmount
+  // Fullscreen change handler
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
     };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Submit feed segment for AI Multimodal threat analysis
-  const executeAiAnalysisSweep = async () => {
-    setPhase("analyzing");
-    setErrorMsg(null);
-    try {
-      const res = await fetch(LIVE_STREAM_CONFIG.videoUrl);
-      if (!res.ok) throw new Error(`Could not access CCTV stream buffer (${res.status})`);
-      const blob = await res.blob();
-      const file = new File([blob], LIVE_STREAM_CONFIG.fileName, { type: blob.type || "video/mp4" });
-
-      await onUploadVideo(file, selectedCameraId);
-      setPhase("detected");
-    } catch (err: any) {
-      setErrorMsg(err?.message || "Failed to analyze CCTV stream segment.");
-      setPhase("monitoring");
+  const toggleFullscreen = () => {
+    if (!playerContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      playerContainerRef.current.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
     }
-  };
-
-  // Start auto-trigger countdown
-  const startCountdown = () => {
-    setErrorMsg(null);
-    setRemaining(delaySeconds);
-    setPhase("countdown");
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    let left = delaySeconds;
-    timerRef.current = setInterval(() => {
-      left -= 1;
-      setRemaining(left);
-      if (left <= 0) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        executeAiAnalysisSweep();
-      }
-    }, 1000);
-  };
-
-  // Stop countdown and return to active monitoring
-  const stopCountdown = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPhase("monitoring");
   };
 
   return (
@@ -151,14 +109,17 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
       </div>
 
       <p className="text-[11px] text-slate-600 leading-relaxed">
-        Live surveillance link to township camera nodes across City of Elmina.
-        Operators can monitor real-time video telemetry or trigger an <strong>Instant AI Threat Sweep</strong> to automatically detect incidents and dispatch response units.
+        Continuous live surveillance telemetry feed linked directly to City of Elmina township CCTV camera nodes.
+        Operators can monitor real-time visual feeds and track live camera positions.
       </p>
 
       {/* Main Stream Player & Controls Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Video Screen with Authentic CCTV HUD */}
-        <div className="lg:col-span-2 relative rounded-lg overflow-hidden bg-slate-950 aspect-video border border-slate-800 shadow-md flex items-center justify-center">
+        <div
+          ref={playerContainerRef}
+          className="lg:col-span-2 relative rounded-lg overflow-hidden bg-slate-950 aspect-video border border-slate-800 shadow-md flex items-center justify-center group"
+        >
           <video
             ref={videoRef}
             src={LIVE_STREAM_CONFIG.videoUrl}
@@ -195,7 +156,7 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
                 </div>
               </div>
 
-              {/* Bottom Bar: Stream Specs & Analysis Status */}
+              {/* Bottom Bar: Stream Specs & Status */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] text-slate-300 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
                   <div className="flex items-center gap-3">
@@ -212,61 +173,32 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
                   </div>
                 </div>
 
-                {/* Real-Time AI Status Banner */}
-                <div className="p-2 rounded bg-black/85 border border-white/15 text-xs text-white backdrop-blur-md">
-                  {phase === "monitoring" && (
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-slate-200 text-[11px]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        Continuous Visual Feed · Normal Activity Telemetry
-                      </span>
-                      <span className="text-[10px] text-teal-300 font-medium hidden sm:inline">
-                        AI Engine Ready
-                      </span>
-                    </div>
-                  )}
-
-                  {phase === "countdown" && (
-                    <div className="flex items-center justify-between text-amber-300">
-                      <span className="flex items-center gap-1.5 text-xs font-bold">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        AI Threat Sweep Triggering in {Math.max(remaining, 0)}s…
-                      </span>
-                      <span className="text-[10px] text-amber-200">
-                        Scanning frames for anomalies
-                      </span>
-                    </div>
-                  )}
-
-                  {phase === "analyzing" && (
-                    <div className="flex items-center gap-2 text-sky-300 text-xs font-semibold">
-                      <Loader2 className="w-4 h-4 animate-spin text-teal-400" />
-                      Multimodal AI Model analyzing visual keyframes & threat posture…
-                    </div>
-                  )}
-
-                  {phase === "detected" && (
-                    <div className="flex items-center justify-between text-emerald-300">
-                      <span className="flex items-center gap-1.5 text-xs font-bold">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                        AI Threat Detected! Alert Logged in Active Priority Queue.
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPhase("monitoring")}
-                        className="pointer-events-auto px-2 py-0.5 rounded bg-emerald-950 text-emerald-200 border border-emerald-500 text-[10px] font-semibold hover:bg-emerald-900"
-                      >
-                        Reset Status
-                      </button>
-                    </div>
-                  )}
+                {/* Real-Time Live Status Banner */}
+                <div className="p-2 rounded bg-black/85 border border-white/15 text-xs text-white backdrop-blur-md flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-slate-200 text-[11px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Continuous Visual Tracking · Online Stream Telemetry
+                  </span>
+                  <span className="text-[10px] text-emerald-300 font-medium hidden sm:inline">
+                    Node Connected · 100% Signal
+                  </span>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Fullscreen Button in corner */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="absolute bottom-3 right-3 p-1.5 rounded bg-black/70 hover:bg-black/90 text-white border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
 
-        {/* Sidebar Controls */}
+        {/* Sidebar Controls & Telemetry Details */}
         <div className="space-y-4 text-xs">
           {/* Active Feed Details */}
           <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
@@ -287,16 +219,16 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
             </div>
           </div>
 
-          {/* Source Camera Assignment */}
+          {/* Source Camera Switcher */}
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">
+            <label className="font-semibold text-slate-700 block mb-1 flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-teal-600" />
               Source Camera Mapping
             </label>
             <select
               value={selectedCameraId}
               onChange={(e) => setSelectedCameraId(e.target.value)}
-              disabled={phase === "countdown" || phase === "analyzing"}
-              className="w-full h-9 rounded-md border border-slate-300 px-2.5 bg-white text-xs focus:ring-2 focus:ring-teal-500"
+              className="w-full h-9 rounded-md border border-slate-300 px-2.5 bg-white text-xs focus:ring-2 focus:ring-teal-500 cursor-pointer"
             >
               {cameras.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -306,63 +238,33 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
             </select>
           </div>
 
-          {/* Auto-Trigger Delay Seconds */}
-          <div>
-            <label className="font-semibold text-slate-700 block mb-1">
-              Auto-Trigger Sweep Delay (Seconds)
-            </label>
-            <input
-              type="number"
-              min={3}
-              max={60}
-              value={delaySeconds}
-              disabled={phase === "countdown" || phase === "analyzing"}
-              onChange={(e) => setDelaySeconds(Math.max(3, Math.min(60, Number(e.target.value) || 6)))}
-              className="w-full h-9 rounded-md border border-slate-300 px-3 bg-white text-xs focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-
-          {errorMsg && (
-            <div className="p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>{errorMsg}</span>
+          {/* Camera Node Telemetry Specs */}
+          <div className="p-3 rounded-lg bg-slate-50/70 border border-slate-200 space-y-2">
+            <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px] block">
+              Node Telemetry
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <span className="text-slate-400 block text-[10px]">Location</span>
+                <span className="font-semibold text-slate-800 truncate block">
+                  {selectedCamera?.name || camName}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Signal Health</span>
+                <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> 99.8% (Optimal)
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Stream Resolution</span>
+                <span className="font-mono text-slate-700">{LIVE_STREAM_CONFIG.resolution}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px]">Framerate</span>
+                <span className="font-mono text-slate-700">{LIVE_STREAM_CONFIG.fps} FPS</span>
+              </div>
             </div>
-          )}
-
-          {/* Action Trigger Buttons */}
-          <div className="space-y-2 pt-1">
-            <Button
-              id="instant-ai-sweep"
-              variant="primary"
-              className="w-full text-xs font-bold py-2 shadow-xs"
-              onClick={executeAiAnalysisSweep}
-              loading={phase === "analyzing"}
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-teal-200" />
-              Instant AI Threat Sweep
-            </Button>
-
-            {phase === "countdown" ? (
-              <Button
-                id="stop-sim-live"
-                variant="outline"
-                onClick={stopCountdown}
-                className="w-full text-xs border-rose-300 text-rose-700 hover:bg-rose-50"
-              >
-                <Square className="w-3.5 h-3.5 mr-1.5" /> Stop Countdown ({remaining}s)
-              </Button>
-            ) : (
-              <Button
-                id="start-sim-live"
-                variant="secondary"
-                onClick={startCountdown}
-                disabled={phase === "analyzing"}
-                className="w-full text-xs"
-              >
-                <Play className="w-3.5 h-3.5 mr-1.5 text-slate-600" />
-                Start Auto-Trigger Sweep ({delaySeconds}s)
-              </Button>
-            )}
           </div>
         </div>
       </div>
