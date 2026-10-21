@@ -47,10 +47,23 @@ export function OverviewView({
   onNavigateToVideo,
   onNavigateToMap,
 }: OverviewViewProps) {
-  // Active incidents sorted by rank
-  const activeIncidents = incidents.filter(
-    (inc) => !["resolved", "false_positive", "closed"].includes(inc.status)
-  );
+  // Active queue strictly sorted from high priority to low priority (Critical > High > Medium > Low)
+  const PRIORITY_ORDER: Record<string, number> = {
+    critical: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  const activeIncidents = incidents
+    .filter((inc) => !["resolved", "false_positive", "closed"].includes(inc.status))
+    .sort((a, b) => {
+      const pDiff = (PRIORITY_ORDER[b.priority_level] || 0) - (PRIORITY_ORDER[a.priority_level] || 0);
+      if (pDiff !== 0) return pDiff;
+      const sDiff = (b.priority_score || b.rank_score || 0) - (a.priority_score || a.rank_score || 0);
+      if (sDiff !== 0) return sDiff;
+      return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
+    });
 
   const criticalCount = activeIncidents.filter((inc) => inc.priority_level === "critical").length;
   const highCount = activeIncidents.filter((inc) => inc.priority_level === "high").length;

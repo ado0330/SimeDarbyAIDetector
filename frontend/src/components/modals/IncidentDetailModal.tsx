@@ -18,6 +18,8 @@ import {
 import { getTaxonomyCategory } from "@/lib/taxonomy";
 import { sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import {
+  EMERGENCY_RESPONSE_FLEET,
+  EmergencyUnit,
   AUXILIARY_PATROL_FLEET,
   findNearestAuxiliaryUnit,
   generateWhatsAppSitrep,
@@ -87,7 +89,7 @@ export function IncidentDetailModal({
   const [activeTab, setActiveTab] = useState<"overview" | "dispatch" | "scoring" | "timeline" | "audit">("overview");
 
   // Action dialog states
-  const [assigneeId, setAssigneeId] = useState<string>("");
+  const [selectedResponderIds, setSelectedResponderIds] = useState<string[]>([]);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
 
   const [actionType, setActionType] = useState<string>("note");
@@ -116,6 +118,17 @@ export function IncidentDetailModal({
   const [copiedSitrep, setCopiedSitrep] = useState(false);
   const [isDispatchingNearest, setIsDispatchingNearest] = useState(false);
   const [showSitrepCard, setShowSitrepCard] = useState(false);
+
+  // Sync selected responders when modal or assign dialog opens
+  useEffect(() => {
+    if (incident) {
+      const current = (incident.assigned_to || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      setSelectedResponderIds(current);
+    }
+  }, [incident, showAssignDialog]);
 
   // Load completed SOP steps from audit trail and event logs
   useEffect(() => {
@@ -170,7 +183,7 @@ export function IncidentDetailModal({
   // Category SOP Workflow
   const categorySop = getTaxonomyCategory(incident.category).sopWorkflow || [
     "Verify surveillance video feed immediately",
-    "Dispatch nearest auxiliary police patrol unit to scene",
+    "Dispatch nearest emergency response unit to scene",
     "Log incident report and escalate if required",
   ];
   const completedCount = categorySop.filter((_, idx) => completedSopSteps[idx]).length;
@@ -223,8 +236,14 @@ export function IncidentDetailModal({
     }
   };
 
-  // WhatsApp / Telegram Field SITREP
-  const sitrepMessage = generateWhatsAppSitrep(incident, nearestUnitInfo.unit, nearestUnitInfo.etaFormatted);
+  // Multi-agency dispatched units
+  const assignedUnits = (incident.assigned_to ? incident.assigned_to.split(",") : [])
+    .map((id) => id.trim())
+    .map((id) => EMERGENCY_RESPONSE_FLEET.find((u) => u.id === id))
+    .filter(Boolean) as EmergencyUnit[];
+
+  const sitrepUnits = assignedUnits.length > 0 ? assignedUnits : [nearestUnitInfo.unit];
+  const sitrepMessage = generateWhatsAppSitrep(incident, sitrepUnits, nearestUnitInfo.etaFormatted);
 
   const handleCopySitrep = async () => {
     try {
@@ -251,7 +270,7 @@ export function IncidentDetailModal({
     onRecordAction(
       incident.id,
       "external_services_contacted",
-      `[Field SITREP Dispatched] WhatsApp SITREP transmitted to Sime Darby Polis Bantuan Channel (${nearestUnitInfo.unit.callsign})`
+      `[Field SITREP Dispatched] WhatsApp SITREP transmitted to Emergency Dispatch Channel (${sitrepUnits.map((u) => u.callsign).join(", ")})`
     ).catch(() => {});
   };
 
@@ -269,13 +288,19 @@ export function IncidentDetailModal({
   };
 
   const handleAssign = async () => {
-    if (!assigneeId) return;
+    if (selectedResponderIds.length === 0) return;
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
-      await onAssign(incident.id, assigneeId);
+      const selectedNames = selectedResponderIds
+        .map((id) => {
+          const found = responders.find((r) => r.id === id) || EMERGENCY_RESPONSE_FLEET.find((u) => u.id === id);
+          return found ? (found as any).name || (found as any).callsign : id;
+        })
+        .join(", ");
+      const multiId = selectedResponderIds.join(",");
+      await onAssign(incident.id, multiId, `Multi-agency dispatch assigned: ${selectedNames}`);
       setShowAssignDialog(false);
-      setAssigneeId("");
     } catch (e: any) {
       setErrorMsg(e.message);
     } finally {
@@ -523,7 +548,7 @@ export function IncidentDetailModal({
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Assigned Responder</span>
+                  <span className="text-slate-500 text-[11px] block">Assigned Responder(s)</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block">
                     {incident.assigned_to_name || incident.assigned_to || "Unassigned"}
                   </span>
@@ -637,13 +662,13 @@ export function IncidentDetailModal({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white tracking-wide uppercase flex items-center gap-2">
-                        Auxiliary Police (Polis Bantuan) & Ranger Dispatch
+                        Emergency & Multi-Agency Responder Dispatch
                         <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
                           Live Fleet Available
                         </span>
                       </h4>
                       <p className="text-[11px] text-slate-400">
-                        City of Elmina Township Security Command & Field SITREP Terminal
+                        City of Elmina Township Emergency Command & Multi-Agency SITREP Terminal
                       </p>
                     </div>
                   </div>
@@ -1162,20 +1187,20 @@ export function IncidentDetailModal({
                 </div>
               </div>
 
-              {/* Auxiliary Police Patrol Fleet Table */}
+              {/* Emergency Response Fleet Table */}
               <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
                       <Car className="w-4 h-4 text-teal-600" />
-                      Sime Darby Auxiliary Police Fleet Roster
+                      Township Emergency Response Fleet Roster
                     </h4>
                     <p className="text-[10px] text-slate-500">
-                      Live on-duty auxiliary police patrol vehicles and rapid response rangers across City of Elmina
+                      Live on-duty emergency response vehicles, ambulances, traffic police, and patrol teams across City of Elmina
                     </p>
                   </div>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                    5 Units On Shift
+                    6 Units On Shift
                   </span>
                 </div>
 
@@ -1192,10 +1217,14 @@ export function IncidentDetailModal({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {AUXILIARY_PATROL_FLEET.map((u) => {
+                      {EMERGENCY_RESPONSE_FLEET.map((u) => {
                         const isNearest = u.id === nearestUnitInfo.unit.id;
+                        const assignedIds = (incident.assigned_to || "").split(",").map((s) => s.trim().toLowerCase());
+                        const assignedNames = (incident.assigned_to_name || "").toLowerCase();
                         const isCurrentlyAssigned =
-                          incident.assigned_to === u.id || incident.assigned_to_name === u.callsign;
+                          assignedIds.includes(u.id.toLowerCase()) ||
+                          assignedNames.includes(u.callsign.toLowerCase()) ||
+                          assignedNames.includes(u.id.toLowerCase());
                         return (
                           <tr
                             key={u.id}
@@ -1244,19 +1273,42 @@ export function IncidentDetailModal({
                                 </span>
                               ) : (
                                 <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">
-                                  On Patrol
+                                  Available
                                 </span>
                               )}
                             </td>
                             <td className="p-2.5 text-right">
                               {isCurrentlyAssigned ? (
-                                <a
-                                  href={`tel:${u.contactNumber}`}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
-                                >
-                                  <PhoneCall className="w-3 h-3 text-teal-600" />
-                                  Call
-                                </a>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <a
+                                    href={`tel:${u.contactNumber}`}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
+                                  >
+                                    <PhoneCall className="w-3 h-3 text-teal-600" />
+                                    Call
+                                  </a>
+                                  <button
+                                    type="button"
+                                    disabled={isSubmitting}
+                                    onClick={async () => {
+                                      setIsSubmitting(true);
+                                      try {
+                                        const currentIds = (incident.assigned_to || "").split(",").map((s) => s.trim()).filter(Boolean);
+                                        const filteredIds = currentIds.filter((id) => id !== u.id);
+                                        await onAssign(
+                                          incident.id,
+                                          filteredIds.join(","),
+                                          `Removed ${u.callsign} from response team.`
+                                        );
+                                      } finally {
+                                        setIsSubmitting(false);
+                                      }
+                                    }}
+                                    className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-medium transition-colors cursor-pointer"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
                               ) : (
                                 <Button
                                   size="sm"
@@ -1265,10 +1317,12 @@ export function IncidentDetailModal({
                                   onClick={async () => {
                                     setIsSubmitting(true);
                                     try {
+                                      const currentIds = (incident.assigned_to || "").split(",").map((s) => s.trim()).filter(Boolean);
+                                      const newIds = Array.from(new Set([...currentIds, u.id]));
                                       await onAssign(
                                         incident.id,
-                                        u.id,
-                                        `Assigned ${u.callsign} (${u.officerInCharge}) from patrol fleet table.`
+                                        newIds.join(","),
+                                        `Assigned ${u.callsign} (${u.officerInCharge}) to response team.`
                                       );
                                     } finally {
                                       setIsSubmitting(false);
@@ -1276,7 +1330,7 @@ export function IncidentDetailModal({
                                   }}
                                   loading={isSubmitting}
                                 >
-                                  Dispatch Unit
+                                  + Dispatch Unit
                                 </Button>
                               )}
                             </td>
@@ -1295,10 +1349,10 @@ export function IncidentDetailModal({
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                     <div>
                       <h4 className="text-xs font-bold text-white tracking-wide uppercase">
-                        Auxiliary Police Field WhatsApp / Telegram SITREP Dispatch
+                        Multi-Agency Field WhatsApp / Telegram SITREP Dispatch
                       </h4>
                       <p className="text-[10px] text-slate-400">
-                        Instant situation report formatted for on-ground auxiliary police & ranger teams
+                        Instant situation report formatted for on-ground emergency responders & command dispatch
                       </p>
                     </div>
                   </div>
@@ -1480,7 +1534,7 @@ export function IncidentDetailModal({
                     onClick={() => setShowAssignDialog(true)}
                   >
                     <UserPlus className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-                    Assign Responder
+                    Assign Responder(s)
                   </Button>
 
                   <Button
@@ -1533,43 +1587,139 @@ export function IncidentDetailModal({
         </div>
       </Modal>
 
-      {/* Sub-modal: Assign Responder */}
+      {/* Sub-modal: Assign Responders (Multi-Select Enabled) */}
       <Modal
         isOpen={showAssignDialog}
         onClose={() => setShowAssignDialog(false)}
-        title="Assign Responder"
-        maxWidth="md"
+        title="Assign Emergency Responders"
+        maxWidth="lg"
         footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setShowAssignDialog(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" variant="primary" onClick={handleAssign} loading={isSubmitting}>
-              Confirm Assignment
-            </Button>
-          </>
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs text-slate-500 font-medium">
+              {selectedResponderIds.length} responder{selectedResponderIds.length === 1 ? "" : "s"} selected
+            </span>
+            <div className="flex items-center space-x-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowAssignDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={handleAssign}
+                disabled={selectedResponderIds.length === 0}
+                loading={isSubmitting}
+              >
+                Confirm Assignment ({selectedResponderIds.length})
+              </Button>
+            </div>
+          </div>
         }
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-600">
-            Select a designated on-duty response team for <strong>{incident.id}</strong>.
+            Select one or more emergency response services for <strong>{incident.id}</strong> ({incident.title}).
+            For major incidents such as vehicle collisions, you can dispatch both an <strong>Ambulance</strong> and <strong>Traffic Police</strong> simultaneously.
           </p>
+
+          {/* Quick Preset Buttons */}
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+              Quick Multi-Agency Presets:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedResponderIds(["ambulance", "traffic-police"])}
+                className="px-2.5 py-1 rounded text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🚑 + 🚓</span>
+                <span>Crash Preset: Ambulance + Traffic Police</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedResponderIds(["ambulance", "patrol-a"])}
+                className="px-2.5 py-1 rounded text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🚑 + 🛡️</span>
+                <span>Fall / Medical: Ambulance + Security Patrol</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedResponderIds(["fire-warden", "traffic-police", "ambulance"])}
+                className="px-2.5 py-1 rounded text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🚒 + 🚓 + 🚑</span>
+                <span>Major Fire / Rescue (All-Services)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Multi-Select Responder Cards */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Select Responder
-            </label>
-            <select
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              className="w-full h-9 rounded-md border border-slate-300 px-3 text-xs bg-white focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">-- Choose a Responder --</option>
-              {responders.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name} ({r.role})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                Available Emergency Units & Responders
+              </label>
+              <div className="flex items-center space-x-2 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedResponderIds(responders.map((r) => r.id))}
+                  className="text-teal-700 hover:text-teal-900 font-medium"
+                >
+                  Select All
+                </button>
+                <span>&bull;</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedResponderIds([])}
+                  className="text-slate-500 hover:text-slate-700 font-medium"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-1">
+              {responders.map((r) => {
+                const isSelected = selectedResponderIds.includes(r.id);
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => {
+                      setSelectedResponderIds((prev) =>
+                        prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                      );
+                    }}
+                    className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex items-start space-x-3 ${
+                      isSelected
+                        ? "bg-teal-50/80 border-teal-500 shadow-xs ring-1 ring-teal-500"
+                        : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+                    }`}
+                  >
+                    <div className="pt-0.5">
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-teal-600 shrink-0" />
+                      ) : (
+                        <Square className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-900 truncate flex items-center justify-between">
+                        <span>{r.name}</span>
+                        {isSelected && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-200 text-teal-900">
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                        {r.role}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </Modal>

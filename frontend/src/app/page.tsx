@@ -38,7 +38,28 @@ import { TownshipMapView } from "@/components/views/TownshipMapView";
 import { VideoAnalysisView } from "@/components/views/VideoAnalysisView";
 import { HistoryView } from "@/components/views/HistoryView";
 import { AnalyticsView } from "@/components/views/AnalyticsView";
+import { EMERGENCY_RESPONSE_FLEET } from "@/lib/auxiliaryUnits";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+
+const PRIORITY_ORDER: Record<string, number> = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+function sortByPriority<T extends { priority_level: string; priority_score?: number; rank_score?: number; detected_at?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const prioDiff = (PRIORITY_ORDER[b.priority_level] || 0) - (PRIORITY_ORDER[a.priority_level] || 0);
+    if (prioDiff !== 0) return prioDiff;
+    const scoreDiff = (b.priority_score ?? b.rank_score ?? 0) - (a.priority_score ?? a.rank_score ?? 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    if (a.detected_at && b.detected_at) {
+      return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
+    }
+    return 0;
+  });
+}
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<NavView>("overview");
@@ -84,14 +105,14 @@ export default function Home() {
       let latestItems: Incident[] = [];
       if (incRes.status === "fulfilled") {
         setBackendStatus("connected");
-        latestItems = incRes.value.items;
-        setIncidents(incRes.value.items);
+        latestItems = sortByPriority(incRes.value.items);
+        setIncidents(latestItems);
       } else {
         // Backend offline or running in cloud demo mode (e.g. Vercel)
         setBackendStatus("demo");
         setIncidents((prev) => {
-          latestItems = prev;
-          return prev;
+          latestItems = sortByPriority(prev);
+          return latestItems;
         });
       }
 
@@ -241,40 +262,51 @@ export default function Home() {
   };
 
   const handleAssign = async (id: string, responderId: string, note?: string) => {
+    const ids = responderId.split(",").map((s) => s.trim()).filter(Boolean);
+    const names = ids.map((unitId) => {
+      const resp = responders.find((r) => r.id === unitId) || EMERGENCY_RESPONSE_FLEET.find((u) => u.id === unitId);
+      return resp ? (resp as any).name || (resp as any).callsign : unitId;
+    });
+    const combinedNames = names.join(", ");
+    const primaryId = ids[0] || responderId;
+
     try {
-      const res = await api.assign(id, responderId, note);
-      showToast(`Responder assigned to ${id}.`);
-      syncFromServer(id, res.incident);
+      const res = await api.assign(id, primaryId, note || `Multi-agency response: ${combinedNames}`);
+      showToast(`Assigned ${combinedNames} to ${id}.`);
+      syncFromServer(id, {
+        ...res.incident,
+        assigned_to: responderId,
+        assigned_to_name: combinedNames,
+      });
     } catch {
-      const resp = responders.find((r) => r.id === responderId);
-      const respName = resp?.name || responderId;
       const now = new Date().toISOString();
+      const newAssignments = ids.map((unitId, idx) => ({
+        id: Date.now() + idx,
+        responder_id: unitId,
+        responder_name: names[idx] || unitId,
+        assigned_by: "Control Room Supervisor",
+        assigned_at: now,
+      }));
+
       setIncidents((prev) =>
         prev.map((i) =>
           i.id === id
-            ? { ...i, assigned_to: responderId, assigned_to_name: respName, status: "in_progress", updated_at: now }
+            ? { ...i, assigned_to: responderId, assigned_to_name: combinedNames, status: "in_progress", updated_at: now }
             : i
         )
       );
       setSelectedIncident((prev) => {
         if (!prev || prev.id !== id) return prev;
-        const newAssignment = {
-          id: Date.now(),
-          responder_id: responderId,
-          responder_name: respName,
-          assigned_by: "Control Room Supervisor",
-          assigned_at: now,
-        };
         return {
           ...prev,
           assigned_to: responderId,
-          assigned_to_name: respName,
+          assigned_to_name: combinedNames,
           status: "in_progress",
-          assignments: [newAssignment, ...(prev.assignments || [])],
+          assignments: [...newAssignments, ...(prev.assignments || [])],
           updated_at: now,
         };
       });
-      showToast(`Assigned ${respName} to ${id}.`);
+      showToast(`Assigned ${combinedNames} to ${id}.`);
     }
   };
 
@@ -645,7 +677,7 @@ export default function Home() {
           video_url: blobUrl,
         };
 
-        setIncidents((prev) => [newIncident, ...prev]);
+        setIncidents((prev) => sortByPriority([newIncident, ...prev]));
 
         showToast(
           `AI Alert: ${analysis.categoryLabel} detected (${(
@@ -714,7 +746,7 @@ export default function Home() {
     },
     video: {
       title: "CCTV Video Analysis & Candidate Stream",
-      subtitle: "OpenCV frame extraction, temporal posture heuristic, and human verification",
+      subtitle: "Multimodal AI video analysis, real-time threat detection, and human verification",
     },
     map: {
       title: "Township GIS & Sector Map",

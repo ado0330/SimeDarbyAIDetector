@@ -90,7 +90,15 @@ export function ActiveIncidentsView({
       return true;
     }).sort((a, b) => {
       if (sortBy === "rank") {
-        return b.rank_score - a.rank_score;
+        const PRIORITY_ORDER: Record<string, number> = {
+          critical: 4,
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
+        const pDiff = (PRIORITY_ORDER[b.priority_level] || 0) - (PRIORITY_ORDER[a.priority_level] || 0);
+        if (pDiff !== 0) return pDiff;
+        return (b.priority_score || b.rank_score || 0) - (a.priority_score || a.rank_score || 0);
       }
       if (sortBy === "time_desc") {
         return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();

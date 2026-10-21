@@ -213,7 +213,7 @@ export function TownshipMapView({
             />
             <span className="text-[11px] font-medium flex items-center gap-1">
               <Car className="w-3 h-3 text-sky-600" />
-              Auxiliary Patrol Fleet (5)
+              Emergency Response Fleet (6)
             </span>
           </label>
 
@@ -680,12 +680,12 @@ export function TownshipMapView({
               </div>
             </div>
 
-            {/* Zone Assigned Auxiliary Police Patrol */}
+            {/* Zone Assigned Emergency Response Unit */}
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
                 <span className="flex items-center gap-1.5">
                   <Car className="w-3.5 h-3.5 text-sky-600" />
-                  Auxiliary Police (Polis Bantuan)
+                  Assigned Emergency Response Unit
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold text-[10px]">
                   Sector Unit

@@ -75,11 +75,14 @@ export const FALLBACK_CAMERAS: Camera[] = [
 ];
 
 export const FALLBACK_RESPONDERS: Responder[] = [
-  { id: "patrol-a", name: "Security Patrol A", role: "Security patrol" },
-  { id: "patrol-b", name: "Security Patrol B", role: "Security patrol" },
-  { id: "first-aid", name: "On-site First-Aid Team", role: "First aid" },
+  { id: "ambulance", name: "Ambulance & Paramedics", role: "Emergency medical & trauma response" },
+  { id: "traffic-police", name: "Traffic Police & Enforcement", role: "Traffic control & accident investigation" },
+  { id: "patrol-a", name: "Security Patrol Alpha", role: "Site security & perimeter patrol" },
+  { id: "patrol-b", name: "Security Patrol Bravo", role: "Site security & rapid response" },
+  { id: "fire-warden", name: "Fire & Rescue (Bomba)", role: "Firefighting & rescue operations" },
+  { id: "first-aid", name: "On-site First-Aid Team", role: "First aid & triage" },
   { id: "traffic-marshal", name: "Traffic Marshal", role: "Traffic & access control" },
-  { id: "fire-warden", name: "Fire-Safety Warden", role: "Fire safety" },
+  { id: "facilities", name: "Township Facilities & Maintenance", role: "Infrastructure & hazard clearing" },
   { id: "parking-mgmt", name: "Parking Management", role: "Parking enforcement" },
 ];
 
