@@ -1,51 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GEMINI_VISION_PROMPT = `You are the core AI vision engine for Sime Darby Property Township Guardian CCTV Security & Safety Operations.
+const GEMINI_VISION_PROMPT = `You are the expert CCTV vision analysis engine for Sime Darby Property Township Guardian Security & Safety Operations.
 Analyze these chronological video frames captured from a township security camera.
 
-Determine if any safety hazard or security incident occurred.
-Classify into exactly ONE of these incident categories:
-1. "fire_smoke": Open flames, thick smoke plume, hazardous burning, fire flare, or wildfire/grass fire.
-2. "wildlife_intrusion": Wild or hazardous animals (wild boars, monkeys, venomous snakes, monitor lizards, stray aggressive animal packs) trespassing into pedestrian walkways, residential yards, or park facilities.
-3. "restricted_area_intrusion": Unauthorized persons trespassing in high-danger restricted zones (persons on rooftop edges, climbing roof structures, electrical substations, construction perimeters, dangerous heights, retention pond banks).
-4. "person_fall": A person collapsed, fell, tripped, slipped, or is lying motionless / unresponsive on the ground, road, or stairs.
-5. "road_collision": Vehicle collision, car crash, motorcycle skid, vehicle hitting pedestrian or cyclist.
-6. "parking_obstruction": Vehicle blocking emergency fire egress route, fire hydrant, or double parked obstructing access.
-7. "pipe_burst_leakage": High-pressure water main burst or street flooding from plumbing failure.
-8. "flash_flood": Rapid roadway or path inundation from storm/monsoon overflow.
-9. "fallen_tree_storm_damage": Entire fallen tree or heavy branches blocking roads/paths, striking power lines or vehicles.
-10. "road_pavement_defect": Opening sinkhole, road crater, or pavement collapse endangering traffic.
-11. "structural_facility_damage": Falling building façade panel, loose roof sheets, broken overhead glass, or collapsed structure.
-12. "illegal_dumping": Vehicle illegally dumping bulk garbage, chemical drums, or debris in public reserve.
-13. "physical_altercation": Violent fight, physical assault, brawl, or menacing confrontation in public areas.
+CRITICAL FIRST DIRECTIVE:
+Determine if this video footage shows NORMAL ROUTINE ACTIVITY or an ABNORMAL SAFETY HAZARD / INCIDENT.
+The vast majority of township CCTV footage is NORMAL. YOU MUST DEFAULT TO NORMAL ACTIVITY UNLESS CLEAR, UNMISTAKABLE VISUAL EVIDENCE OF A SAFETY HAZARD OR VIOLATION IS VISIBLE.
 
-If normal peaceful township activity without any safety hazard, set "detected": false and "category": null.
+STEP 1: NORMAL ACTIVITY CHECK:
+If the video shows normal routine township life:
+- Pedestrians walking normally, strolling, jogging, sitting on benches, exercising, or standing upright.
+- Vehicles driving smoothly along roads, parking legally, or cycling normally.
+- Normal landscape, trees swaying naturally, calm streets, or normal weather conditions.
+-> For ALL normal situations above, you MUST return:
+{
+  "detected": false,
+  "category": null,
+  "is_danger": false,
+  "confidence": 0.95,
+  "timestamp_s": 0.0,
+  "title": "Normal Activity Verified — No Incident",
+  "summary": "Routine township activity observed. Pedestrians or vehicles moving normally without any falls, safety hazards, or security violations.",
+  "evidence": {
+    "status": "normal_routine",
+    "hazard_level": "none"
+  }
+}
+
+STEP 2: ABNORMAL INCIDENT CLASSIFICATION (ONLY IF AN ACTUAL HAZARD OCCURRED):
+Only if an unmistakable incident is visible, set "detected": true, "is_danger": true, and classify into ONE of:
+1. "fire_smoke": Open flames, thick smoke plume, hazardous burning, fire flare, or wildfire. (NOT cigarette smoke or vehicle exhaust).
+2. "wildlife_intrusion": Hazardous wild animals (wild boars, large snakes, aggressive monkeys, monitor lizards) in public areas. (NOT domestic pets on leash or common birds).
+3. "restricted_area_intrusion": Unauthorized person climbing onto a rooftop, roof structure, electrical substation, or dangerous height ledge.
+4. "person_fall": A person who ACTUALLY collapsed, fell, tripped, slipped, or is lying prostrate/motionless horizontally on the ground.
+   IMPORTANT: A person walking upright, jogging, standing, bending, or sitting is strictly NORMAL and NEVER a person_fall!
+5. "road_collision": Active vehicle crash, collision, rollover, or vehicle hitting a pedestrian/cyclist.
+6. "parking_obstruction": Vehicle severely blocking an active emergency fire egress route, ambulance path, or fire hydrant.
+7. "pipe_burst_leakage": High-pressure ruptured water main or street geyser flooding road.
+8. "flash_flood": Rapid roadway inundation or storm surge flooding.
+9. "fallen_tree_storm_damage": Entire fallen tree or large branch blocking roads or crushing property.
+10. "road_pavement_defect": Opening sinkhole, crater, or road pavement collapse.
+11. "structural_facility_damage": Falling building façade, loose roof sheets, broken overhead glass.
+12. "illegal_dumping": Vehicle illegally dumping bulk trash or chemical drums in public reserve.
+13. "physical_altercation": Violent fight, assault, or physical brawl between individuals.
 
 RULES:
-- "title": MUST be specific, descriptive, and vivid to THIS exact video scene (mention colors, actions, animals, or exact location like "Wild Boar on Walking Trail", "Trespasser on Commercial Rooftop Edge", "Fallen Tree Obstructing Boulevard"). NEVER use generic placeholders.
-- "summary": 2-3 detailed sentences describing the sequence of visual events observed across the frames.
-- "is_danger": true for any safety hazard (fire, wildlife, rooftop trespass, collapse, collision, flooding, pipe burst, fallen tree).
-
-Respond STRICTLY with valid JSON (no markdown formatting, just raw JSON):
-{
-  "detected": true,
-  "category": "fire_smoke",
-  "confidence": 0.95,
-  "timestamp_s": 2.5,
-  "is_danger": true,
-  "title": "Specific Descriptive Incident Title",
-  "summary": "Detailed visual description of subjects, vehicles, animals, actions, and environment.",
-  "evidence": {
-    "hazard_level": "critical",
-    "subjects_involved": 1,
-    "environment": "park / road / residential / rooftop",
-    "notes": "key visual facts"
-  }
-}`;
+- NEVER hallucinate or force an incident. If you are uncertain or the scene is peaceful, IT IS NORMAL ACTIVITY ("detected": false, "category": null).
+- "title": Specific and descriptive of the exact scene (e.g., "Normal Activity Verified — No Incident" or "Wild Boar on Walking Trail").
+- "summary": 2-3 accurate sentences describing the visual sequence observed across the frames.
+- Respond STRICTLY with valid JSON (no markdown formatting, just raw JSON).`;
 
 export async function POST(request: NextRequest) {
   try {
     const apiKey = (
+      request.headers.get("x-gemini-api-key") ||
       process.env.GEMINI_API_KEY ||
       process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
       ""
@@ -104,7 +112,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             contents: [{ parts }],
             generationConfig: {
-              temperature: 0.15,
+              temperature: 0.1,
               responseMimeType: "application/json",
             },
           }),
@@ -128,15 +136,32 @@ export async function POST(request: NextRequest) {
 
         const parsed = JSON.parse(cleaned);
 
+        const rawDetected = Boolean(parsed.detected);
+        const rawCategory = parsed.category;
+        const isActuallyDetected =
+          rawDetected &&
+          Boolean(rawCategory) &&
+          rawCategory !== "null" &&
+          rawCategory !== "none" &&
+          rawCategory !== "normal" &&
+          rawCategory !== "normal_activity";
+
+        const category = isActuallyDetected ? rawCategory : null;
+
         return NextResponse.json({
           success: true,
           modelUsed: model,
-          detected: Boolean(parsed.detected),
-          category: parsed.category || "person_fall",
-          confidence: parseFloat(parsed.confidence) || 0.92,
-          timestamp_s: parseFloat(parsed.timestamp_s) || 2.0,
-          title: parsed.title || "Township Incident Detected",
-          summary: parsed.summary || "Multimodal vision analysis completed.",
+          detected: isActuallyDetected,
+          category: category,
+          confidence: parseFloat(parsed.confidence) || (isActuallyDetected ? 0.92 : 0.95),
+          timestamp_s: parseFloat(parsed.timestamp_s) || 0.0,
+          is_danger: isActuallyDetected ? Boolean(parsed.is_danger) : false,
+          title: parsed.title || (isActuallyDetected ? "Township Incident Detected" : "Normal Surveillance Activity"),
+          summary:
+            parsed.summary ||
+            (isActuallyDetected
+              ? "Incident detected by multimodal vision engine."
+              : "Normal surveillance activity verified. No safety hazards or incidents detected."),
           evidence: parsed.evidence || {},
         });
       } catch (err: any) {

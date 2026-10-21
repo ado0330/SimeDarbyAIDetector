@@ -313,8 +313,14 @@ export function VideoAnalysisView({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-xs font-bold text-teal-800">
-                      {job.candidate_count} candidates
+                    <div
+                      className={`text-xs font-bold ${
+                        job.candidate_count === 0 ? "text-emerald-700" : "text-teal-800"
+                      }`}
+                    >
+                      {job.candidate_count === 0
+                        ? "Normal (0 Incidents)"
+                        : `${job.candidate_count} ${job.candidate_count === 1 ? "candidate" : "candidates"}`}
                     </div>
                     <div className="text-[10px] text-slate-400">
                       {formatTimeAgo(job.created_at)}

@@ -32,12 +32,37 @@ FALLBACK_MODELS = [
 PROMPT = """You are an expert CCTV security and township safety operations AI for Sime Darby Property smart townships.
 Analyze these sampled video frames captured chronologically from a CCTV security camera.
 
-Determine if any security, life safety, or danger incident occurred in this footage.
-Classify into one of these specific township safety categories:
+CRITICAL FIRST DIRECTIVE:
+Determine if this video footage shows NORMAL ROUTINE ACTIVITY or an ABNORMAL SAFETY HAZARD / INCIDENT.
+The vast majority of township CCTV footage is NORMAL. YOU MUST DEFAULT TO NORMAL ACTIVITY UNLESS CLEAR, UNMISTAKABLE VISUAL EVIDENCE OF A SAFETY HAZARD OR VIOLATION IS VISIBLE.
+
+STEP 1: NORMAL ACTIVITY CHECK:
+If the video shows normal routine township life:
+- Pedestrians walking normally, strolling, jogging, sitting on benches, exercising, or standing upright.
+- Vehicles driving smoothly along roads, parking legally, or cycling normally.
+- Normal landscape, trees swaying naturally, calm streets, or normal weather conditions.
+-> For ALL normal situations above, you MUST return:
+{
+  "detected": false,
+  "category": null,
+  "is_danger": false,
+  "confidence": 0.95,
+  "timestamp_s": 0.0,
+  "title": "Normal Activity Verified — No Incident",
+  "summary": "Routine township activity observed. Pedestrians or vehicles moving normally without any falls, safety hazards, or security violations.",
+  "evidence": {
+    "status": "normal_routine",
+    "hazard_level": "none"
+  }
+}
+
+STEP 2: ABNORMAL INCIDENT CLASSIFICATION (ONLY IF AN ACTUAL HAZARD OCCURRED):
+Only if an unmistakable incident is visible, set "detected": true and classify into ONE of:
 1. "fire_smoke": Open flames, thick smoke plume, hazardous burning, fire flare, or thermal hazard.
 2. "wildlife_intrusion": Wild or hazardous animals (wild boars, monkeys, venomous snakes, monitor lizards, stray aggressive packs) entering residential neighborhoods, parks, or pedestrian trails.
 3. "restricted_area_intrusion": Unauthorized persons in high-danger restricted zones (persons on rooftop edges, climbing roof structures, electrical substations, construction perimeters, dangerous heights, retention pond banks).
-4. "person_fall": A person collapsed, fell, tripped, slipped, or is lying motionless / unresponsive on the ground or walkway.
+4. "person_fall": A person who ACTUALLY collapsed, fell, tripped, slipped, or is lying prostrate/motionless horizontally on the ground.
+   IMPORTANT: A person walking upright, jogging, standing, bending, or sitting is strictly NORMAL and NEVER a person_fall!
 5. "road_collision": Vehicle collision, car crash, motorcycle skid, vehicle hitting pedestrian or cyclist.
 6. "parking_obstruction": Vehicle blocking emergency egress route, fire hydrant, or double parked.
 7. "pipe_burst_leakage": High-pressure water main burst or street flooding from plumbing failure.
@@ -48,25 +73,11 @@ Classify into one of these specific township safety categories:
 12. "illegal_dumping": Vehicle illegally dumping bulk garbage, chemical drums, or debris in public reserve.
 13. "physical_altercation": Violent fight, physical assault, brawl, or menacing confrontation in public areas.
 
-If no incident occurred (normal pedestrian/traffic activity), set "detected": false and "category": null.
-
-IMPORTANT TITLE AND SUMMARY RULES:
-- The "title" MUST be specific, descriptive, and unique to the exact visual scene in THIS video (e.g. mention subject's clothing colors, animals, rooftop location, vehicle colors/models). NEVER use generic repeated titles unless that exact setting is visible.
-- The "summary" MUST describe the actual visual scene, sequence of events, and specific subjects or vehicles observed in the frames.
-
-Respond STRICTLY with a valid JSON object matching this schema (do not wrap in markdown quotes if possible):
-{
-  "detected": true,
-  "category": "fire_smoke" | "wildlife_intrusion" | "restricted_area_intrusion" | "person_fall" | "road_collision" | "parking_obstruction" | "pipe_burst_leakage" | "flash_flood" | "fallen_tree_storm_damage" | "road_pavement_defect" | "structural_facility_damage" | "illegal_dumping" | "physical_altercation",
-  "confidence": 0.94,
-  "timestamp_s": 3.0,
-  "title": "Specific Descriptive Title of Incident",
-  "summary": "Detailed, specific visual description of the incident including colors, vehicles, person actions, and exact surroundings.",
-  "evidence": {
-    "hazard_level": "critical",
-    "details": "Specific visual details about the hazard observed in the frames."
-  }
-}
+RULES:
+- NEVER hallucinate or force an incident. If you are uncertain or the scene is peaceful, IT IS NORMAL ACTIVITY ("detected": false, "category": null).
+- "title": Specific and descriptive of the exact scene.
+- "summary": 2-3 accurate sentences describing the visual sequence observed across the frames.
+- Respond STRICTLY with a valid JSON object matching the schema (do not wrap in markdown quotes if possible).
 """
 
 

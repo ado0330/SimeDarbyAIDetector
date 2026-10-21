@@ -83,6 +83,12 @@ Resolved the issue where uploading two different video clips of the same categor
 3. **Prompt Hardening for Distinct Titles:** Enhanced Gemini's system prompt in `gemini_analyzer.py` to instruct the model to produce unique, scene-specific titles and detailed summaries (incorporating clothing colors, setting like stairs/crosswalk, exact vehicle models) instead of generic repeated placeholders.
 4. **Filename Fallback:** Configured candidate review in `video_service.py` to incorporate the uploaded clip's original filename into candidate titles when AI titles are not supplied.
 
-
-
-
+## D-019 — Normal Video Activity Verification & False Positive Suppression (2026-10-21) — accepted
+Resolved the critical issue where routine CCTV footage without abnormal incidents was falsely detected as "Person fall down" or generated spurious danger alerts:
+1. **Serverless Vision Route Fix (`frontend/src/app/api/vision/route.ts`):** Eliminated the fallback `parsed.category || "person_fall"`, which was converting valid `category: null` responses on normal videos into `"person_fall"`. Added strict validation requiring `parsed.detected && parsed.category` to be truthy and non-null before setting `detected: true`.
+2. **Heuristics & Prompt Overhaul (`geminiVision.ts`, `gemini_analyzer.py`):**
+   - Reframed the Gemini system prompt to establish **Normal Activity Check as the Primary Directive**, instructing the model to default to normal routine life (`detected: false, category: null`) unless unmistakable visual evidence of a safety hazard exists.
+   - Clarified that people walking upright, jogging, standing, or sitting are strictly normal and must NEVER be flagged as `person_fall`.
+   - In browser fallback heuristics (`analyzeWithMultiHazardHeuristics`), eliminated greedy substring matches (e.g., bare `"down"` matching `"download.mp4"`, or `"park"` matching `"central park"`), and made Normal Activity the default return whenever no danger keywords match.
+3. **Client Upload Pipeline Hardening (`frontend/src/app/page.tsx`):** Added explicit checks for `!analysis.detected || !analysis.category`. When normal activity is verified, the video processing job is marked completed with `candidate_count: 0`, and no candidate or incident is created in the active queue. A clear confirmation toast notifies the operator: *"Analysis Complete: Normal activity verified. No safety hazards or incidents detected."*
+4. **UI Clarity (`VideoAnalysisView.tsx`):** Updated video job status indicators to explicitly render *"Normal (0 Incidents)"* in emerald green when no hazards are found, providing immediate visual feedback to operators.

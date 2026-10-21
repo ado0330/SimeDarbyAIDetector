@@ -421,6 +421,37 @@ export default function Home() {
         const analysis = await analyzeVideoWithGemini(file, cam.name);
         const thumbUrl = analysis.keyframes[0]?.dataUrl || (await extractVideoThumbnail(file));
         const now = new Date().toISOString();
+
+        // 1. Check if normal surveillance activity (No incident detected)
+        if (
+          !analysis.detected ||
+          !analysis.category ||
+          analysis.category === "null" ||
+          analysis.category === "none" ||
+          analysis.category === "normal" ||
+          analysis.category === "normal_activity"
+        ) {
+          const completedJob: VideoJob = {
+            ...newJob,
+            status: "completed",
+            progress: 1.0,
+            frames_analyzed: analysis.keyframes.length || 8,
+            candidate_count: 0,
+            duration_s: 16.5,
+            detector_id: analysis.isGeminiAi ? `gemini-${analysis.modelUsed}` : "township-guardian-v2",
+            completed_at: now,
+          };
+
+          setVideos((prev) => prev.map((j) => (j.id === jobId ? completedJob : j)));
+
+          showToast(
+            `Analysis Complete: Normal activity verified on ${cam.name}. No safety hazards or incidents detected.`,
+            "success"
+          );
+          return;
+        }
+
+        // 2. Incident detected: Proceed with candidate and incident creation
         const severity: PriorityLevel = analysis.score >= 90 ? "critical" : analysis.score >= 75 ? "high" : "medium";
 
         const completedJob: VideoJob = {
@@ -547,10 +578,10 @@ export default function Home() {
         setIncidents((prev) => [newIncident, ...prev]);
 
         showToast(
-          `AI Vision: ${analysis.categoryLabel} detected (${(
+          `AI Alert: ${analysis.categoryLabel} detected (${(
             analysis.confidence * 100
           ).toFixed(0)}% conf). Incident ${incidentId} created.`,
-          "success"
+          "error"
         );
       } catch (analysisErr: any) {
         console.error("Frame analysis error:", analysisErr);
