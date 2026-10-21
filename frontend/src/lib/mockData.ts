@@ -6,6 +6,8 @@ import {
   IncidentDetail,
   ScoringConfigData,
   AnalyticsSummary,
+  VideoJob,
+  VideoCandidate,
 } from "@/types";
 
 export const FALLBACK_LOCATIONS: Location[] = [
@@ -444,7 +446,8 @@ export function createFallbackDetail(inc: Incident): IncidentDetail {
         id: 1,
         kind: "frame",
         video_url: inc.video_url || "/samples/sample_cctv_fall.mp4",
-        timestamp_s: 24.0,
+        timestamp_s: inc.metadata?.video_timestamp_s ?? 24.0,
+        frame_url: inc.evidence?.thumbnail,
         description: `Visual evidence frame captured from ${inc.camera_name || "camera feed"}.`,
         created_at: inc.detected_at,
       },
@@ -464,3 +467,75 @@ export function createFallbackDetail(inc: Incident): IncidentDetail {
     allowed_status_transitions: ["acknowledged", "in_progress", "resolved", "false_positive"],
   };
 }
+
+export const FALLBACK_VIDEOS: VideoJob[] = [
+  {
+    id: "job-cctv-baseline",
+    original_filename: "sample_cctv_fall.mp4",
+    size_bytes: 4280000,
+    camera_id: "CAM-PROM-02",
+    status: "completed",
+    progress: 1.0,
+    frames_analyzed: 32,
+    duration_s: 28.5,
+    fps: 25,
+    frame_count: 712,
+    detector_id: "posture-heuristic-v2",
+    detector_available: true,
+    video_available: true,
+    video_url: "/samples/sample_cctv_fall.mp4",
+    candidate_count: 1,
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    completed_at: new Date(Date.now() - 3590000).toISOString(),
+  },
+];
+
+export const FALLBACK_CANDIDATES: VideoCandidate[] = [
+  {
+    id: 101,
+    video_job_id: "job-cctv-baseline",
+    category: "person_fall",
+    timestamp_s: 24.0,
+    end_timestamp_s: 28.5,
+    confidence: 0.92,
+    bbox: { x: 340, y: 220, w: 180, h: 90 },
+    evidence: {
+      motionless_seconds: 30,
+      aspect_ratio_collapsed: true,
+      filename: "sample_cctv_fall.mp4",
+    },
+    details: {
+      explanation:
+        "Pedestrian fall detected. Aspect ratio collapsed to horizontal and subject motionless on lake-edge promenade.",
+      source: "OpenCV Pedestrian Posture Heuristic",
+    },
+    model_id: "posture-heuristic-v2",
+    model_version: "2.4.0",
+    preview: {
+      severity: 75,
+      immediacy: 65,
+      people_at_risk: 60,
+      secondary_hazard: 30,
+      composite_score: 62.75,
+      score_level: "high",
+      level: "high",
+      emergency: false,
+      factors: [],
+      unknown_fields: [],
+      needs_verification: false,
+      low_confidence: false,
+      uncertainty: "low",
+      uncertainty_reasons: [],
+      config_version: "2.0",
+      explanation: "Pedestrian fall detected on promenade.",
+    },
+    status: "accepted",
+    incident_id: "INC-0001",
+    reviewed_by: "Control Room Operator",
+    reviewed_at: new Date(Date.now() - 3500000).toISOString(),
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    source: "video_analysis",
+    source_clip: "sample_cctv_fall.mp4",
+    urgent_review: false,
+  },
+];

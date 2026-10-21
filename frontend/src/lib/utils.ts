@@ -149,3 +149,63 @@ export function formatDuration(seconds?: number | null): string {
   return `${(seconds / 3600).toFixed(1)}h`;
 }
 
+export function extractVideoThumbnail(file: File | string): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(undefined);
+      return;
+    }
+    try {
+      const url = typeof file === "string" ? file : URL.createObjectURL(file);
+      const video = document.createElement("video");
+      video.crossOrigin = "anonymous";
+      video.preload = "metadata";
+      video.src = url;
+      video.muted = true;
+      video.playsInline = true;
+
+      let resolved = false;
+      const finish = (result?: string) => {
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      };
+
+      video.onloadeddata = () => {
+        try {
+          video.currentTime = Math.min(2.0, Math.max(0.1, (video.duration || 3) * 0.25));
+        } catch {
+          finish(undefined);
+        }
+      };
+
+      video.onseeked = () => {
+        if (resolved) return;
+        try {
+          const canvas = document.createElement("canvas");
+          const width = video.videoWidth || 320;
+          const height = video.videoHeight || 180;
+          canvas.width = Math.min(width, 480);
+          canvas.height = Math.round((canvas.width / width) * height) || 270;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+            finish(dataUrl);
+            return;
+          }
+        } catch {
+          // ignore canvas capture issue
+        }
+        finish(undefined);
+      };
+
+      video.onerror = () => finish(undefined);
+      setTimeout(() => finish(undefined), 2500);
+    } catch {
+      resolve(undefined);
+    }
+  });
+}
+
