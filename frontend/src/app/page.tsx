@@ -24,6 +24,7 @@ import {
   FALLBACK_VIDEOS,
   FALLBACK_CANDIDATES,
   createFallbackDetail,
+  computeDynamicAnalytics,
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
 import { analyzeVideoWithGemini } from "@/lib/geminiVision";
@@ -41,7 +42,7 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 export default function Home() {
   const [currentView, setCurrentView] = useState<NavView>("overview");
 
-  // Core Data States
+  // Core Data States - completely blank initial state for every visitor
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<IncidentDetail | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -50,7 +51,7 @@ export default function Home() {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [responders, setResponders] = useState<Responder[]>([]);
   const [scoringConfig, setScoringConfig] = useState<ScoringConfigData | null>(null);
-  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(FALLBACK_ANALYTICS);
   const [videos, setVideos] = useState<VideoJob[]>([]);
   const [candidates, setCandidates] = useState<VideoCandidate[]>([]);
 
@@ -78,27 +79,33 @@ export default function Home() {
         api.getCandidates(),
       ]);
 
+      let latestItems: Incident[] = [];
       if (incRes.status === "fulfilled") {
+        latestItems = incRes.value.items;
         setIncidents(incRes.value.items);
       } else {
-        setIncidents((prev) => (prev.length > 0 ? prev : FALLBACK_INCIDENTS));
+        // Keep active client state without falling back to synthetic fake items
+        setIncidents((prev) => {
+          latestItems = prev;
+          return prev;
+        });
       }
 
-      if (anaRes.status === "fulfilled") {
+      if (anaRes.status === "fulfilled" && anaRes.value && anaRes.value.totals.incidents > 0) {
         setAnalytics(anaRes.value);
       } else {
-        setAnalytics((prev) => prev || FALLBACK_ANALYTICS);
+        setAnalytics(computeDynamicAnalytics(latestItems));
       }
 
       if (vidRes.status === "fulfilled") {
         setVideos(vidRes.value);
       } else {
-        setVideos((prev) => (prev.length > 0 ? prev : FALLBACK_VIDEOS));
+        setVideos((prev) => prev);
       }
       if (candRes.status === "fulfilled") {
         setCandidates(candRes.value);
       } else {
-        setCandidates((prev) => (prev.length > 0 ? prev : FALLBACK_CANDIDATES));
+        setCandidates((prev) => prev);
       }
     } catch (err) {
       console.error("Data refresh error:", err);
@@ -624,6 +631,16 @@ export default function Home() {
       subtitle: "Persisted metrics on priority breakdown, categories, and resolution times",
     },
   };
+
+  // Synchronize dynamic analytics whenever incidents change (client-side only)
+  useEffect(() => {
+    setAnalytics((prev) => {
+      if (prev && prev.totals && prev.totals.incidents > 0 && incidents.length === prev.totals.incidents) {
+        return prev;
+      }
+      return computeDynamicAnalytics(incidents, new Date());
+    });
+  }, [incidents]);
 
   return (
     <div className="flex h-screen bg-slate-100 text-slate-800 font-sans antialiased overflow-hidden">

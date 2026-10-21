@@ -27,7 +27,55 @@ import {
   Info,
   Loader2,
   Filter,
+  Download,
+  Sparkles,
 } from "lucide-react";
+
+export interface SampleClip {
+  id: string;
+  title: string;
+  filename: string;
+  url: string;
+  size: string;
+  duration: string;
+  category: string;
+  categoryBadge: string;
+  cameraId: string;
+  cameraName: string;
+  description: string;
+  expectedOutcome: string;
+}
+
+export const EVALUATION_SAMPLE_VIDEOS: SampleClip[] = [
+  {
+    id: "clip-pedestrian-fall",
+    title: "Pedestrian Slip & Fall on Jogging Trail",
+    filename: "sample_pedestrian_fall.mp4",
+    url: "/samples/sample_pedestrian_fall.mp4",
+    size: "174 KB",
+    duration: "8.0s",
+    category: "Person Down / Medical Emergency",
+    categoryBadge: "bg-rose-100 text-rose-800 border-rose-200",
+    cameraId: "CAM-PARK-01",
+    cameraName: "Playground Bench Area",
+    description: "Pedestrian suddenly collapses onto walkway along park perimeter with zero bystanders nearby.",
+    expectedOutcome: "Detects Person Fall / Immobility, triggers priority medical escalation.",
+  },
+  {
+    id: "clip-car-collision",
+    title: "Roundabout Two-Vehicle Collision",
+    filename: "sample_car_collision.mp4",
+    url: "/samples/sample_car_collision.mp4",
+    size: "5.4 MB",
+    duration: "10.0s",
+    category: "Traffic / Road Collision",
+    categoryBadge: "bg-amber-100 text-amber-800 border-amber-200",
+    cameraId: "CAM-GATE-01",
+    cameraName: "Gate Roundabout North Approach",
+    description: "Two sedans collide at roundabout junction blocking active vehicle lane.",
+    expectedOutcome: "Detects Road Collision, identifies lane blockage, alerts Traffic Marshal.",
+  },
+];
 
 interface VideoAnalysisViewProps {
   videos: VideoJob[];
@@ -54,6 +102,7 @@ export function VideoAnalysisView({
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [reviewingId, setReviewingId] = useState<number | null>(null);
+  const [loadingSampleId, setLoadingSampleId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Sync selected camera when cameras load
@@ -62,6 +111,25 @@ export function VideoAnalysisView({
       setSelectedCameraId(cameras[0].id);
     }
   }, [cameras, selectedCameraId]);
+
+  // Direct sample analysis handler
+  const handleDirectAnalyzeSample = async (clip: SampleClip) => {
+    setLoadingSampleId(clip.id);
+    setUploadError(null);
+    setUploadSuccess(null);
+    try {
+      const res = await fetch(clip.url);
+      if (!res.ok) throw new Error(`Could not load ${clip.filename}`);
+      const blob = await res.blob();
+      const file = new File([blob], clip.filename, { type: "video/mp4" });
+      await onUploadVideo(file, clip.cameraId);
+      setUploadSuccess(`Evaluation clip "${clip.filename}" loaded & vision analysis initiated.`);
+    } catch (err: any) {
+      setUploadError(err.message || "Failed to analyze sample video");
+    } finally {
+      setLoadingSampleId(null);
+    }
+  };
 
   // File selection handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +176,95 @@ export function VideoAnalysisView({
 
   return (
     <div className="space-y-6">
-      {/* Video Upload Section & Processing Status */}
+      {/* 1. Judge Evaluation & Demo Clips Kit */}
+      <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-slate-900 rounded-lg p-5 text-white shadow-sm border border-teal-800/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-teal-800/60">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300">
+              <Download className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold tracking-tight text-white">
+                  Judge Evaluation & Sample CCTV Clips
+                </h3>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-teal-500/20 text-teal-300 border border-teal-400/30">
+                  Ready for Testing
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Download sample CCTV clips to test file uploading, or run instant multimodal AI vision analysis.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] text-teal-300/80 font-mono">
+            {EVALUATION_SAMPLE_VIDEOS.length} Test Clips Available
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {EVALUATION_SAMPLE_VIDEOS.map((clip) => (
+            <div
+              key={clip.id}
+              className="bg-slate-800/80 border border-slate-700/80 rounded-lg p-3.5 flex flex-col justify-between hover:border-teal-500/50 transition-colors"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${clip.categoryBadge}`}>
+                    {clip.category}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {clip.duration} &bull; {clip.size}
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-white mb-1">
+                  {clip.title}
+                </h4>
+                <p className="text-[11px] text-slate-300 leading-relaxed mb-2">
+                  {clip.description}
+                </p>
+                <div className="text-[10px] text-teal-300/90 bg-teal-950/50 rounded px-2 py-1 border border-teal-800/40 mb-3">
+                  <span className="font-semibold text-teal-200">Expected AI Output: </span>
+                  {clip.expectedOutcome}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                <a
+                  href={clip.url}
+                  download={clip.filename}
+                  className="flex-1 inline-flex items-center justify-center h-8 rounded px-3 text-xs font-medium bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-teal-300" />
+                  Download Clip (.mp4)
+                </a>
+
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
+                  disabled={loadingSampleId === clip.id || isUploading}
+                  onClick={() => handleDirectAnalyzeSample(clip)}
+                >
+                  {loadingSampleId === clip.id ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5 text-teal-200" />
+                      Direct AI Scan
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Video Upload Section & Processing Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Upload Card */}
         <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">

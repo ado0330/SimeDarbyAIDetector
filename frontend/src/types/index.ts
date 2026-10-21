@@ -215,8 +215,8 @@ export interface AnalyticsSummary {
     emergency_tier_active: number;
     needing_verification_active: number;
   };
-  avg_acknowledgement_seconds?: number;
-  avg_resolution_seconds?: number;
+  avg_acknowledgement_seconds?: number | null;
+  avg_resolution_seconds?: number | null;
   acknowledgement_sample_size: number;
   resolution_sample_size: number;
   by_severity_active: Record<PriorityLevel, number>;

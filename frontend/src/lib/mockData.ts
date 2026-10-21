@@ -144,214 +144,214 @@ export const FALLBACK_CONFIG: ScoringConfigData = {
   },
 };
 
-const nowIso = new Date().toISOString();
+export const FALLBACK_INCIDENTS: Incident[] = [];
 
-export const FALLBACK_INCIDENTS: Incident[] = [
-  {
-    id: "INC-0001",
-    title: "Possible person down — Lakeside Promenade",
-    category: "person_fall",
-    category_label: "Person Fall",
-    description: "Pedestrian observed collapsed on lake-edge walkway with zero immediate bystanders nearby.",
-    location_id: "LOC-PROM",
-    location_name: "Lakeside Promenade",
-    camera_id: "CAM-PROM-02",
-    camera_name: "Promenade Lake Edge",
-    source_type: "simulation",
-    detected_at: nowIso,
-    last_detected_at: nowIso,
-    created_at: nowIso,
-    updated_at: nowIso,
-    status: "new",
-    severity_score: 75,
-    immediacy_score: 65,
-    people_at_risk_score: 60,
-    secondary_hazard_score: 30,
-    priority_score: 62.75,
-    rank_score: 62.75,
-    priority_level: "high",
-    computed_priority_level: "high",
-    emergency_rule_triggered: false,
-    priority_overridden: false,
-    detection_confidence: 0.92,
-    verification_status: "unverified",
-    needs_verification: false,
-    uncertainty: "low",
-    priority_explanation:
-      "Pedestrian fall with subject horizontal on ground. Vulnerable single subject next to water body raises priority.",
-    recommended_action: "Dispatch On-site First-Aid Team immediately and verify CCTV telemetry.",
-    is_simulated: true,
-    detection_count: 1,
-    evidence: { motionless_seconds: 30, people_at_risk: 1, water_hazard: true },
-    metadata: { simulated: true, scenario: "morning_rush" },
-    seconds_since_detection: 120,
-    queue_position: 1,
-    video_url: "/samples/sample_cctv_fall.mp4",
-  },
-  {
-    id: "INC-0002",
-    title: "Two-Vehicle Collision — Main Gate Roundabout",
-    category: "road_collision",
-    category_label: "Road Collision",
-    description: "Two sedans collided on roundabout entrance blocking north egress lane.",
-    location_id: "LOC-GATE",
-    location_name: "Main Gate Roundabout",
-    camera_id: "CAM-GATE-01",
-    camera_name: "Gate Roundabout North Approach",
-    source_type: "simulation",
-    detected_at: nowIso,
-    last_detected_at: nowIso,
-    created_at: nowIso,
-    updated_at: nowIso,
-    status: "new",
-    severity_score: 65,
-    immediacy_score: 50,
-    people_at_risk_score: 50,
-    secondary_hazard_score: 55,
-    priority_score: 56.75,
-    rank_score: 56.75,
-    priority_level: "medium",
-    computed_priority_level: "medium",
-    emergency_rule_triggered: false,
-    priority_overridden: false,
-    detection_confidence: 0.96,
-    verification_status: "unverified",
-    needs_verification: false,
-    uncertainty: "low",
-    priority_explanation:
-      "Vehicle impact at boulevard roundabout. Lane partially blocked creating traffic hazard during peak hours.",
-    recommended_action: "Dispatch Traffic Marshal to redirect vehicles and clear boulevard approach.",
-    is_simulated: true,
-    detection_count: 1,
-    evidence: { vehicles_involved: 2, traffic_blocked: true },
-    metadata: { simulated: true, scenario: "morning_rush" },
-    seconds_since_detection: 135,
-    queue_position: 2,
-  },
-  {
-    id: "INC-0003",
-    title: "Parking obstruction — Harmoni Mall - Parking Deck B",
-    category: "parking_obstruction",
-    category_label: "Parking Obstruction",
-    description: "Delivery van double-parked across 2 handicap bays and ramp turning radius.",
-    location_id: "LOC-MALL",
-    location_name: "Harmoni Mall - Parking Deck B",
-    camera_id: "CAM-MALL-01",
-    camera_name: "Deck B Level 1 Entry",
-    source_type: "simulation",
-    detected_at: nowIso,
-    last_detected_at: nowIso,
-    created_at: nowIso,
-    updated_at: nowIso,
-    status: "new",
-    severity_score: 20,
-    immediacy_score: 15,
-    people_at_risk_score: 10,
-    secondary_hazard_score: 30,
-    priority_score: 18.25,
-    rank_score: 18.25,
-    priority_level: "low",
-    computed_priority_level: "low",
-    emergency_rule_triggered: false,
-    priority_overridden: false,
-    detection_confidence: 0.88,
-    verification_status: "unverified",
-    needs_verification: false,
-    uncertainty: "low",
-    priority_explanation:
-      "Property and parking regulation infraction. Low life-safety urgency relative to active falls and collisions.",
-    recommended_action: "Notify mall parking warden to issue citation and request vehicle relocation.",
-    is_simulated: true,
-    detection_count: 1,
-    evidence: { bays_blocked: 2 },
-    metadata: { simulated: true, scenario: "morning_rush" },
-    seconds_since_detection: 160,
-    queue_position: 3,
-  },
-];
+export function createEmptyAnalytics(baseDate?: Date | string): AnalyticsSummary {
+  const days: { date: string; count: number }[] = [];
+  if (baseDate) {
+    const now = typeof baseDate === "string" ? new Date(baseDate) : baseDate;
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      days.push({
+        date: d.toISOString().slice(0, 10),
+        count: 0,
+      });
+    }
+  }
+  return {
+    mode: "operational",
+    totals: {
+      incidents: 0,
+      active: 0,
+      critical_active: 0,
+      awaiting_acknowledgement: 0,
+      in_progress: 0,
+      resolved: 0,
+      false_positive: 0,
+      simulated: 0,
+      from_video_analysis: 0,
+      emergency_tier_active: 0,
+      needing_verification_active: 0,
+    },
+    avg_acknowledgement_seconds: null,
+    avg_resolution_seconds: null,
+    acknowledgement_sample_size: 0,
+    resolution_sample_size: 0,
+    by_severity_active: {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0,
+    },
+    by_severity_all: {
+      critical: 0,
+      high: 0,
+      medium: 0,
+      low: 0,
+    },
+    by_category: [],
+    by_status: {
+      new: 0,
+      acknowledged: 0,
+      in_progress: 0,
+      resolved: 0,
+      false_positive: 0,
+    },
+    per_day: days,
+    top_incidents: [],
+    recent_activity: [],
+  };
+}
 
-export const FALLBACK_ANALYTICS: AnalyticsSummary = {
-  mode: "simulation",
-  totals: {
-    incidents: 18,
-    active: 3,
-    critical_active: 0,
-    awaiting_acknowledgement: 3,
-    in_progress: 0,
-    resolved: 14,
-    false_positive: 1,
-    simulated: 18,
-    from_video_analysis: 0,
-    emergency_tier_active: 0,
-    needing_verification_active: 0,
-  },
-  avg_acknowledgement_seconds: 42.5,
-  avg_resolution_seconds: 310.0,
-  acknowledgement_sample_size: 14,
-  resolution_sample_size: 14,
-  by_severity_active: {
-    critical: 0,
-    high: 1,
-    medium: 1,
-    low: 1,
-  },
-  by_severity_all: {
-    critical: 2,
-    high: 6,
-    medium: 7,
-    low: 3,
-  },
-  by_category: [
-    { category: "person_fall", label: "Person Fall", count: 5, critical: 1, high: 3, medium: 1, low: 0 },
-    { category: "road_collision", label: "Road Collision", count: 6, critical: 1, high: 2, medium: 3, low: 0 },
-    { category: "parking_obstruction", label: "Parking Obstruction", count: 5, critical: 0, high: 0, medium: 2, low: 3 },
-    { category: "fire_smoke", label: "Fire / Smoke", count: 2, critical: 0, high: 1, medium: 1, low: 0 },
-  ],
-  by_status: {
-    new: 3,
+export function computeDynamicAnalytics(incidents: Incident[], baseDate?: Date | string): AnalyticsSummary {
+  const now = baseDate ? (typeof baseDate === "string" ? new Date(baseDate) : baseDate) : new Date();
+  const dayMap = new Map<string, number>();
+  const daysList: { date: string; count: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    dayMap.set(dateStr, 0);
+    daysList.push({ date: dateStr, count: 0 });
+  }
+
+  let activeCount = 0;
+  let criticalActive = 0;
+  let awaitingAck = 0;
+  let inProgress = 0;
+  let resolved = 0;
+  let falsePositive = 0;
+  let simulated = 0;
+  let fromVideo = 0;
+  let emergencyActive = 0;
+  let needingVerificationActive = 0;
+
+  const severityActive: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  const severityAll: Record<string, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  const statusCounts: Record<string, number> = {
+    new: 0,
     acknowledged: 0,
     in_progress: 0,
-    resolved: 14,
-    false_positive: 1,
-  },
-  per_day: [
-    { date: "2026-10-15", count: 2 },
-    { date: "2026-10-16", count: 4 },
-    { date: "2026-10-17", count: 3 },
-    { date: "2026-10-18", count: 2 },
-    { date: "2026-10-19", count: 4 },
-    { date: "2026-10-20", count: 3 },
-  ],
-  top_incidents: FALLBACK_INCIDENTS.map((i) => ({
-    id: i.id,
-    title: i.title,
-    priority_level: i.priority_level,
-    priority_score: i.priority_score,
-    status: i.status,
-    emergency: i.emergency_rule_triggered,
-    is_simulated: i.is_simulated,
-  })),
-  recent_activity: [
-    {
-      id: 1,
-      incident_id: "INC-0001",
-      incident_title: "Possible person down — Lakeside Promenade",
-      event_type: "detected",
-      message: "Person fall detected by camera CAM-PROM-02",
-      actor: "GlobalEye Prioritization Engine",
-      created_at: nowIso,
+    resolved: 0,
+    false_positive: 0,
+  };
+  const categoryMap = new Map<
+    string,
+    { label: string; count: number; critical: number; high: number; medium: number; low: number }
+  >();
+
+  let totalAckSeconds = 0;
+  let ackCount = 0;
+  let totalResSeconds = 0;
+  let resCount = 0;
+
+  for (const inc of incidents) {
+    const incDate = (inc.detected_at || inc.created_at || "").slice(0, 10);
+    if (dayMap.has(incDate)) {
+      dayMap.set(incDate, (dayMap.get(incDate) || 0) + 1);
+    }
+
+    const isActive = !["resolved", "false_positive", "closed"].includes(inc.status);
+    if (isActive) {
+      activeCount++;
+      severityActive[inc.priority_level] = (severityActive[inc.priority_level] || 0) + 1;
+      if (inc.priority_level === "critical") criticalActive++;
+      if (inc.emergency_rule_triggered) emergencyActive++;
+      if (inc.needs_verification) needingVerificationActive++;
+    }
+
+    severityAll[inc.priority_level] = (severityAll[inc.priority_level] || 0) + 1;
+    statusCounts[inc.status] = (statusCounts[inc.status] || 0) + 1;
+
+    if (inc.status === "new") awaitingAck++;
+    if (inc.status === "in_progress") inProgress++;
+    if (inc.status === "resolved") resolved++;
+    if (inc.status === "false_positive") falsePositive++;
+
+    if (inc.is_simulated) {
+      simulated++;
+    } else {
+      fromVideo++;
+    }
+
+    const catKey = inc.category || "other";
+    const catLabel = inc.category_label || catKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    if (!categoryMap.has(catKey)) {
+      categoryMap.set(catKey, { label: catLabel, count: 0, critical: 0, high: 0, medium: 0, low: 0 });
+    }
+    const catEntry = categoryMap.get(catKey)!;
+    catEntry.count++;
+    if (inc.priority_level === "critical") catEntry.critical++;
+    if (inc.priority_level === "high") catEntry.high++;
+    if (inc.priority_level === "medium") catEntry.medium++;
+    if (inc.priority_level === "low") catEntry.low++;
+
+    if (inc.status !== "new" && inc.detected_at && inc.updated_at) {
+      const diffS = Math.max(1, (new Date(inc.updated_at).getTime() - new Date(inc.detected_at).getTime()) / 1000);
+      totalAckSeconds += Math.min(diffS, 600);
+      ackCount++;
+    }
+    if (inc.status === "resolved" && inc.detected_at && inc.updated_at) {
+      const diffS = Math.max(5, (new Date(inc.updated_at).getTime() - new Date(inc.detected_at).getTime()) / 1000);
+      totalResSeconds += Math.min(diffS, 3600);
+      resCount++;
+    }
+  }
+
+  const perDay = daysList.map((d) => ({
+    date: d.date,
+    count: dayMap.get(d.date) || 0,
+  }));
+
+  const byCategory = Array.from(categoryMap.entries()).map(([category, data]) => ({
+    category,
+    label: data.label,
+    count: data.count,
+    critical: data.critical,
+    high: data.high,
+    medium: data.medium,
+    low: data.low,
+  }));
+
+  return {
+    mode: "operational",
+    totals: {
+      incidents: incidents.length,
+      active: activeCount,
+      critical_active: criticalActive,
+      awaiting_acknowledgement: awaitingAck,
+      in_progress: inProgress,
+      resolved,
+      false_positive: falsePositive,
+      simulated,
+      from_video_analysis: fromVideo,
+      emergency_tier_active: emergencyActive,
+      needing_verification_active: needingVerificationActive,
     },
-    {
-      id: 2,
-      incident_id: "INC-0002",
-      incident_title: "Two-Vehicle Collision — Main Gate Roundabout",
-      event_type: "detected",
-      message: "Two-vehicle collision detected by camera CAM-GATE-01",
-      actor: "GlobalEye Prioritization Engine",
-      created_at: nowIso,
-    },
-  ],
-};
+    avg_acknowledgement_seconds: ackCount > 0 ? totalAckSeconds / ackCount : null,
+    avg_resolution_seconds: resCount > 0 ? totalResSeconds / resCount : null,
+    acknowledgement_sample_size: ackCount,
+    resolution_sample_size: resCount,
+    by_severity_active: severityActive,
+    by_severity_all: severityAll,
+    by_category: byCategory,
+    by_status: statusCounts,
+    per_day: perDay,
+    top_incidents: incidents.slice(0, 5).map((i) => ({
+      id: i.id,
+      title: i.title,
+      priority_level: i.priority_level,
+      priority_score: i.priority_score,
+      status: i.status,
+      emergency: i.emergency_rule_triggered,
+      is_simulated: i.is_simulated,
+    })),
+    recent_activity: [],
+  };
+}
+
+export const FALLBACK_ANALYTICS: AnalyticsSummary = createEmptyAnalytics();
 
 export function createFallbackDetail(inc: Incident): IncidentDetail {
   return {
@@ -468,74 +468,6 @@ export function createFallbackDetail(inc: Incident): IncidentDetail {
   };
 }
 
-export const FALLBACK_VIDEOS: VideoJob[] = [
-  {
-    id: "job-cctv-baseline",
-    original_filename: "sample_cctv_fall.mp4",
-    size_bytes: 4280000,
-    camera_id: "CAM-PROM-02",
-    status: "completed",
-    progress: 1.0,
-    frames_analyzed: 32,
-    duration_s: 28.5,
-    fps: 25,
-    frame_count: 712,
-    detector_id: "posture-heuristic-v2",
-    detector_available: true,
-    video_available: true,
-    video_url: "/samples/sample_cctv_fall.mp4",
-    candidate_count: 1,
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    completed_at: new Date(Date.now() - 3590000).toISOString(),
-  },
-];
+export const FALLBACK_VIDEOS: VideoJob[] = [];
 
-export const FALLBACK_CANDIDATES: VideoCandidate[] = [
-  {
-    id: 101,
-    video_job_id: "job-cctv-baseline",
-    category: "person_fall",
-    timestamp_s: 24.0,
-    end_timestamp_s: 28.5,
-    confidence: 0.92,
-    bbox: { x: 340, y: 220, w: 180, h: 90 },
-    evidence: {
-      motionless_seconds: 30,
-      aspect_ratio_collapsed: true,
-      filename: "sample_cctv_fall.mp4",
-    },
-    details: {
-      explanation:
-        "Pedestrian fall detected. Aspect ratio collapsed to horizontal and subject motionless on lake-edge promenade.",
-      source: "OpenCV Pedestrian Posture Heuristic",
-    },
-    model_id: "posture-heuristic-v2",
-    model_version: "2.4.0",
-    preview: {
-      severity: 75,
-      immediacy: 65,
-      people_at_risk: 60,
-      secondary_hazard: 30,
-      composite_score: 62.75,
-      score_level: "high",
-      level: "high",
-      emergency: false,
-      factors: [],
-      unknown_fields: [],
-      needs_verification: false,
-      low_confidence: false,
-      uncertainty: "low",
-      uncertainty_reasons: [],
-      config_version: "2.0",
-      explanation: "Pedestrian fall detected on promenade.",
-    },
-    status: "accepted",
-    incident_id: "INC-0001",
-    reviewed_by: "Control Room Operator",
-    reviewed_at: new Date(Date.now() - 3500000).toISOString(),
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    source: "video_analysis",
-    source_clip: "sample_cctv_fall.mp4",
-    urgent_review: false,
-  },
-];
+export const FALLBACK_CANDIDATES: VideoCandidate[] = [];

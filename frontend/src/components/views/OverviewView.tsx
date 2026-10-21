@@ -125,13 +125,15 @@ export function OverviewView({
             <span className="text-2xl font-bold text-slate-900">
               {analytics?.avg_acknowledgement_seconds
                 ? formatDuration(analytics.avg_acknowledgement_seconds)
-                : "1.2m"}
+                : "—"}
             </span>
-            <span className="text-xs text-slate-500">stored metrics</span>
+            <span className="text-xs text-slate-500">
+              {analytics?.acknowledgement_sample_size ? `${analytics.acknowledgement_sample_size} acked` : "stored metrics"}
+            </span>
           </div>
           <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span>Total Logged Incidents:</span>
-            <span className="font-semibold text-slate-700">{analytics?.totals?.incidents || incidents.length}</span>
+            <span className="font-semibold text-slate-700">{analytics?.totals?.incidents ?? incidents.length}</span>
           </div>
         </div>
       </div>
@@ -252,6 +254,19 @@ export function OverviewView({
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             No active incidents currently require operator attention. All surveillance streams and township sectors are clear.
           </p>
+          {onNavigateToVideo && (
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onNavigateToVideo}
+                className="text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-50 text-xs font-semibold"
+              >
+                <Video className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
+                Upload CCTV Clip or Try Judge Sample Videos &rarr;
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

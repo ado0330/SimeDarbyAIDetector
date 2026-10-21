@@ -25,7 +25,7 @@ class Settings(BaseSettings):
         "http://0.0.0.0:3000",
         "*",
     ]
-    seed_demo_history: bool = True
+    seed_demo_history: bool = False
     demo_admin_name: str = "Demo Administrator"
     allow_demo_endpoints: bool = True
 
