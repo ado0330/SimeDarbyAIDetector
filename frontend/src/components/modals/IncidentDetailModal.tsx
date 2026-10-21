@@ -86,7 +86,7 @@ export function IncidentDetailModal({
   onReopen,
   onEvidenceUpdate,
 }: IncidentDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "dispatch" | "scoring" | "timeline" | "audit">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "scoring" | "timeline" | "audit">("overview");
 
   // Action dialog states
   const [selectedResponderIds, setSelectedResponderIds] = useState<string[]>([]);
@@ -113,11 +113,7 @@ export function IncidentDetailModal({
   const [mediaMode, setMediaMode] = useState<"video" | "snapshot">("video");
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Auxiliary Police & Ranger Workflow State
-  const [completedSopSteps, setCompletedSopSteps] = useState<Record<number, boolean>>({});
   const [copiedSitrep, setCopiedSitrep] = useState(false);
-  const [isDispatchingNearest, setIsDispatchingNearest] = useState(false);
-  const [showSitrepCard, setShowSitrepCard] = useState(false);
 
   // Sync selected responders when modal or assign dialog opens
   useEffect(() => {
@@ -129,33 +125,6 @@ export function IncidentDetailModal({
       setSelectedResponderIds(current);
     }
   }, [incident, showAssignDialog]);
-
-  // Load completed SOP steps from audit trail and event logs
-  useEffect(() => {
-    if (!incident) return;
-    const completed: Record<number, boolean> = {};
-    const sopList = getTaxonomyCategory(incident.category).sopWorkflow || [];
-    sopList.forEach((step, idx) => {
-      const stepSnippet = step.slice(0, 20).toLowerCase();
-      const match =
-        incident.events?.some(
-          (e) =>
-            e.message?.toLowerCase().includes(stepSnippet) ||
-            e.message?.includes(`Step ${idx + 1}`) ||
-            e.message?.includes(`[SOP Step ${idx + 1}`)
-        ) ||
-        incident.audit?.some(
-          (a) =>
-            a.reason?.toLowerCase().includes(stepSnippet) ||
-            a.reason?.includes(`Step ${idx + 1}`) ||
-            a.reason?.includes(`[SOP Step ${idx + 1}`)
-        );
-      if (match) {
-        completed[idx] = true;
-      }
-    });
-    setCompletedSopSteps(completed);
-  }, [incident?.id, incident?.events?.length, incident?.audit?.length]);
 
   if (!incident) return null;
 
@@ -180,61 +149,9 @@ export function IncidentDetailModal({
   const statusStyles = getStatusStyles(incident.status);
   const isTerminal = ["resolved", "false_positive", "closed"].includes(incident.status);
 
-  // Category SOP Workflow
-  const categorySop = getTaxonomyCategory(incident.category).sopWorkflow || [
-    "Verify surveillance video feed immediately",
-    "Dispatch nearest emergency response unit to scene",
-    "Log incident report and escalate if required",
-  ];
-  const completedCount = categorySop.filter((_, idx) => completedSopSteps[idx]).length;
-  const sopProgressPct = Math.round((completedCount / categorySop.length) * 100);
-
   // Nearest Auxiliary Patrol Unit
   const nearestUnitInfo = findNearestAuxiliaryUnit(incident.location_id, incident.camera_id);
   const isAssigned = !!(incident.assigned_to_name || incident.assigned_to);
-
-  // Toggle individual SOP step and record into audit trail
-  const handleToggleSopStep = async (stepIndex: number, stepText: string) => {
-    const isNowDone = !completedSopSteps[stepIndex];
-    setCompletedSopSteps((prev) => ({ ...prev, [stepIndex]: isNowDone }));
-    if (isNowDone) {
-      try {
-        await onRecordAction(
-          incident.id,
-          "sop_step_completed",
-          `[SOP Step ${stepIndex + 1} Done] ${stepText} — Verified by Control Room Operator`
-        );
-      } catch (err: any) {
-        // Server did not confirm: undo the local tick so the checklist never claims an unsaved step.
-        setCompletedSopSteps((prev) => ({ ...prev, [stepIndex]: false }));
-        console.error("Failed to record SOP step:", err);
-      }
-    }
-  };
-
-  // 1-Click Dispatch Nearest Auxiliary Police Unit
-  const handleQuickDispatchNearest = async () => {
-    setIsDispatchingNearest(true);
-    setErrorMsg(null);
-    try {
-      const note = `Dispatched ${nearestUnitInfo.unit.callsign} (${nearestUnitInfo.unit.officerInCharge}) to ${
-        incident.location_name || incident.location_id
-      }. Proximity: ${nearestUnitInfo.distanceMeters}m, ETA: ${nearestUnitInfo.etaFormatted}`;
-      await onAssign(incident.id, nearestUnitInfo.unit.id, note);
-
-      // Auto-check the patrol dispatch SOP step if present
-      const dispatchIdx = categorySop.findIndex(
-        (s) => s.toLowerCase().includes("dispatch") || s.toLowerCase().includes("patrol")
-      );
-      if (dispatchIdx !== -1 && !completedSopSteps[dispatchIdx]) {
-        handleToggleSopStep(dispatchIdx, categorySop[dispatchIdx]);
-      }
-    } catch (e: any) {
-      setErrorMsg(e.message);
-    } finally {
-      setIsDispatchingNearest(false);
-    }
-  };
 
   // Multi-agency dispatched units
   const assignedUnits = (incident.assigned_to ? incident.assigned_to.split(",") : [])
@@ -442,20 +359,7 @@ export function IncidentDetailModal({
             >
               Incident Assessment
             </button>
-            <button
-              onClick={() => setActiveTab("dispatch")}
-              className={`pb-2.5 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-                activeTab === "dispatch"
-                  ? "border-teal-600 text-teal-800 font-bold"
-                  : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-              <span>SOP & Ranger Dispatch</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
-                {completedCount}/{categorySop.length}
-              </span>
-            </button>
+
             <button
               onClick={() => setActiveTab("scoring")}
               className={`pb-2.5 cursor-pointer border-b-2 transition-colors ${
@@ -555,265 +459,7 @@ export function IncidentDetailModal({
                 </div>
               </div>
 
-              {/* Interactive Standard Operating Procedure (SOP) Protocol */}
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 tracking-wide">
-                        Standard Operating Procedure (SOP) Protocol
-                      </h4>
-                      <p className="text-[10px] text-slate-500">
-                        Mandatory compliance checklist for {getTaxonomyCategory(incident.category).name}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[11px] font-semibold text-slate-600">
-                      {completedCount} of {categorySop.length} Steps Logged
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        sopProgressPct === 100
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {sopProgressPct}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-300 rounded-full ${
-                      sopProgressPct === 100 ? "bg-emerald-500" : "bg-teal-600"
-                    }`}
-                    style={{ width: `${sopProgressPct}%` }}
-                  />
-                </div>
-
-                {/* Steps List */}
-                <div className="space-y-2 pt-1">
-                  {categorySop.map((step, idx) => {
-                    const isDone = !!completedSopSteps[idx];
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => handleToggleSopStep(idx, step)}
-                        className={`p-2.5 rounded-md border text-xs flex items-start space-x-3 cursor-pointer transition-colors ${
-                          isDone
-                            ? "bg-emerald-50/70 border-emerald-200 text-emerald-950"
-                            : "bg-slate-50/70 border-slate-200 hover:bg-slate-50 text-slate-800"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          className="mt-0.5 shrink-0 text-slate-400 hover:text-teal-600"
-                        >
-                          {isDone ? (
-                            <CheckSquare className="w-4 h-4 text-emerald-600" />
-                          ) : (
-                            <Square className="w-4 h-4 text-slate-400" />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={`font-semibold ${
-                                isDone ? "line-through text-emerald-900 opacity-80" : "text-slate-900"
-                              }`}
-                            >
-                              Step {idx + 1}: {step}
-                            </span>
-                            {isDone && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-medium shrink-0">
-                                Verified & Logged
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {sopProgressPct === 100 && (
-                  <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span className="font-medium">
-                      Standard operating procedure fully executed and recorded into incident audit log.
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Auxiliary Police Patrol & Field Ranger Response Hub */}
-              <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 rounded-xl p-4 text-white shadow-xs space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
-                  <div className="flex items-center space-x-2.5">
-                    <div className="w-7 h-7 rounded bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400">
-                      <Radio className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white tracking-wide uppercase flex items-center gap-2">
-                        Emergency & Multi-Agency Responder Dispatch
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                          Live Fleet Available
-                        </span>
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        City of Elmina Township Emergency Command & Multi-Agency SITREP Terminal
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowSitrepCard(!showSitrepCard)}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Share2 className="w-3.5 h-3.5 text-teal-400" />
-                      {showSitrepCard ? "Hide Field SITREP" : "View Field SITREP"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Nearest Unit Spotlight */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <div className="md:col-span-2 p-3 rounded-lg bg-slate-800/80 border border-slate-700 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold text-teal-400 tracking-wider flex items-center gap-1">
-                        <Car className="w-3.5 h-3.5" />
-                        Recommended Nearest Patrol Unit
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        ETA: {nearestUnitInfo.etaFormatted} (~{nearestUnitInfo.distanceMeters}m away)
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-0.5">
-                      <div>
-                        <div className="font-bold text-white text-sm">
-                          {nearestUnitInfo.unit.callsign}
-                        </div>
-                        <div className="text-[11px] text-slate-300 mt-0.5">
-                          Officer: <span className="text-white font-medium">{nearestUnitInfo.unit.officerInCharge}</span> &bull; {nearestUnitInfo.unit.vehicleModel} ({nearestUnitInfo.unit.plateNumber})
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block">Sector Patrol Base</span>
-                        <span className="text-xs text-slate-200 font-medium">{nearestUnitInfo.unit.baseLocation}</span>
-                      </div>
-                    </div>
-
-                    {/* Equipment badges */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {nearestUnitInfo.unit.equipment.map((eq, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 rounded bg-slate-900/90 text-slate-300 text-[10px] border border-slate-700 font-medium"
-                        >
-                          {eq}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dispatch Action Column */}
-                  <div className="p-3 rounded-lg bg-slate-800/80 border border-slate-700 flex flex-col justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">
-                        Deployment Status
-                      </span>
-                      {isAssigned ? (
-                        <div className="p-2 rounded bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>Unit Dispatched & En Route</span>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] text-slate-300">
-                          Unit on active patrol in sector. 1-click will assign responder and log dispatch time.
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-2">
-                      {!isAssigned ? (
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs"
-                          onClick={handleQuickDispatchNearest}
-                          loading={isDispatchingNearest}
-                        >
-                          <Send className="w-3.5 h-3.5 mr-1.5" />
-                          1-Click Dispatch {nearestUnitInfo.unit.unitCode}
-                        </Button>
-                      ) : (
-                        <a
-                          href={`tel:${nearestUnitInfo.unit.contactNumber}`}
-                          className="w-full h-8 px-3 rounded-md bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
-                        >
-                          <PhoneCall className="w-3.5 h-3.5 text-teal-400" />
-                          Call Officer ({nearestUnitInfo.unit.contactNumber})
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expandable WhatsApp SITREP Card */}
-                {showSitrepCard && (
-                  <div className="bg-slate-950 rounded-lg border border-slate-800 p-3.5 space-y-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center space-x-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        <span className="font-semibold text-emerald-400 text-xs">
-                          Field WhatsApp / Telegram SITREP Card
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={handleCopySitrep}
-                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          {copiedSitrep ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-emerald-300">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5 text-teal-400" />
-                              <span>Copy SITREP</span>
-                            </>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSendWhatsApp}
-                          className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Transmit via WhatsApp</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <pre className="p-3 bg-slate-900 rounded-md border border-slate-800 text-[11px] font-mono text-emerald-300/90 whitespace-pre-wrap leading-relaxed select-all">
-                      {sitrepMessage}
-                    </pre>
-                  </div>
-                )}
-              </div>
 
               {/* CCTV Video Footage & Evidence Inspector */}
               {(effectiveVideoUrl || (incident.evidence_items && incident.evidence_items.length > 0)) && (
@@ -1080,318 +726,7 @@ export function IncidentDetailModal({
             </div>
           )}
 
-          {/* Dedicated Tab: SOP & Ranger Dispatch */}
-          {activeTab === "dispatch" && (
-            <div className="space-y-5">
-              {/* SOP Execution Management Board */}
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-7 h-7 rounded bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
-                      <ShieldCheck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 tracking-wide">
-                        Standard Operating Procedure (SOP) Compliance Matrix
-                      </h4>
-                      <p className="text-[10px] text-slate-500">
-                        Official incident protocol for {getTaxonomyCategory(incident.category).name} &bull; Domain: {getTaxonomyCategory(incident.category).domainName}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-slate-700">
-                      Compliance Progress: {completedCount}/{categorySop.length} ({sopProgressPct}%)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        categorySop.forEach((step, idx) => {
-                          if (!completedSopSteps[idx]) {
-                            handleToggleSopStep(idx, step);
-                          }
-                        });
-                      }}
-                      className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold transition-colors cursor-pointer"
-                    >
-                      Mark All Steps Done
-                    </button>
-                  </div>
-                </div>
-
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-300 rounded-full ${
-                      sopProgressPct === 100 ? "bg-emerald-500" : "bg-teal-600"
-                    }`}
-                    style={{ width: `${sopProgressPct}%` }}
-                  />
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  {categorySop.map((step, idx) => {
-                    const isDone = !!completedSopSteps[idx];
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => handleToggleSopStep(idx, step)}
-                        className={`p-3 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition-colors ${
-                          isDone
-                            ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
-                            : "bg-slate-50/80 border-slate-200 hover:bg-slate-100/70 text-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <button
-                            type="button"
-                            className="shrink-0 text-slate-400 hover:text-teal-600"
-                          >
-                            {isDone ? (
-                              <CheckSquare className="w-4 h-4 text-emerald-600" />
-                            ) : (
-                              <Square className="w-4 h-4 text-slate-400" />
-                            )}
-                          </button>
-                          <div>
-                            <span
-                              className={`font-semibold block ${
-                                isDone ? "line-through text-emerald-900 opacity-80" : "text-slate-900"
-                              }`}
-                            >
-                              Step {idx + 1}: {step}
-                            </span>
-                            <span className="text-[10px] text-slate-500">
-                              {isDone
-                                ? "Verified by Control Room Operator — Logged to station audit trail"
-                                : "Pending operator execution on ground"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          {isDone ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              Completed
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
-                              Action Required
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Emergency Response Fleet Table */}
-              <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-2xs space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
-                      <Car className="w-4 h-4 text-teal-600" />
-                      Township Emergency Response Fleet Roster
-                    </h4>
-                    <p className="text-[10px] text-slate-500">
-                      Live on-duty emergency response vehicles, ambulances, traffic police, and patrol teams across City of Elmina
-                    </p>
-                  </div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                    6 Units On Shift
-                  </span>
-                </div>
-
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
-                      <tr>
-                        <th className="p-2.5">Unit / Callsign</th>
-                        <th className="p-2.5">Officer in Charge</th>
-                        <th className="p-2.5">Patrol Sector Base</th>
-                        <th className="p-2.5">Equipment</th>
-                        <th className="p-2.5 text-center">Status</th>
-                        <th className="p-2.5 text-right">Dispatch Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {EMERGENCY_RESPONSE_FLEET.map((u) => {
-                        const isNearest = u.id === nearestUnitInfo.unit.id;
-                        const assignedIds = (incident.assigned_to || "").split(",").map((s) => s.trim().toLowerCase());
-                        const assignedNames = (incident.assigned_to_name || "").toLowerCase();
-                        const isCurrentlyAssigned =
-                          assignedIds.includes(u.id.toLowerCase()) ||
-                          assignedNames.includes(u.callsign.toLowerCase()) ||
-                          assignedNames.includes(u.id.toLowerCase());
-                        return (
-                          <tr
-                            key={u.id}
-                            className={`hover:bg-slate-50/80 transition-colors ${
-                              isCurrentlyAssigned
-                                ? "bg-emerald-50/50"
-                                : isNearest
-                                ? "bg-teal-50/40"
-                                : ""
-                            }`}
-                          >
-                            <td className="p-2.5">
-                              <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                <span>{u.callsign}</span>
-                                {isNearest && (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-100 text-teal-800">
-                                    Nearest ({nearestUnitInfo.etaFormatted})
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-slate-500">
-                                {u.vehicleModel} &bull; {u.plateNumber}
-                              </div>
-                            </td>
-                            <td className="p-2.5 text-slate-700 font-medium">
-                              {u.officerInCharge}
-                              <div className="text-[10px] text-slate-400">{u.contactNumber}</div>
-                            </td>
-                            <td className="p-2.5 text-slate-600">{u.baseLocation}</td>
-                            <td className="p-2.5">
-                              <div className="flex flex-wrap gap-1 max-w-xs">
-                                {u.equipment.slice(0, 2).map((eq, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[10px]"
-                                  >
-                                    {eq}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="p-2.5 text-center">
-                              {isCurrentlyAssigned ? (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                  Dispatched
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">
-                                  Available
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-2.5 text-right">
-                              {isCurrentlyAssigned ? (
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <a
-                                    href={`tel:${u.contactNumber}`}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
-                                  >
-                                    <PhoneCall className="w-3 h-3 text-teal-600" />
-                                    Call
-                                  </a>
-                                  <button
-                                    type="button"
-                                    disabled={isSubmitting}
-                                    onClick={async () => {
-                                      setIsSubmitting(true);
-                                      try {
-                                        const currentIds = (incident.assigned_to || "").split(",").map((s) => s.trim()).filter(Boolean);
-                                        const filteredIds = currentIds.filter((id) => id !== u.id);
-                                        await onAssign(
-                                          incident.id,
-                                          filteredIds.join(","),
-                                          `Removed ${u.callsign} from response team.`
-                                        );
-                                      } finally {
-                                        setIsSubmitting(false);
-                                      }
-                                    }}
-                                    className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-medium transition-colors cursor-pointer"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="h-7 text-[11px] px-2.5"
-                                  onClick={async () => {
-                                    setIsSubmitting(true);
-                                    try {
-                                      const currentIds = (incident.assigned_to || "").split(",").map((s) => s.trim()).filter(Boolean);
-                                      const newIds = Array.from(new Set([...currentIds, u.id]));
-                                      await onAssign(
-                                        incident.id,
-                                        newIds.join(","),
-                                        `Assigned ${u.callsign} (${u.officerInCharge}) to response team.`
-                                      );
-                                    } finally {
-                                      setIsSubmitting(false);
-                                    }
-                                  }}
-                                  loading={isSubmitting}
-                                >
-                                  + Dispatch Unit
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Field SITREP Terminal */}
-              <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 text-white space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <div>
-                      <h4 className="text-xs font-bold text-white tracking-wide uppercase">
-                        Multi-Agency Field WhatsApp / Telegram SITREP Dispatch
-                      </h4>
-                      <p className="text-[10px] text-slate-400">
-                        Instant situation report formatted for on-ground emergency responders & command dispatch
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={handleCopySitrep}
-                      className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      {copiedSitrep ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-300 font-semibold">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 text-teal-400" />
-                          <span>Copy WhatsApp Text</span>
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSendWhatsApp}
-                      className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Transmit to Field Unit</span>
-                    </button>
-                  </div>
-                </div>
-
-                <pre className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs font-mono text-emerald-300 whitespace-pre-wrap leading-relaxed select-all">
-                  {sitrepMessage}
-                </pre>
-              </div>
-            </div>
-          )}
 
           {/* Tab 2: Scoring Details */}
           {activeTab === "scoring" && (
@@ -1534,8 +869,20 @@ export function IncidentDetailModal({
                     onClick={() => setShowAssignDialog(true)}
                   >
                     <UserPlus className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-                    Assign Responder(s)
+                    Assign Responder(s) {incident.assigned_to ? `(${incident.assigned_to.split(",").length})` : ""}
                   </Button>
+
+                  {isAssigned && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleSendWhatsApp}
+                      className="text-emerald-700 hover:text-emerald-800 border-emerald-300 bg-emerald-50/50"
+                    >
+                      <Share2 className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                      Send SITREP
+                    </Button>
+                  )}
 
                   <Button
                     size="sm"

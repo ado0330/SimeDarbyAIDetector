@@ -2,19 +2,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { Camera } from "@/types";
 import { Button } from "@/components/ui/Button";
 import {
-  Radio,
   Play,
   Square,
-  Globe,
   Loader2,
   CheckCircle,
   AlertTriangle,
   Sparkles,
-  Maximize2,
   Activity,
   Layers,
-  ShieldCheck,
-  RefreshCw,
+  Video,
+  ShieldAlert,
 } from "lucide-react";
 
 interface SimulatedLiveCctvProps {
@@ -22,93 +19,31 @@ interface SimulatedLiveCctvProps {
   onUploadVideo: (file: File, cameraId?: string) => Promise<void>;
 }
 
-export interface CctvChannel {
-  id: string;
-  name: string;
-  shortLabel: string;
-  category: "online_live" | "simulated_anomaly";
-  type: "embed" | "video";
-  url?: string;
-  embedUrl?: string;
-  file?: string;
-  cameraId: string;
-  locationName: string;
-  fps: number;
-  resolution: string;
-  bitrate: string;
-  anomalyType?: string;
-}
-
-const CCTV_CHANNELS: CctvChannel[] = [
-  {
-    id: "online_crossing",
-    name: "Channel 01: Online Live Stream — Pedestrian & Urban Traffic Crossing",
-    shortLabel: "Online Live Crossing (24/7)",
-    category: "online_live",
-    type: "embed",
-    embedUrl: "https://www.youtube-nocookie.com/embed/4ffe7JI3zSs?autoplay=1&mute=1&controls=0&loop=1&playsinline=1&modestbranding=1&rel=0",
-    cameraId: "CAM-GATE-01",
-    locationName: "Main Gate Roundabout & Urban Access",
-    fps: 30,
-    resolution: "1080p FHD",
-    bitrate: "4.8 Mbps",
-  },
-  {
-    id: "online_boulevard",
-    name: "Channel 02: Online Live Traffic — Highway & Perimeter Boulevard",
-    shortLabel: "Online Highway Flow (24/7)",
-    category: "online_live",
-    type: "video",
-    url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    cameraId: "CAM-GATE-02",
-    locationName: "Gate Security & Boulevard Corridor",
-    fps: 30,
-    resolution: "1080p FHD",
-    bitrate: "5.2 Mbps",
-  },
-  {
-    id: "anomaly_fall",
-    name: "Channel 03: Township CCTV — Central Park Playground (Pedestrian Down)",
-    shortLabel: "Central Park (Fall Anomaly)",
-    category: "simulated_anomaly",
-    type: "video",
-    url: "/samples/sample_pedestrian_fall.mp4",
-    file: "sim_live_pedestrian_fall.mp4",
-    cameraId: "CAM-PARK-01",
-    locationName: "Central Park Playground Bench Area",
-    fps: 25,
-    resolution: "1080p FHD",
-    bitrate: "3.6 Mbps",
-    anomalyType: "person_fall",
-  },
-  {
-    id: "anomaly_crash",
-    name: "Channel 04: Township CCTV — Harmoni Mall Deck B (Vehicle Collision)",
-    shortLabel: "Deck B (Car Crash Anomaly)",
-    category: "simulated_anomaly",
-    type: "video",
-    url: "/samples/sample_car_collision.mp4",
-    file: "sim_live_car_collision.mp4",
-    cameraId: "CAM-MALL-02",
-    locationName: "Harmoni Mall - Deck B Service Road",
-    fps: 30,
-    resolution: "1080p FHD",
-    bitrate: "4.5 Mbps",
-    anomalyType: "road_collision",
-  },
-];
+const LIVE_STREAM_CONFIG = {
+  id: "live_cctv_01",
+  name: "Township Surveillance Camera 01 — Live CCTV Stream",
+  locationName: "Main Gate Roundabout & Urban Access Corridor",
+  defaultCameraId: "CAM-GATE-01",
+  videoUrl: "/samples/cctv_live_stream.mp4",
+  fileName: "cctv_live_stream.mp4",
+  resolution: "1280x720 HD",
+  fps: 30,
+  bitrate: "3.8 Mbps",
+  latency: "24ms",
+};
 
 type Phase = "monitoring" | "countdown" | "analyzing" | "detected";
 
 /**
- * Continuous Simulated & Online Live CCTV Monitoring Terminal.
- * Streams continuous video immediately on mount with authentic CCTV HUD overlays.
- * Presenters can switch between online live traffic streams and prepared incident feeds,
- * or trigger automated AI threat detection without manual file uploads.
+ * Continuous Live CCTV Surveillance Terminal.
+ * Streams continuous video immediately on mount with authentic CCTV HUD telemetry.
+ * Operators can link to the live camera feed and trigger an automated AI Threat Sweep
+ * to detect incidents without manual file uploads.
  */
 export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvProps) {
-  const [selectedChannelId, setSelectedChannelId] = useState<string>(CCTV_CHANNELS[0].id);
-  const [selectedCameraId, setSelectedCameraId] = useState<string>(cameras[0]?.id || "CAM-PARK-01");
+  const [selectedCameraId, setSelectedCameraId] = useState<string>(
+    cameras.find((c) => c.id === LIVE_STREAM_CONFIG.defaultCameraId)?.id || cameras[0]?.id || "CAM-GATE-01"
+  );
   const [delaySeconds, setDelaySeconds] = useState<number>(6);
   const [phase, setPhase] = useState<Phase>("monitoring");
   const [remaining, setRemaining] = useState<number>(0);
@@ -116,16 +51,9 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
   const [clock, setClock] = useState<Date | null>(null);
   const [showTelemetryGrid, setShowTelemetryGrid] = useState<boolean>(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const currentChannel = CCTV_CHANNELS.find((c) => c.id === selectedChannelId) || CCTV_CHANNELS[0];
-  const camName = cameras.find((c) => c.id === selectedCameraId)?.name || currentChannel.locationName;
-
-  // Sync camera selection when channel changes
-  useEffect(() => {
-    if (currentChannel.cameraId && cameras.some((c) => c.id === currentChannel.cameraId)) {
-      setSelectedCameraId(currentChannel.cameraId);
-    }
-  }, [currentChannel, cameras]);
+  const camName = cameras.find((c) => c.id === selectedCameraId)?.name || LIVE_STREAM_CONFIG.locationName;
 
   // Real-time CCTV digital clock (MYT / Asia/Kuala_Lumpur)
   useEffect(() => {
@@ -147,20 +75,15 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
     setPhase("analyzing");
     setErrorMsg(null);
     try {
-      // If channel has a prepared anomaly clip, fetch and analyze it
-      // Otherwise fallback to prepared pedestrian fall anomaly to guarantee real AI detection
-      const fetchUrl = currentChannel.file ? currentChannel.url! : "/samples/sample_pedestrian_fall.mp4";
-      const fetchFileName = currentChannel.file || "sim_live_cctv_sweep.mp4";
-
-      const res = await fetch(fetchUrl);
-      if (!res.ok) throw new Error(`Could not access stream buffer (${res.status})`);
+      const res = await fetch(LIVE_STREAM_CONFIG.videoUrl);
+      if (!res.ok) throw new Error(`Could not access CCTV stream buffer (${res.status})`);
       const blob = await res.blob();
-      const file = new File([blob], fetchFileName, { type: blob.type || "video/mp4" });
+      const file = new File([blob], LIVE_STREAM_CONFIG.fileName, { type: blob.type || "video/mp4" });
 
       await onUploadVideo(file, selectedCameraId);
       setPhase("detected");
     } catch (err: any) {
-      setErrorMsg(err?.message || "Failed to analyze feed segment.");
+      setErrorMsg(err?.message || "Failed to analyze CCTV stream segment.");
       setPhase("monitoring");
     }
   };
@@ -200,9 +123,9 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
           </span>
           <div>
             <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              Live CCTV Surveillance & AI Detection Terminal
+              Live CCTV Surveillance Stream
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase">
-                Active Stream
+                Active Feed
               </span>
             </h4>
           </div>
@@ -228,34 +151,23 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
       </div>
 
       <p className="text-[11px] text-slate-600 leading-relaxed">
-        Continuously streams live online surveillance video feeds and township CCTV channels.
-        Operators can switch channels anytime or trigger an <strong>Automated AI Incident Sweep</strong>.
-        When an anomaly is detected, it is immediately elevated into the high-priority incident queue with multi-agency dispatch recommendations.
+        Live surveillance link to township camera nodes across City of Elmina.
+        Operators can monitor real-time video telemetry or trigger an <strong>Instant AI Threat Sweep</strong> to automatically detect incidents and dispatch response units.
       </p>
 
       {/* Main Stream Player & Controls Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Video Screen with Authentic CCTV HUD */}
         <div className="lg:col-span-2 relative rounded-lg overflow-hidden bg-slate-950 aspect-video border border-slate-800 shadow-md flex items-center justify-center">
-          {currentChannel.type === "embed" && currentChannel.embedUrl ? (
-            <iframe
-              src={currentChannel.embedUrl}
-              title={currentChannel.name}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <video
-              key={currentChannel.url}
-              src={currentChannel.url}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          )}
+          <video
+            ref={videoRef}
+            src={LIVE_STREAM_CONFIG.videoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          />
 
           {/* CCTV HUD Telemetry Overlay */}
           {showTelemetryGrid && (
@@ -272,7 +184,7 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
                 </div>
 
                 <div className="bg-black/70 px-2.5 py-1 rounded border border-white/10 text-[11px] text-emerald-400 font-semibold backdrop-blur-xs">
-                  {clock ? clock.toISOString().replace("T", " ").slice(0, 19) : "2026-10-21 00:00:00"} MYT
+                  {clock ? clock.toISOString().replace("T", " ").slice(0, 19) : "2026-10-22 00:00:00"} MYT
                 </div>
               </div>
 
@@ -287,14 +199,16 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] text-slate-300 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
                   <div className="flex items-center gap-3">
-                    <span>{currentChannel.resolution}</span>
+                    <span>{LIVE_STREAM_CONFIG.resolution}</span>
                     <span>&bull;</span>
-                    <span>{currentChannel.fps} FPS</span>
+                    <span>{LIVE_STREAM_CONFIG.fps} FPS</span>
                     <span>&bull;</span>
-                    <span>{currentChannel.bitrate}</span>
+                    <span>{LIVE_STREAM_CONFIG.bitrate}</span>
+                    <span>&bull;</span>
+                    <span>Latency: {LIVE_STREAM_CONFIG.latency}</span>
                   </div>
                   <div className="text-teal-300 font-semibold uppercase">
-                    {currentChannel.category === "online_live" ? "🌐 Online Live Surveillance" : "🏢 City of Elmina CCTV"}
+                    🏢 City of Elmina CCTV Network
                   </div>
                 </div>
 
@@ -327,7 +241,7 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
                   {phase === "analyzing" && (
                     <div className="flex items-center gap-2 text-sky-300 text-xs font-semibold">
                       <Loader2 className="w-4 h-4 animate-spin text-teal-400" />
-                      Multimodal AI Model analyzing visual keyframes & posture dynamics…
+                      Multimodal AI Model analyzing visual keyframes & threat posture…
                     </div>
                   )}
 
@@ -335,7 +249,7 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
                     <div className="flex items-center justify-between text-emerald-300">
                       <span className="flex items-center gap-1.5 text-xs font-bold">
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                        AI Incident Alert Generated & Dispatched to Active Queue!
+                        AI Threat Detected! Alert Logged in Active Priority Queue.
                       </span>
                       <button
                         type="button"
@@ -352,58 +266,32 @@ export function SimulatedLiveCctv({ cameras, onUploadVideo }: SimulatedLiveCctvP
           )}
         </div>
 
-        {/* Sidebar Controls & Channel Selector */}
+        {/* Sidebar Controls */}
         <div className="space-y-4 text-xs">
-          {/* Channel Selector */}
-          <div>
-            <label className="font-bold text-slate-800 uppercase tracking-wide block mb-1.5 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-teal-600" />
-              Select CCTV Feed Channel
-            </label>
-            <div className="space-y-1.5">
-              {CCTV_CHANNELS.map((ch) => {
-                const isSelected = ch.id === selectedChannelId;
-                return (
-                  <button
-                    key={ch.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedChannelId(ch.id);
-                      setPhase("monitoring");
-                      if (timerRef.current) clearInterval(timerRef.current);
-                    }}
-                    className={`w-full p-2.5 rounded-lg border text-left transition-all flex items-center justify-between ${
-                      isSelected
-                        ? "bg-teal-50 border-teal-500 shadow-xs ring-1 ring-teal-500"
-                        : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="font-bold text-slate-900 text-xs truncate">
-                        {ch.shortLabel}
-                      </div>
-                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                        {ch.locationName}
-                      </div>
-                    </div>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 uppercase ${
-                        ch.category === "online_live"
-                          ? "bg-sky-100 text-sky-800 border border-sky-200"
-                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                      }`}
-                    >
-                      {ch.category === "online_live" ? "Online Live" : "Scenario"}
-                    </span>
-                  </button>
-                );
-              })}
+          {/* Active Feed Details */}
+          <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5 text-xs">
+                <Video className="w-3.5 h-3.5 text-teal-600" />
+                Active CCTV Stream
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Connected
+              </span>
+            </div>
+            <div className="text-xs font-bold text-slate-900">
+              {LIVE_STREAM_CONFIG.name}
+            </div>
+            <div className="text-[11px] text-slate-500 leading-snug">
+              Direct RTSP/H.264 camera telemetry feed linked to township traffic monitoring infrastructure.
             </div>
           </div>
 
-          {/* Assigned Camera Mapping */}
+          {/* Source Camera Assignment */}
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Source Camera Mapping</label>
+            <label className="font-semibold text-slate-700 block mb-1">
+              Source Camera Mapping
+            </label>
             <select
               value={selectedCameraId}
               onChange={(e) => setSelectedCameraId(e.target.value)}
