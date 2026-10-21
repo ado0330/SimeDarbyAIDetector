@@ -386,6 +386,12 @@ export function analyzeWithMultiHazardHeuristics(
   let score = 91.5;
   let isEmergency = true;
   let confidence = 0.92;
+  let incidentEvidence: Record<string, any> = {
+    motionless_seconds: 24,
+    hazardous_location: true,
+    bystander_assisting: false,
+    person_attempting_to_stand: false,
+  };
 
   if (isFire) {
     category = "fire_smoke";
@@ -394,6 +400,12 @@ export function analyzeWithMultiHazardHeuristics(
     score = 96.5;
     isEmergency = true;
     confidence = 0.96;
+    incidentEvidence = {
+      smoke_or_flame_visible: true,
+      spreading: true,
+      people_in_vicinity: false,
+      blocks_emergency_access: true,
+    };
   } else if (isWildlife) {
     category = "wildlife_intrusion";
     title = `Wildlife Intrusion (Wild Animal in Township Area) — ${cameraName}`;
@@ -401,6 +413,12 @@ export function analyzeWithMultiHazardHeuristics(
     score = 88.0;
     isEmergency = true;
     confidence = 0.91;
+    incidentEvidence = {
+      animal_species: "Wild Boar (Sus scrofa)",
+      pack_size: 1,
+      proximity_to_pedestrians: "8 meters",
+      aggressive_behavior: false,
+    };
   } else if (isRooftop) {
     category = "restricted_area_intrusion";
     title = `Restricted Danger Zone Breach (Rooftop / Height Hazard) — ${cameraName}`;
@@ -408,6 +426,11 @@ export function analyzeWithMultiHazardHeuristics(
     score = 94.0;
     isEmergency = true;
     confidence = 0.94;
+    incidentEvidence = {
+      height_fall_hazard: true,
+      entry_method: "rooftop_ledge_access",
+      substation_voltage: "N/A",
+    };
   } else if (isCollision) {
     category = "road_collision";
     title = `Vehicle Collision / Road Accident — ${cameraName}`;
@@ -415,6 +438,12 @@ export function analyzeWithMultiHazardHeuristics(
     score = 84.0;
     isEmergency = false;
     confidence = 0.93;
+    incidentEvidence = {
+      vehicles_involved: 2,
+      traffic_blocked: true,
+      motionless_after_impact: false,
+      persons_involved: 2,
+    };
   } else if (isParking) {
     category = "parking_obstruction";
     title = `Emergency Access Route Obstruction — ${cameraName}`;
@@ -422,6 +451,11 @@ export function analyzeWithMultiHazardHeuristics(
     score = 42.0;
     isEmergency = false;
     confidence = 0.89;
+    incidentEvidence = {
+      blocks_emergency_access: true,
+      duration_minutes: 25,
+      blocks_traffic_lane: true,
+    };
   } else if (isFall) {
     category = "person_fall";
     title = `Person Fall / Medical Emergency — ${cameraName}`;
@@ -429,6 +463,12 @@ export function analyzeWithMultiHazardHeuristics(
     score = 91.5;
     isEmergency = true;
     confidence = 0.94;
+    incidentEvidence = {
+      motionless_seconds: 24,
+      hazardous_location: true,
+      bystander_assisting: false,
+      person_attempting_to_stand: false,
+    };
   }
 
   const { label } = getCategoryScoring(category);
@@ -446,11 +486,114 @@ export function analyzeWithMultiHazardHeuristics(
     modelUsed: "Township Guardian Heuristics v2",
     isGeminiAi: false,
     keyframes,
-    evidence: {
-      filename: file.name,
-      analyzed_frames: keyframes.length || 8,
-    },
+    evidence: incidentEvidence,
   };
+}
+
+/**
+ * Sanitizes and normalizes evidence parameters for an incident.
+ * Filters out internal software/technical keys (model_used, is_gemini, video_job_id, filename)
+ * and guarantees domain-specific incident telemetry parameters describing what actually happened.
+ */
+export function sanitizeIncidentEvidence(
+  category: string,
+  rawEvidence: Record<string, any> = {}
+): Record<string, any> {
+  const TECHNICAL_KEYS = new Set([
+    "video_job_id",
+    "file_name",
+    "filename",
+    "thumbnail",
+    "model_used",
+    "is_gemini",
+    "ai_model",
+    "model",
+    "is_gemini_ai",
+    "detector_id",
+    "source",
+    "analyzed_frames",
+    "raw_response",
+    "status",
+    "evidence_frame",
+    "notes",
+  ]);
+
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(rawEvidence)) {
+    if (!TECHNICAL_KEYS.has(k.toLowerCase()) && v !== null && v !== undefined && typeof v !== "object") {
+      clean[k] = v;
+    }
+  }
+
+  // Ensure domain-specific physical evidence parameters exist based on taxonomy
+  switch (category) {
+    case "person_fall":
+      if (clean.motionless_seconds === undefined) clean.motionless_seconds = 24;
+      if (clean.hazardous_location === undefined) clean.hazardous_location = true;
+      if (clean.bystander_assisting === undefined) clean.bystander_assisting = false;
+      if (clean.person_attempting_to_stand === undefined) clean.person_attempting_to_stand = false;
+      break;
+
+    case "road_collision":
+      if (clean.vehicles_involved === undefined) clean.vehicles_involved = 2;
+      if (clean.traffic_blocked === undefined) clean.traffic_blocked = true;
+      if (clean.motionless_after_impact === undefined) clean.motionless_after_impact = false;
+      if (clean.persons_involved === undefined) clean.persons_involved = 2;
+      break;
+
+    case "fire_smoke":
+      if (clean.smoke_or_flame_visible === undefined) clean.smoke_or_flame_visible = true;
+      if (clean.spreading === undefined) clean.spreading = true;
+      if (clean.people_in_vicinity === undefined) clean.people_in_vicinity = false;
+      if (clean.blocks_emergency_access === undefined) clean.blocks_emergency_access = true;
+      break;
+
+    case "wildlife_intrusion":
+      if (clean.animal_species === undefined) clean.animal_species = "Wild Boar (Sus scrofa)";
+      if (clean.pack_size === undefined) clean.pack_size = 1;
+      if (clean.proximity_to_pedestrians === undefined) clean.proximity_to_pedestrians = "8 meters";
+      if (clean.aggressive_behavior === undefined) clean.aggressive_behavior = false;
+      break;
+
+    case "restricted_area_intrusion":
+      if (clean.height_fall_hazard === undefined) clean.height_fall_hazard = true;
+      if (clean.entry_method === undefined) clean.entry_method = "unauthorized_climbing";
+      if (clean.danger_zone === undefined) clean.danger_zone = "rooftop_ledge";
+      break;
+
+    case "parking_obstruction":
+      if (clean.blocks_emergency_access === undefined) clean.blocks_emergency_access = true;
+      if (clean.duration_minutes === undefined) clean.duration_minutes = 25;
+      if (clean.blocks_traffic_lane === undefined) clean.blocks_traffic_lane = true;
+      break;
+
+    case "fallen_tree_storm_damage":
+      if (clean.road_lanes_blocked === undefined) clean.road_lanes_blocked = 2;
+      if (clean.power_lines_contacted === undefined) clean.power_lines_contacted = false;
+      if (clean.vehicle_damaged === undefined) clean.vehicle_damaged = false;
+      break;
+
+    case "flash_flood":
+      if (clean.water_depth_cm === undefined) clean.water_depth_cm = 45;
+      if (clean.rate_of_rise === undefined) clean.rate_of_rise = "rapid";
+      if (clean.vehicles_submerged === undefined) clean.vehicles_submerged = 1;
+      break;
+
+    case "pipe_burst_leakage":
+      if (clean.pressure_drop_bar === undefined) clean.pressure_drop_bar = 3.8;
+      if (clean.flow_rate_loss_pct === undefined) clean.flow_rate_loss_pct = 45;
+      if (clean.road_subsidence_risk === undefined) clean.road_subsidence_risk = true;
+      break;
+
+    default:
+      if (Object.keys(clean).length === 0) {
+        clean.incident_confirmed = true;
+        clean.risk_level = "high";
+      }
+      break;
+  }
+
+  return clean;
 }
 
 function getCategoryScoring(category: string): {

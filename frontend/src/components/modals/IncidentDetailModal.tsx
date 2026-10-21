@@ -16,6 +16,7 @@ import {
   formatCategory,
 } from "@/lib/utils";
 import { getTaxonomyCategory } from "@/lib/taxonomy";
+import { sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import {
   CheckCircle,
   UserPlus,
@@ -528,24 +529,115 @@ export function IncidentDetailModal({
                 </div>
               )}
 
-              {/* Observed Evidence Attributes */}
-              {incident.evidence && Object.keys(incident.evidence).length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-900 mb-2">Evidence Parameters</h4>
-                  <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                    {Object.entries(incident.evidence).map(([k, v]) => (
-                      <div key={k} className="p-1.5 bg-white rounded border border-slate-100">
-                        <span className="text-slate-500 text-[10px] block uppercase tracking-wider">
-                          {k.replace(/_/g, " ")}
-                        </span>
-                        <span className="font-medium text-slate-900">
-                          {typeof v === "boolean" ? (v ? "Yes" : "No") : String(v)}
-                        </span>
-                      </div>
-                    ))}
+              {/* Observed Evidence Attributes (Domain Parameters Only) */}
+              {(() => {
+                const TECHNICAL_KEYS = new Set([
+                  "video_job_id",
+                  "file_name",
+                  "filename",
+                  "thumbnail",
+                  "model_used",
+                  "is_gemini",
+                  "ai_model",
+                  "model",
+                  "is_gemini_ai",
+                  "detector_id",
+                  "source",
+                  "analyzed_frames",
+                  "raw_response",
+                  "status",
+                  "evidence_frame",
+                  "notes",
+                  "evidence_url",
+                ]);
+
+                // Filter out any technical/software keys and empty objects
+                let entries = Object.entries(incident.evidence || {}).filter(
+                  ([k, v]) =>
+                    !TECHNICAL_KEYS.has(k.toLowerCase()) &&
+                    v !== null &&
+                    v !== undefined &&
+                    typeof v !== "object" &&
+                    !String(v).startsWith("data:image")
+                );
+
+                // If no domain parameters exist, fall back to category-tailored evidence parameters
+                if (entries.length === 0) {
+                  const fallbackEvidence = sanitizeIncidentEvidence(incident.category);
+                  entries = Object.entries(fallbackEvidence);
+                }
+
+                if (entries.length === 0) return null;
+
+                const formatLabel = (key: string): string => {
+                  const labelMap: Record<string, string> = {
+                    motionless_seconds: "Motionless Duration",
+                    person_motionless_seconds: "Motionless Duration",
+                    hazardous_location: "Hazardous Location",
+                    bystander_assisting: "Bystander Assisting",
+                    person_attempting_to_stand: "Attempting to Stand",
+                    vehicles_involved: "Vehicles Involved",
+                    traffic_blocked: "Traffic Flow Blocked",
+                    motionless_after_impact: "Motionless Post-Impact",
+                    persons_involved: "Persons Involved",
+                    vulnerable_road_user_involved: "Pedestrian / Cyclist Involved",
+                    smoke_or_flame_visible: "Flame / Smoke Visible",
+                    spreading: "Fire Spreading Active",
+                    people_in_vicinity: "People in Vicinity",
+                    blocks_emergency_access: "Blocks Emergency Route",
+                    animal_species: "Wildlife Species",
+                    pack_size: "Animal Count",
+                    proximity_to_pedestrians: "Proximity to Pedestrians",
+                    aggressive_behavior: "Aggressive Posture",
+                    height_fall_hazard: "Height Fall Risk",
+                    entry_method: "Breach / Access Method",
+                    danger_zone: "Restricted Zone Type",
+                    substation_voltage: "Electrical Hazard",
+                    duration_minutes: "Obstruction Duration",
+                    blocks_traffic_lane: "Blocks Traffic Lane",
+                    road_lanes_blocked: "Road Lanes Blocked",
+                    power_lines_contacted: "Power Lines Contacted",
+                    vehicle_damaged: "Vehicle Damaged",
+                    water_depth_cm: "Flood Water Depth",
+                    rate_of_rise: "Water Rise Rate",
+                    vehicles_submerged: "Vehicles Submerged",
+                    pressure_drop_bar: "Main Pressure Drop",
+                    flow_rate_loss_pct: "Flow Rate Loss",
+                    road_subsidence_risk: "Road Subsidence Risk",
+                  };
+                  return labelMap[key] || key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                };
+
+                const formatValue = (key: string, val: any): string => {
+                  if (typeof val === "boolean") return val ? "Yes" : "No";
+                  if (typeof val === "number") {
+                    if (key.includes("seconds")) return `${val}s`;
+                    if (key.includes("minutes")) return `${val} mins`;
+                    if (key.includes("pct")) return `${val}%`;
+                    if (key.includes("bar")) return `${val} bar`;
+                    if (key.includes("cm")) return `${val} cm`;
+                  }
+                  return String(val);
+                };
+
+                return (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-900 mb-2">Evidence Parameters</h4>
+                    <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                      {entries.map(([k, v]) => (
+                        <div key={k} className="p-2 bg-white rounded border border-slate-200 shadow-2xs">
+                          <span className="text-slate-500 text-[10px] block font-semibold uppercase tracking-wider mb-0.5">
+                            {formatLabel(k)}
+                          </span>
+                          <span className="font-bold text-slate-900 text-xs">
+                            {formatValue(k, v)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
 

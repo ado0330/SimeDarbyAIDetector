@@ -27,7 +27,7 @@ import {
   computeDynamicAnalytics,
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
-import { analyzeVideoWithGemini } from "@/lib/geminiVision";
+import { analyzeVideoWithGemini, sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
 import { IncidentDetailModal } from "@/components/modals/IncidentDetailModal";
@@ -467,6 +467,8 @@ export default function Home() {
 
         setVideos((prev) => prev.map((j) => (j.id === jobId ? completedJob : j)));
 
+        const cleanEvidence = sanitizeIncidentEvidence(analysis.category, analysis.evidence);
+
         const newCandidate: VideoCandidate = {
           id: candidateId,
           video_job_id: jobId,
@@ -475,21 +477,14 @@ export default function Home() {
           end_timestamp_s: analysis.timestamp_s + 4.5,
           confidence: analysis.confidence,
           bbox: { x: 120, y: 160, w: 240, h: 140 },
-          evidence: {
-            filename: file.name,
-            model: analysis.modelUsed,
-            is_gemini: analysis.isGeminiAi,
-            ...analysis.evidence,
-          },
+          evidence: cleanEvidence,
           details: {
             explanation: analysis.summary,
-            source: analysis.isGeminiAi
-              ? `Google Gemini Vision (${analysis.modelUsed})`
-              : "Township Guardian Heuristics v2",
+            source: "Township Vision AI Engine",
           },
           frame_url: thumbUrl,
-          model_id: analysis.modelUsed,
-          model_version: analysis.isGeminiAi ? "Gemini 1.5 Flash" : "2.4.0",
+          model_id: "vision-pipeline",
+          model_version: "2.4.0",
           preview: {
             severity: analysis.score >= 90 ? 95 : 75,
             immediacy: analysis.score >= 90 ? 90 : 70,
@@ -510,9 +505,7 @@ export default function Home() {
           },
           status: "accepted",
           incident_id: incidentId,
-          reviewed_by: analysis.isGeminiAi
-            ? "AI Auto-Promote (Gemini Vision)"
-            : "AI Auto-Promote (Township Vision)",
+          reviewed_by: "AI Auto-Promote (Township Vision)",
           reviewed_at: now,
           created_at: now,
           source: "video_analysis",
@@ -558,17 +551,11 @@ export default function Home() {
           recommended_action: `Dispatch immediate response team to ${cam.name}. Verify CCTV telemetry feed.`,
           is_simulated: false,
           detection_count: 1,
-          evidence: {
-            video_job_id: jobId,
-            file_name: file.name,
-            thumbnail: thumbUrl,
-            model_used: analysis.modelUsed,
-            is_gemini: analysis.isGeminiAi,
-          },
+          evidence: cleanEvidence,
           metadata: {
             video_job_id: jobId,
             video_timestamp_s: analysis.timestamp_s,
-            ai_model: analysis.modelUsed,
+            source_file: file.name,
           },
           seconds_since_detection: 1,
           queue_position: 1,

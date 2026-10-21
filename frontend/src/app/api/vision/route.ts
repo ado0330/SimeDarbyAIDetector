@@ -44,6 +44,17 @@ Only if an unmistakable incident is visible, set "detected": true, "is_danger": 
 12. "illegal_dumping": Vehicle illegally dumping bulk trash or chemical drums in public reserve.
 13. "physical_altercation": Violent fight, assault, or physical brawl between individuals.
 
+CRITICAL RULES FOR "evidence" FIELD:
+- The "evidence" object MUST ONLY contain domain physical parameters describing what actually occurred in the incident.
+- DO NOT mention AI models, Gemini, software algorithms, cameras, or filenames.
+- Extract real visual parameters such as:
+  * For "person_fall": "motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
+  * For "road_collision": "vehicles_involved" (number), "traffic_blocked" (boolean), "motionless_after_impact" (boolean), "persons_involved" (number)
+  * For "fire_smoke": "smoke_or_flame_visible" (boolean), "spreading" (boolean), "people_in_vicinity" (boolean), "blocks_emergency_access" (boolean)
+  * For "wildlife_intrusion": "animal_species" (string), "pack_size" (number), "proximity_to_pedestrians" (string), "aggressive_behavior" (boolean)
+  * For "restricted_area_intrusion": "height_fall_hazard" (boolean), "entry_method" (string), "danger_zone" (string)
+  * For "parking_obstruction": "blocks_emergency_access" (boolean), "duration_minutes" (number), "blocks_traffic_lane" (boolean)
+
 RULES:
 - NEVER hallucinate or force an incident. If you are uncertain or the scene is peaceful, IT IS NORMAL ACTIVITY ("detected": false, "category": null).
 - "title": Specific and descriptive of the exact scene (e.g., "Normal Activity Verified — No Incident" or "Wild Boar on Walking Trail").
@@ -148,6 +159,27 @@ export async function POST(request: NextRequest) {
 
         const category = isActuallyDetected ? rawCategory : null;
 
+        // Clean evidence object: filter out any technical keys
+        const rawEvidence = parsed.evidence || {};
+        const cleanEvidence: Record<string, any> = {};
+        const FORBIDDEN_KEYS = new Set([
+          "model_used",
+          "is_gemini",
+          "ai_model",
+          "model",
+          "video_job_id",
+          "filename",
+          "file_name",
+          "thumbnail",
+          "status",
+        ]);
+
+        for (const [k, v] of Object.entries(rawEvidence)) {
+          if (!FORBIDDEN_KEYS.has(k.toLowerCase()) && v !== null && v !== undefined && typeof v !== "object") {
+            cleanEvidence[k] = v;
+          }
+        }
+
         return NextResponse.json({
           success: true,
           modelUsed: model,
@@ -162,7 +194,7 @@ export async function POST(request: NextRequest) {
             (isActuallyDetected
               ? "Incident detected by multimodal vision engine."
               : "Normal surveillance activity verified. No safety hazards or incidents detected."),
-          evidence: parsed.evidence || {},
+          evidence: cleanEvidence,
         });
       } catch (err: any) {
         lastError = err.message || "Failed model request";

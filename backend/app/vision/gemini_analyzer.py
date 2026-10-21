@@ -73,6 +73,17 @@ Only if an unmistakable incident is visible, set "detected": true and classify i
 12. "illegal_dumping": Vehicle illegally dumping bulk garbage, chemical drums, or debris in public reserve.
 13. "physical_altercation": Violent fight, physical assault, brawl, or menacing confrontation in public areas.
 
+CRITICAL RULES FOR "evidence" FIELD:
+- The "evidence" object MUST ONLY contain domain physical parameters describing what actually occurred in the incident.
+- DO NOT mention AI models, Gemini, software algorithms, cameras, or filenames.
+- Extract real visual parameters such as:
+  * For "person_fall": "person_motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
+  * For "road_collision": "vehicles_involved" (number), "traffic_blocked" (boolean), "motionless_after_impact" (boolean), "persons_involved" (number)
+  * For "fire_smoke": "smoke_or_flame_visible" (boolean), "spreading" (boolean), "people_in_vicinity" (boolean), "blocks_emergency_access" (boolean)
+  * For "wildlife_intrusion": "animal_species" (string), "pack_size" (number), "proximity_to_pedestrians" (string), "aggressive_behavior" (boolean)
+  * For "restricted_area_intrusion": "height_fall_hazard" (boolean), "entry_method" (string), "danger_zone" (string)
+  * For "parking_obstruction": "blocks_emergency_access" (boolean), "duration_minutes" (number), "blocks_traffic_lane" (boolean)
+
 RULES:
 - NEVER hallucinate or force an incident. If you are uncertain or the scene is peaceful, IT IS NORMAL ACTIVITY ("detected": false, "category": null).
 - "title": Specific and descriptive of the exact scene.
@@ -298,14 +309,18 @@ def analyze_video_with_gemini(
         banner_text = f"GEMINI AI [{model_used}]: {category.upper()} ({conf_pct}% CONF)"
         cv2.putText(best_frame, banner_text, (12, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 220, 255), 2)
 
+    raw_ev = dict(parsed.get("evidence") or {})
+    forbidden = {"model_used", "is_gemini", "ai_model", "model", "video_job_id", "filename", "file_name", "thumbnail", "status"}
+    clean_ev = {k: v for k, v in raw_ev.items() if k.lower() not in forbidden and not isinstance(v, (dict, list))}
+
     return GeminiAnalysisResult(
         detected=detected and (category is not None),
         category=category,
         confidence=float(parsed.get("confidence") or 0.90) if detected else None,
         timestamp_s=target_ts,
         title=parsed.get("title") or (f"{category.replace('_', ' ').title()} Detected" if category else "Normal"),
-        summary=parsed.get("summary") or "Gemini multimodal video scan completed.",
-        evidence=dict(parsed.get("evidence") or {}),
+        summary=parsed.get("summary") or "CCTV incident scan completed.",
+        evidence=clean_ev,
         evidence_frame=best_frame,
         model_used=model_used,
     )
