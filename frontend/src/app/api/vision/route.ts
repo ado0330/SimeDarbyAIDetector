@@ -63,12 +63,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const configuredModel = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
     const modelsToTry = [
-      "gemini-1.5-flash",
-      "gemini-2.0-flash",
+      configuredModel,
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash",
       "gemini-2.5-flash",
-      "gemini-1.5-flash-8b",
-    ];
+      "gemini-flash-latest",
+      "gemini-1.5-flash",
+    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
 
     const parts: any[] = [{ text: GEMINI_VISION_PROMPT }];
     for (const frame of frames) {
