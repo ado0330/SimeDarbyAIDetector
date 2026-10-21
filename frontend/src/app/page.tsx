@@ -28,6 +28,7 @@ import {
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
 import { CriticalAlertCenter } from "@/components/layout/CriticalAlertCenter";
+import { playCriticalAlertSound, registerAudioUnlockListener } from "@/lib/sound";
 import { analyzeVideoWithGemini, sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
@@ -142,6 +143,7 @@ export default function Home() {
   // Initial Reference & Health Fetch
   useEffect(() => {
     const initPlatform = async () => {
+      registerAudioUnlockListener();
       try {
         const [refData, healthData, configData] = await Promise.allSettled([
           api.getReference(),
@@ -678,6 +680,10 @@ export default function Home() {
         };
 
         setIncidents((prev) => sortByPriority([newIncident, ...prev]));
+
+        if (severity === "critical" || newIncident.emergency_rule_triggered) {
+          playCriticalAlertSound(false);
+        }
 
         showToast(
           `AI Alert: ${analysis.categoryLabel} detected (${(
