@@ -98,4 +98,14 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` completed AND verified �
 - [x] Backend test suite: 74/74 passing (`.venv/bin/pytest -v`) — done & verified
 - [x] Frontend build: `npm run build` compiled cleanly in 364ms with 0 type errors — done & verified
 
+## Phase 16 — Video Upload Independence & Deduplication Scoping
+- [x] Trace root cause of different fall videos merging into single incident (camera + category temporal dedup window) — done & verified
+- [x] Scope `find_duplicate` in `backend/app/services/incident_service.py` so different `video_job_id` files never merge — done & verified
+- [x] Enhance Gemini VLM prompt in `gemini_analyzer.py` to enforce unique, visually distinct titles and summaries — done & verified
+- [x] Add original filename fallback for candidate titles in `video_service.py` — done & verified
+- [x] Add automated test `test_distinct_video_uploads_never_deduplicate_into_same_incident` in `test_video.py` — done & verified
+- [x] Test suite: 75/75 pytest tests passing (`.venv/bin/pytest -v`) — done & verified
+- [x] Frontend build: `npm run build` compiled cleanly with 0 type errors — done & verified
+
+
 

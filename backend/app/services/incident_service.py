@@ -205,15 +205,45 @@ def _commit(db: Session, inc: Incident, before_order: List[str], reason: str, pr
 # ---------------------------------------------------------------------------------------------
 def find_duplicate(db: Session, cand: NormalizedCandidate, event_ts: datetime) -> Optional[Incident]:
     """Dedup strategy: same category + same camera (or, lacking a camera, same location) + same source kind,
-    on an ACTIVE incident whose last detection is within ``dedup_window_seconds`` of the new event."""
+    on an ACTIVE incident whose last detection is within ``dedup_window_seconds`` of the new event.
+
+    CRITICAL: Uploaded video files represent distinct physical footage clips. Detections from DIFFERENT
+    video files (different video_job_id) must NEVER be merged into the same incident, even if they share
+    the same category or assigned camera. Only multiple detections within the EXACT SAME video file may merge.
+    """
     if cand.camera_id is None and cand.location_id is None:
         return None
     window = timedelta(seconds=build_config().dedup_window_seconds)
-    q = select(Incident).where(Incident.status.in_(ACTIVE_STATUSES), Incident.category == cand.category,
-                               Incident.is_simulated == cand.is_simulated)
+
+    # For video uploads: detections from different video uploads must never merge.
+    if cand.source_type == SourceType.VIDEO_UPLOAD.value:
+        cand_job_id = (cand.metadata or {}).get("video_job_id")
+        if not cand_job_id:
+            return None
+        q = select(Incident).where(
+            Incident.status.in_(ACTIVE_STATUSES),
+            Incident.source_type == SourceType.VIDEO_UPLOAD.value,
+            Incident.category == cand.category,
+            Incident.is_simulated == False,
+        )
+        q = q.where(Incident.camera_id == cand.camera_id) if cand.camera_id else q.where(Incident.location_id == cand.location_id)
+        matches = [
+            i for i in db.execute(q).scalars().all()
+            if ((i.meta or {}).get("video_job_id") == cand_job_id or (i.source_reference and i.source_reference.startswith("video:%s@" % cand_job_id)))
+            and abs(event_ts - i.last_detected_at) <= window
+        ]
+        return max(matches, key=lambda i: i.last_detected_at) if matches else None
+
+    # For simulations / real-time camera sensor events: dedup by category + camera within time window
+    q = select(Incident).where(
+        Incident.status.in_(ACTIVE_STATUSES),
+        Incident.category == cand.category,
+        Incident.is_simulated == cand.is_simulated,
+    )
     q = q.where(Incident.camera_id == cand.camera_id) if cand.camera_id else q.where(Incident.location_id == cand.location_id)
     matches = [i for i in db.execute(q).scalars().all() if abs(event_ts - i.last_detected_at) <= window]
     return max(matches, key=lambda i: i.last_detected_at) if matches else None
+
 
 
 def _validate_candidate(db: Session, cand: NormalizedCandidate) -> None:

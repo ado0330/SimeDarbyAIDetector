@@ -294,9 +294,10 @@ def review_candidate(db: Session, candidate_id: int, decision: str, note: Option
             "Video-analysis candidate from clip '%s' at %.1f s (%s). Heuristic detection — human verification required."
             % (job.original_filename, ts, details.get("method", "detector output"))
         )
+        title = ai_title or ("%s (%s)" % (svc.TITLES.get(cand.category, cand.category), job.original_filename))
         ncand = svc.NormalizedCandidate(
             category=cand.category, camera_id=job.camera_id, source_type=SourceType.VIDEO_UPLOAD.value,
-            title=ai_title,
+            title=title,
             source_reference="video:%s@%.1fs" % (job.id, ts), confidence=cand.confidence,
             evidence=dict(cand.evidence or {}),
             description=description,

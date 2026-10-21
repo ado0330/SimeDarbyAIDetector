@@ -76,5 +76,13 @@ Resolved video upload HTTP 500 errors caused by Next.js 16's default 10MB revers
 5. **OpenCV Probing & Fallback:** Handled containers with unindexed frame counts (`CAP_PROP_FRAME_COUNT <= 0`) or variable frame rates gracefully by falling back to duration probing (`CAP_PROP_POS_AVI_RATIO`) and defaulting to 25.0 FPS, preventing spurious crashes. Sequential frame extraction was added as a fallback in `gemini_analyzer.py`.
 6. **Defensive Error Handling:** Wrapped video probe routines in `video_service.py` with uniform validation handlers to return clear 422 HTTP errors instead of unhandled 500 server crashes.
 
+## D-018 — Video Upload Independence & Deduplication Scoping (2026-10-21) — accepted
+Resolved the issue where uploading two different video clips of the same category (e.g., pedestrian falls) concluded as the same incident:
+1. **Root Cause:** `find_duplicate` in `incident_service.py` matched any active incident sharing the same category and camera within the 300-second deduplication window, without distinguishing whether the detections originated from different uploaded video files. Because video uploads often use the default selected camera (e.g., `CAM-PARK-01`), uploading a second fall clip within 5 minutes caused the engine to merge the detection into the first incident (`_merge_into`), overwriting/merging evidence rather than creating a distinct incident.
+2. **Video Upload Scoping:** Updated `find_duplicate` to enforce that uploaded video files (`SourceType.VIDEO_UPLOAD`) only merge if they originate from the *exact same* `video_job_id` (i.e. multiple detections within a single clip). Detections from different uploaded video files are always treated as separate, independent incidents with their own incident IDs, dedicated video player streams, and individual triage lifecycles.
+3. **Prompt Hardening for Distinct Titles:** Enhanced Gemini's system prompt in `gemini_analyzer.py` to instruct the model to produce unique, scene-specific titles and detailed summaries (incorporating clothing colors, setting like stairs/crosswalk, exact vehicle models) instead of generic repeated placeholders.
+4. **Filename Fallback:** Configured candidate review in `video_service.py` to incorporate the uploaded clip's original filename into candidate titles when AI titles are not supplied.
+
+
 
 

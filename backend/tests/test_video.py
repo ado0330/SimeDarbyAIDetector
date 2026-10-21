@@ -219,3 +219,29 @@ def test_demo_clip_endpoints(client):
     assert data["status"] in ("queued", "processing", "completed")
     assert data["original_filename"] == "sample_cctv_fall.mp4"
 
+
+def test_distinct_video_uploads_never_deduplicate_into_same_incident(client, tmp_path, fake_detector):
+    """Uploading two different video files of the same category (e.g. falls) must create two distinct incidents."""
+    v1 = make_video(tmp_path / "fall_clip_1.mp4", seconds=8)
+    job1 = post_video(client, v1, camera_id="CAM-PARK-01").json()
+    cid1 = client.get("/api/videos/%s" % job1["id"]).json()["candidates"][0]["id"]
+    r1 = client.post("/api/candidates/%d/review" % cid1, json={"decision": "accept", "note": "First fall verified"}).json()
+    inc1 = r1["mutation"]["incident"]
+    assert inc1["id"] is not None
+
+    # Upload second video of a fall on the exact same camera within the 300s window
+    v2 = make_video(tmp_path / "fall_clip_2.mp4", seconds=8)
+    job2 = post_video(client, v2, camera_id="CAM-PARK-01").json()
+    cid2 = client.get("/api/videos/%s" % job2["id"]).json()["candidates"][0]["id"]
+    r2 = client.post("/api/candidates/%d/review" % cid2, json={"decision": "accept", "note": "Second fall verified"}).json()
+    inc2 = r2["mutation"]["incident"]
+
+    # Must be separate incidents, NOT merged/deduplicated into inc1
+    assert inc2["id"] != inc1["id"]
+    assert r2["mutation"]["deduplicated"] is False
+    all_incidents = client.get("/api/incidents").json()
+    assert all_incidents["total"] == 2
+    ids = [i["id"] for i in all_incidents["items"]]
+    assert inc1["id"] in ids and inc2["id"] in ids
+
+

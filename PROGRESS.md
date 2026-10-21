@@ -1,7 +1,7 @@
 # PROGRESS
 
 ## Last Updated
-2026-10-21 12:45 +08:00
+2026-10-21 15:20 +08:00
 
 ## Current Phase
 Post-Implementation System Optimization & Polish Completed (Local Workspace)
@@ -10,6 +10,12 @@ Post-Implementation System Optimization & Polish Completed (Local Workspace)
 Complete, Fully Tested & Validated for Sime Darby Property University Hackathon 2026
 
 ## Completed Work
+- **Video Upload Independence & Deduplication Scoping (Fix for Merged Video Incidents):**
+  - Resolved bug where uploading two different video files of the same category (e.g. pedestrian falls) concluded as the same incident.
+  - Updated `find_duplicate` in `backend/app/services/incident_service.py` to enforce that uploaded video files (`SourceType.VIDEO_UPLOAD`) only merge if they originate from the exact same `video_job_id`. Detections from different uploaded video files now always generate independent incidents with separate IDs, individual video players, and distinct triage lifecycles.
+  - Enhanced Gemini VLM prompt in `backend/app/vision/gemini_analyzer.py` to require unique, scene-specific titles and detailed visual descriptions (including clothing colors, precise settings, and exact actions) rather than generic repeated placeholders.
+  - Added original filename fallback to candidate titles in `backend/app/services/video_service.py`.
+  - Added automated test `test_distinct_video_uploads_never_deduplicate_into_same_incident` in `test_video.py` (75/75 backend tests passing).
 - **High-Capacity Video Upload & Ingestion Resiliency (Fix for HTTP 500 & Upload Stalls):**
   - Resolved `Request body exceeded 10MB` and `ECONNRESET` socket hangups in Next.js 16 reverse proxy by configuring `experimental: { proxyClientMaxBodySize: "150mb" }` in `next.config.ts`.
   - Configured `frontend/src/lib/api.ts` to stream large multipart video uploads directly to FastAPI on port 8000 (`http://${hostname}:8000`) in browser runtime, bypassing Node.js buffer limitations entirely.

@@ -166,4 +166,28 @@ Diagnose and resolve the intermittent video upload failure ("keep processing and
    - Frontend build: `npm run build` compiled cleanly in 364ms with 0 type errors.
    - Both daemons remain active and healthy. All changes strictly local (no git push).
 
+---
+
+## Session 6 — 2026-10-21: Video Upload Deduplication Scoping & Title Uniqueness
+
+### Focus & Objectives
+Investigate and resolve the bug where uploading two different video clips of the same incident category (e.g. pedestrian falls) resulted in the second video being merged/concluded as the same incident rather than creating a separate incident.
+
+### Root Cause Analysis
+1. **Deduplication Scope Collapsed Across Uploads:** In `backend/app/services/incident_service.py`, `find_duplicate` looked for any active incident matching `(category, camera_id)` whose `last_detected_at` was within `dedup_window_seconds` (300 seconds / 5 minutes). In video analysis, users often upload videos to the default selected camera (e.g., `CAM-PARK-01`). Uploading a second fall video within 5 minutes caused `find_duplicate` to match the first incident and call `_merge_into`, treating the second video as a repeated detection (detection count 2) instead of creating a new incident.
+2. **Generic Video Title Overwrite:** Gemini's zero-shot vision prompt lacked explicit instructions against generic titles, occasionally producing repetitive titles like `"Person Collapsed on Lakeside Walkway"` for multiple distinct fall clips, making separate events look identical.
+
+### Accomplishments
+1. **Video Upload Deduplication Scoping:**
+   - Updated `find_duplicate` in `incident_service.py` to differentiate between continuous camera sensor streams and uploaded video files. For `SourceType.VIDEO_UPLOAD`, deduplication only matches if the detection originates from the *exact same* `video_job_id`. Detections from different uploaded video files are guaranteed to create distinct, independent incidents.
+2. **Gemini Prompt Hardening:**
+   - Enhanced `PROMPT` in `backend/app/vision/gemini_analyzer.py` with strict instructions: titles and summaries must describe unique visual attributes (e.g., clothing color, specific setting such as stairs or crosswalk, fall mechanics, vehicle colors) and must never use repeated generic placeholders.
+3. **Filename Fallback for Non-AI Detections:**
+   - Updated `backend/app/services/video_service.py` so that candidate titles default to `"<Category> (<Original Filename>)"` when AI titles are absent, ensuring distinct titles even in local heuristic mode.
+4. **Automated Verification:**
+   - Added `test_distinct_video_uploads_never_deduplicate_into_same_incident` in `tests/test_video.py`.
+   - Backend pytest suite: **75/75 passing** in 1.88s (`.venv/bin/pytest -v`).
+   - Frontend build: `npm run build` verified cleanly in 237ms with 0 type errors.
+
+
 

@@ -39,24 +39,29 @@ Determine if any of the following 4 security/safety incident categories occurred
 
 If no incident occurred (normal pedestrian/traffic activity), set "detected": false and "category": null.
 
+IMPORTANT TITLE AND SUMMARY RULES:
+- The "title" MUST be specific, descriptive, and unique to the exact visual scene in THIS video (e.g. mention subject's clothing colors, exact setting like stairs/sidewalk/crosswalk/road/corridor, fall type, or vehicle colors/models). NEVER use generic repeated titles like "Person Collapsed on Lakeside Walkway" unless that exact setting is visible.
+- The "summary" MUST describe the actual visual scene, sequence of events, and specific subjects or vehicles observed in the frames.
+
 Respond STRICTLY with a valid JSON object matching this schema (do not wrap in markdown quotes if possible):
 {
   "detected": true,
   "category": "road_collision",
   "confidence": 0.94,
   "timestamp_s": 3.0,
-  "title": "Two-Vehicle Collision at Roundabout Exit",
-  "summary": "Silver sedan collided with a dark SUV near the exit lane. Both vehicles are stationary and blocking traffic.",
+  "title": "Specific Descriptive Title of Incident",
+  "summary": "Detailed, specific visual description of the incident including colors, vehicles, person actions, and exact surroundings.",
   "evidence": {
     "vehicles_involved": 2,
     "traffic_blocked": true,
     "motionless_seconds": null,
     "people_at_risk": 0,
     "secondary_hazard": true,
-    "details": "Impact damaged front bumper of sedan; debris scattered in lane."
+    "details": "Specific visual details about the hazard observed in the frames."
   }
 }
 """
+
 
 
 @dataclass
