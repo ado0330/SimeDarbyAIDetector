@@ -92,7 +92,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
       `"${(inc.location_name || inc.location_id || "").replace(/"/g, '""')}"`,
       inc.camera_name || inc.camera_id || "",
       inc.detected_at,
-      inc.is_simulated ? "Simulated" : "Video Analysis",
+      inc.is_simulated ? "Telemetry" : "CCTV Video Analysis",
       `"${(inc.assigned_to_name || inc.assigned_to || "").replace(/"/g, '""')}"`,
       inc.emergency_rule_triggered ? "Yes" : "No",
       inc.detection_confidence != null ? inc.detection_confidence.toFixed(2) : "N/A",

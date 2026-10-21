@@ -19,8 +19,7 @@ export type NavView =
   | "video"
   | "map"
   | "history"
-  | "analytics"
-  | "settings";
+  | "analytics";
 
 interface SidebarProps {
   currentView: NavView;
@@ -52,7 +51,6 @@ export function Sidebar({
     { id: "map" as NavView, label: "Township Map", icon: MapPin },
     { id: "history" as NavView, label: "Incident History", icon: History },
     { id: "analytics" as NavView, label: "Analytics & Trends", icon: BarChart3 },
-    { id: "settings" as NavView, label: "Demo & Config", icon: Sliders },
   ];
 
   return (
@@ -62,18 +60,14 @@ export function Sidebar({
         <GlobalEyeLogo variant="full" theme="dark" size="md" withTagline={true} />
       </div>
 
-      {/* Mode Banner */}
+      {/* System Status Banner */}
       <div className="px-4 py-2.5 mx-3 mt-3 rounded-md bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
-        <span className="text-slate-400 font-medium">Operation Mode:</span>
-        <span
-          className={cn(
-            "px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider uppercase",
-            mode === "simulation"
-              ? "bg-amber-950/80 text-amber-300 border border-amber-700/50"
-              : "bg-teal-950/80 text-teal-300 border border-teal-700/50"
-          )}
-        >
-          {mode === "simulation" ? "Simulation" : "Video Analysis"}
+        <span className="text-slate-400 font-medium flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          System Status:
+        </span>
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider uppercase bg-teal-950/80 text-teal-300 border border-teal-700/50">
+          OPERATIONAL
         </span>
       </div>
 

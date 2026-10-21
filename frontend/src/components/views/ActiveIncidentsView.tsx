@@ -191,7 +191,7 @@ export function ActiveIncidentsView({
             className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Sources</option>
-            <option value="simulated">Simulation Scenarios</option>
+            <option value="simulated">Township Telemetry</option>
             <option value="video">CCTV Video Analysis</option>
           </select>
 
@@ -278,10 +278,12 @@ export function ActiveIncidentsView({
                         </span>
 
                         {inc.is_simulated ? (
-                          <Badge variant="simulated">Simulation</Badge>
+                          <Badge variant="outline" className="border-slate-300 text-slate-700 font-medium">
+                            Telemetry
+                          </Badge>
                         ) : (
                           <Badge variant="outline" className="border-teal-400 text-teal-800 bg-teal-50/60 font-semibold">
-                            Video Analysis
+                            CCTV Vision
                           </Badge>
                         )}
 

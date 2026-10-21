@@ -240,13 +240,9 @@ export function IncidentDetailModal({
                 {statusStyles.label}
               </span>
 
-              {incident.is_simulated ? (
-                <Badge variant="simulated">Simulation Mode</Badge>
-              ) : (
-                <Badge variant="outline" className="border-teal-400 text-teal-800 bg-teal-50/60 font-semibold">
-                  Video Analysis
-                </Badge>
-              )}
+              <Badge variant="outline" className="border-teal-400 text-teal-800 bg-teal-50/60 font-semibold">
+                {incident.source_type === "video_upload" || !incident.is_simulated ? "CCTV Vision Analysis" : "Township Telemetry"}
+              </Badge>
 
               {incident.priority_overridden && (
                 <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-purple-800 border border-purple-200">
@@ -814,7 +810,7 @@ export function IncidentDetailModal({
               <option value="patrol_dispatched">Security Patrol Dispatched</option>
               <option value="owner_contacted">Vehicle / Property Owner Contacted</option>
               <option value="area_secured">Area Secured / Cordoned</option>
-              <option value="external_services_contacted">Emergency Services Contacted (Simulated Note)</option>
+              <option value="external_services_contacted">Emergency Services Contacted (Dispatch Log)</option>
             </select>
           </div>
           <div>

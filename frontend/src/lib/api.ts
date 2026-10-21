@@ -28,7 +28,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "X-Admin-Name": "Demo Administrator",
+      "X-Admin-Name": "Control Room Supervisor",
       ...(options?.headers || {}),
     },
   });
@@ -172,7 +172,7 @@ export const api = {
       method: "POST",
       body: fd,
       headers: {
-        "X-Admin-Name": "Demo Administrator",
+        "X-Admin-Name": "Control Room Supervisor",
       },
     });
 
@@ -196,7 +196,7 @@ export const api = {
       method: "POST",
       body: fd,
       headers: {
-        "X-Admin-Name": "Demo Administrator",
+        "X-Admin-Name": "Control Room Supervisor",
       },
     });
 

@@ -23,13 +23,9 @@ import {
   Camera,
   ArrowRight,
   ShieldAlert,
-  Play,
-  RotateCcw,
-  Sparkles,
   Activity,
   UserCheck,
   Video,
-  Flame,
 } from "lucide-react";
 
 interface OverviewViewProps {
@@ -37,13 +33,9 @@ interface OverviewViewProps {
   analytics: AnalyticsSummary | null;
   onSelectIncident: (id: string) => void;
   onNavigateToIncidents: () => void;
-  onQuickDemoTrigger: (
-    scenario: "simultaneous" | "escalate" | "human_intervention" | "false_positive" | "low_confidence_fire"
-  ) => void;
-  onResetDemo: () => void;
   onAcknowledgeIncident: (id: string) => void;
   onNavigateToVideo?: () => void;
-  onNavigateToSettings?: () => void;
+  onNavigateToMap?: () => void;
 }
 
 export function OverviewView({
@@ -51,11 +43,9 @@ export function OverviewView({
   analytics,
   onSelectIncident,
   onNavigateToIncidents,
-  onQuickDemoTrigger,
-  onResetDemo,
   onAcknowledgeIncident,
   onNavigateToVideo,
-  onNavigateToSettings,
+  onNavigateToMap,
 }: OverviewViewProps) {
   // Active incidents sorted by rank
   const activeIncidents = incidents.filter(
@@ -260,12 +250,12 @@ export function OverviewView({
           </div>
           <h3 className="text-sm font-bold text-slate-900">All Clear in Township</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            No active incidents currently require operator attention. You can trigger simulated scenarios or upload a video clip below.
+            No active incidents currently require operator attention. All surveillance streams and township sectors are clear.
           </p>
         </div>
       )}
 
-      {/* 3. Two-Column Layout: Active Queue Preview & Hackathon Demo Controls */}
+      {/* 3. Two-Column Layout: Active Queue Preview & Township Operations */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Active Queue Preview */}
         <div className="lg:col-span-2 space-y-3">
@@ -331,136 +321,82 @@ export function OverviewView({
           </div>
         </div>
 
-        {/* Right Column: Interactive Hackathon Demonstration Controls */}
+        {/* Right Column: Township Operations & Quick Actions */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-teal-600" />
-              Demo Scenarios (v2.0)
+              <Activity className="w-4 h-4 text-teal-600" />
+              Township Surveillance Operations
             </h3>
-            <div className="flex items-center space-x-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onResetDemo}
-                className="text-slate-500 hover:text-rose-600 text-[11px] h-6 px-1.5"
-                title="Reset transient simulated incidents"
-              >
-                <RotateCcw className="w-3 h-3 mr-1" />
-                Reset
-              </Button>
-            </div>
           </div>
 
-          <div className="space-y-2.5">
-            {/* Scenario 1: Multi-Sector Concurrency */}
-            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">1. Multi-Sector Concurrency</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onQuickDemoTrigger("simultaneous")}
-                  className="h-6 text-[11px] px-2 text-teal-800 border-teal-300 hover:bg-teal-50"
-                >
-                  <Play className="w-2.5 h-2.5 mr-1 fill-teal-600 text-teal-600" />
-                  Run
-                </Button>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                Simultaneous collision (Gate 1), person down (Lakeside), and delivery van (Mall). Demonstrates 4-factor multi-tier sorting.
-              </p>
-            </div>
-
-            {/* Scenario 2: Dynamic Telemetry Escalation */}
-            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">2. Telemetry Escalation</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onQuickDemoTrigger("escalate")}
-                  className="h-6 text-[11px] px-2 text-amber-800 border-amber-300 hover:bg-amber-50"
-                >
-                  <Play className="w-2.5 h-2.5 mr-1 fill-amber-600 text-amber-600" />
-                  Run
-                </Button>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                Victim motionless &gt;90s near water. R-FALL-PERSISTENT rule triggers emergency floor (85.0) and live SSE re-rank to #1.
-              </p>
-            </div>
-
-            {/* Scenario 3 & 4: Gemini Multimodal Vision & CCTV Player */}
+          <div className="space-y-3">
+            {/* Quick Action: CCTV Video Ingest */}
             {onNavigateToVideo && (
-              <div className="p-3 bg-cyan-50/50 rounded-lg border border-cyan-200 hover:border-cyan-300 transition-colors">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-cyan-900">3 & 4. Gemini AI & CCTV Player</span>
+              <div className="p-4 bg-white rounded-lg border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-md bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-700">
+                      <Video className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">CCTV Video Ingest</div>
+                      <div className="text-[11px] text-slate-500">Live AI Vision Analysis</div>
+                    </div>
+                  </div>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="primary"
                     onClick={onNavigateToVideo}
-                    className="h-6 text-[11px] px-2 text-cyan-800 border-cyan-300 hover:bg-cyan-100"
+                    className="h-7 text-xs px-3"
                   >
-                    <Video className="w-2.5 h-2.5 mr-1 text-cyan-700" />
-                    Open Lab
+                    Upload Clip
                   </Button>
                 </div>
-                <p className="text-[11px] text-cyan-800 leading-tight">
-                  Analyze real video with Gemini 3.5 Flash Lite, auto-triage to queue, and jump to 24.0s detection timestamp in modal player.
+                <p className="text-xs text-slate-600 leading-snug">
+                  Upload footage clips to analyze posture heuristics, falls, and perimeter security events.
                 </p>
               </div>
             )}
 
-            {/* Scenario 5: Operator Intervention */}
-            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">5. Operator Triage & Flow</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onQuickDemoTrigger("human_intervention")}
-                  className="h-6 text-[11px] px-2 text-blue-800 border-blue-300 hover:bg-blue-50"
-                >
-                  <Play className="w-2.5 h-2.5 mr-1 fill-blue-600 text-blue-600" />
-                  Run
-                </Button>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                Acknowledge top alert, assign First-Aid team, log operator note, and resolve incident. Audited to SQLite.
-              </p>
-            </div>
-
-            {/* Scenario 6: Safety Invariance (Low-Confidence Fire) */}
-            <div className="p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-bold text-slate-800">6. Safety Invariant (Fire)</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onQuickDemoTrigger("low_confidence_fire")}
-                  className="h-6 text-[11px] px-2 text-rose-800 border-rose-300 hover:bg-rose-50"
-                >
-                  <Play className="w-2.5 h-2.5 mr-1 fill-rose-600 text-rose-600" />
-                  Run
-                </Button>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-tight">
-                Residential smoke detected at 0.41 confidence. Flags needs_verification without down-ranking life safety.
-              </p>
-            </div>
-
-            {/* Deep Dive Link to Full Demo Tab */}
-            {onNavigateToSettings && (
-              <div className="pt-1 text-center">
-                <button
-                  onClick={onNavigateToSettings}
-                  className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                >
-                  Open Full Demo Center & Prioritization Weights &rarr;
-                </button>
+            {/* Quick Action: Township Map */}
+            {onNavigateToMap && (
+              <div className="p-4 bg-white rounded-lg border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-md bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">Township GIS Map</div>
+                      <div className="text-[11px] text-slate-500">City of Elmina Sectors</div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onNavigateToMap}
+                    className="h-7 text-xs px-3 text-sky-700 border-sky-200 hover:bg-sky-50"
+                  >
+                    Open Map
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-600 leading-snug">
+                  Inspect camera network locations, township zones, and live alert clusters across City of Elmina.
+                </p>
               </div>
             )}
+
+            {/* System Protocol Box */}
+            <div className="p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1.5">
+              <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-teal-700" />
+                Human-in-the-Loop Governance
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-500">
+                All algorithmic scoring and vision detections serve as advisory intelligence. Final dispatch and resolution authority remains with control room operators.
+              </p>
+            </div>
           </div>
         </div>
       </div>

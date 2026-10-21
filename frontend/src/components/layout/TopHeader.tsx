@@ -68,8 +68,8 @@ export function TopHeader({
             <User className="w-4 h-4" />
           </div>
           <div className="hidden xl:block text-left leading-tight">
-            <div className="text-xs font-semibold text-slate-800">Demo Admin</div>
-            <div className="text-[10px] text-slate-500">Security Supervisor</div>
+            <div className="text-xs font-semibold text-slate-800">Control Supervisor</div>
+            <div className="text-[10px] text-slate-500">Security Operations Center</div>
           </div>
         </div>
       </div>

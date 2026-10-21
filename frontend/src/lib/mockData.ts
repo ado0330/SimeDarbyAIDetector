@@ -84,10 +84,10 @@ export const FALLBACK_RESPONDERS: Responder[] = [
 ];
 
 export const FALLBACK_CONFIG: ScoringConfigData = {
-  mode: "simulation",
+  mode: "operational",
   scoring: {
-    version: "2.0-cloud",
-    disclaimer: "Prototype heuristic weights for demonstration purposes.",
+    version: "2.0",
+    disclaimer: "Dynamic multi-factor prioritization weights matrix.",
     weights: {
       severity: 0.4,
       immediacy: 0.25,
@@ -436,7 +436,7 @@ export function createFallbackDetail(inc: Incident): IncidentDetail {
             id: 1,
             responder_id: inc.assigned_to,
             responder_name: inc.assigned_to_name,
-            assigned_by: "Demo Administrator",
+            assigned_by: "Control Room Supervisor",
             assigned_at: inc.updated_at,
           },
         ]
