@@ -26,6 +26,13 @@ class Category(StrEnum):
     FALLEN_TREE_STORM_DAMAGE = "fallen_tree_storm_damage"
     POWER_OUTAGE_ELECTRICAL = "power_outage_electrical"
     ILLEGAL_DUMPING = "illegal_dumping"
+    ROAD_PAVEMENT_DEFECT = "road_pavement_defect"
+    STRUCTURAL_FACILITY_DAMAGE = "structural_facility_damage"
+    CROWD_SURGE_CONGESTION = "crowd_surge_congestion"
+    CONSTRUCTION_SAFETY_HAZARD = "construction_safety_hazard"
+    EARLY_WARNING_SUBSIDENCE = "early_warning_subsidence"
+    CYBER_PHYSICAL_SYSTEM_OUTAGE = "cyber_physical_system_outage"
+    ACCESSIBILITY_OBSTRUCTION = "accessibility_obstruction"
     CUSTOM_SAFETY_HAZARD = "custom_safety_hazard"
 
 

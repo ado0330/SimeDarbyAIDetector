@@ -42,6 +42,11 @@ Classify into one of these specific township safety categories:
 6. "parking_obstruction": Vehicle blocking emergency egress route, fire hydrant, or double parked.
 7. "pipe_burst_leakage": High-pressure water main burst or street flooding from plumbing failure.
 8. "flash_flood": Rapid roadway or path inundation from storm/monsoon overflow.
+9. "fallen_tree_storm_damage": Entire fallen tree or heavy branches blocking roads/paths, striking power lines or vehicles.
+10. "road_pavement_defect": Opening sinkhole, road crater, or pavement collapse endangering traffic.
+11. "structural_facility_damage": Falling building façade panel, loose roof sheets, broken overhead glass, or collapsed structure.
+12. "illegal_dumping": Vehicle illegally dumping bulk garbage, chemical drums, or debris in public reserve.
+13. "physical_altercation": Violent fight, physical assault, brawl, or menacing confrontation in public areas.
 
 If no incident occurred (normal pedestrian/traffic activity), set "detected": false and "category": null.
 
@@ -52,7 +57,7 @@ IMPORTANT TITLE AND SUMMARY RULES:
 Respond STRICTLY with a valid JSON object matching this schema (do not wrap in markdown quotes if possible):
 {
   "detected": true,
-  "category": "fire_smoke" | "wildlife_intrusion" | "restricted_area_intrusion" | "person_fall" | "road_collision" | "parking_obstruction" | "pipe_burst_leakage" | "flash_flood",
+  "category": "fire_smoke" | "wildlife_intrusion" | "restricted_area_intrusion" | "person_fall" | "road_collision" | "parking_obstruction" | "pipe_burst_leakage" | "flash_flood" | "fallen_tree_storm_damage" | "road_pavement_defect" | "structural_facility_damage" | "illegal_dumping" | "physical_altercation",
   "confidence": 0.94,
   "timestamp_s": 3.0,
   "title": "Specific Descriptive Title of Incident",
