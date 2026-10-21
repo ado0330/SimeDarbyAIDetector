@@ -30,6 +30,9 @@ export interface GeminiVisionResult {
   score: number;
   modelUsed: string;
   isGeminiAi: boolean;
+  /** True when no real visual analysis happened. Never treat as normal-activity verification. */
+  aiUnavailable?: boolean;
+  unavailableReason?: string;
   keyframes: GeminiKeyframe[];
   evidence: Record<string, any>;
   errorMessage?: string;
@@ -190,7 +193,8 @@ export function extractVideoKeyframes(
 /**
  * Analyze an uploaded video clip.
  * 1. Queries the server-side /api/vision route (which reads GEMINI_API_KEY from Vercel environment variables).
- * 2. If the API key is not present or the endpoint fails, smoothly falls back to multi-hazard heuristics.
+ * 2. If the API key is not present or the endpoint fails, returns an explicit "AI unavailable" result
+ *    (no filename-based guessing).
  */
 export async function analyzeVideoWithGemini(
   file: File,
@@ -275,225 +279,46 @@ export async function analyzeVideoWithGemini(
   }
 
   // Step 3: Direct browser fallback heuristics
-  return analyzeWithMultiHazardHeuristics(file, cameraName, keyframes);
+  const reason =
+    keyframes.length === 0
+      ? "Frames could not be extracted from this clip in the browser."
+      : "The Gemini vision service is unreachable or not configured. No incident was created; review the clip manually.";
+  return buildAiUnavailableResult(cameraName, keyframes, reason);
 }
 
 /**
- * Intelligent Smart Multi-Hazard Heuristics (Offline Browser Fallback).
- * Defaults to Normal Activity (no incident) unless specific safety hazard keywords match.
+ * AI-unavailable result. Returned when real video analysis could not be completed (no API key,
+ * network/API failure, no extractable frames). It NEVER infers an incident from the filename or any
+ * other non-visual signal: no category, no confidence, no incident is produced.
  */
-export function analyzeWithMultiHazardHeuristics(
-  file: File,
+export function buildAiUnavailableResult(
   cameraName: string,
-  keyframes: GeminiKeyframe[] = []
+  keyframes: GeminiKeyframe[],
+  reason: string
 ): GeminiVisionResult {
-  const lower = (file.name || "").toLowerCase();
-
-  // 1. Explicit Normal Indicators
-  const isExplicitNormal =
-    lower.includes("normal") ||
-    lower.includes("routine") ||
-    lower.includes("peaceful") ||
-    lower.includes("safe") ||
-    lower.includes("clear") ||
-    lower.includes("walk") ||
-    lower.includes("stroll") ||
-    lower.includes("jog") ||
-    lower.includes("pedestrian_walk");
-
-  // 2. Fire & Smoke
-  const isFire =
-    lower.includes("fire") ||
-    lower.includes("smoke") ||
-    lower.includes("flame") ||
-    lower.includes("blaze") ||
-    lower.includes("wildfire");
-
-  // 3. Wildlife Intrusion (specific dangerous animals)
-  const isWildlife =
-    lower.includes("wildlife") ||
-    lower.includes("wild_boar") ||
-    lower.includes("boar") ||
-    lower.includes("monkey") ||
-    lower.includes("snake") ||
-    lower.includes("python") ||
-    lower.includes("cobra") ||
-    lower.includes("monitor_lizard");
-
-  // 4. Restricted Area / Rooftop Intrusion
-  const isRooftop =
-    lower.includes("rooftop") ||
-    lower.includes("roof_edge") ||
-    lower.includes("substation") ||
-    lower.includes("trespass") ||
-    lower.includes("high_voltage") ||
-    lower.includes("restricted_area");
-
-  // 5. Road Collision / Vehicle Crash (requires collision/crash context)
-  const isCollision =
-    lower.includes("collision") ||
-    lower.includes("crash") ||
-    lower.includes("car_crash") ||
-    lower.includes("car_collision") ||
-    lower.includes("road_accident") ||
-    lower.includes("vehicle_crash");
-
-  // 6. Parking / Emergency Access Obstruction
-  const isParking =
-    lower.includes("parking_obstruction") ||
-    lower.includes("illegal_parking") ||
-    lower.includes("blocked_hydrant") ||
-    lower.includes("illegal_dumping");
-
-  // 7. Person Fall / Medical Emergency (requires explicit fall terms, NEVER bare 'down')
-  const isFall =
-    lower.includes("person_fall") ||
-    lower.includes("fall_down") ||
-    lower.includes("pedestrian_fall") ||
-    lower.includes("fainted") ||
-    lower.includes("collapse") ||
-    lower.includes("tripped");
-
-  // If explicit normal or none of the hazard keywords matched: STRICTLY NORMAL ACTIVITY
-  if (
-    isExplicitNormal ||
-    (!isFire && !isWildlife && !isRooftop && !isCollision && !isParking && !isFall)
-  ) {
-    return {
-      detected: false,
-      category: null,
-      categoryLabel: "Normal Activity (No Incident)",
-      confidence: 0.95,
-      timestamp_s: 0.0,
-      title: `Normal Surveillance Feed — ${cameraName}`,
-      summary: `Automated vision scan verified normal township activity on ${cameraName}. No safety hazards, falls, or security violations detected.`,
-      isEmergency: false,
-      score: 0,
-      modelUsed: "Township Guardian Heuristics v2",
-      isGeminiAi: false,
-      keyframes,
-      evidence: {
-        filename: file.name,
-        analyzed_frames: keyframes.length || 8,
-        status: "normal_clear",
-      },
-    };
-  }
-
-  let category = "person_fall";
-  let title = `Pedestrian Collapse on ${cameraName}`;
-  let summary = `Computer vision detected pedestrian posture collapse on ${cameraName}. Subject motionless for > 15s.`;
-  let score = 91.5;
-  let isEmergency = true;
-  let confidence = 0.92;
-  let incidentEvidence: Record<string, any> = {
-    motionless_seconds: 24,
-    hazardous_location: true,
-    bystander_assisting: false,
-    person_attempting_to_stand: false,
-  };
-
-  if (isFire) {
-    category = "fire_smoke";
-    title = `Suspected Fire / Smoke Plume — ${cameraName}`;
-    summary = `Visual flame emission and thermal smoke plume expansion identified on ${cameraName}. Critical life-safety danger.`;
-    score = 96.5;
-    isEmergency = true;
-    confidence = 0.96;
-    incidentEvidence = {
-      smoke_or_flame_visible: true,
-      spreading: true,
-      people_in_vicinity: false,
-      blocks_emergency_access: true,
-    };
-  } else if (isWildlife) {
-    category = "wildlife_intrusion";
-    title = `Wildlife Intrusion (Wild Animal in Township Area) — ${cameraName}`;
-    summary = `Wild animal (wildlife intrusion) detected entering active pedestrian trails / residential perimeter on ${cameraName}. Potential threat to residents and children.`;
-    score = 88.0;
-    isEmergency = true;
-    confidence = 0.91;
-    incidentEvidence = {
-      animal_species: "Wild Boar (Sus scrofa)",
-      pack_size: 1,
-      proximity_to_pedestrians: "8 meters",
-      aggressive_behavior: false,
-    };
-  } else if (isRooftop) {
-    category = "restricted_area_intrusion";
-    title = `Restricted Danger Zone Breach (Rooftop / Height Hazard) — ${cameraName}`;
-    summary = `Unauthorized person detected in high-danger restricted area (rooftop ledge / hazardous zone) on ${cameraName}. Immediate fall and life-safety danger.`;
-    score = 94.0;
-    isEmergency = true;
-    confidence = 0.94;
-    incidentEvidence = {
-      height_fall_hazard: true,
-      entry_method: "rooftop_ledge_access",
-      substation_voltage: "N/A",
-    };
-  } else if (isCollision) {
-    category = "road_collision";
-    title = `Vehicle Collision / Road Accident — ${cameraName}`;
-    summary = `High-velocity deceleration and vehicle pathway obstruction detected on ${cameraName}. Traffic lane blocked.`;
-    score = 84.0;
-    isEmergency = false;
-    confidence = 0.93;
-    incidentEvidence = {
-      vehicles_involved: 2,
-      traffic_blocked: true,
-      motionless_after_impact: false,
-      persons_involved: 2,
-    };
-  } else if (isParking) {
-    category = "parking_obstruction";
-    title = `Emergency Access Route Obstruction — ${cameraName}`;
-    summary = `Vehicle or stationary obstruction blocking designated emergency egress path on ${cameraName}.`;
-    score = 42.0;
-    isEmergency = false;
-    confidence = 0.89;
-    incidentEvidence = {
-      blocks_emergency_access: true,
-      duration_minutes: 25,
-      blocks_traffic_lane: true,
-    };
-  } else if (isFall) {
-    category = "person_fall";
-    title = `Person Fall / Medical Emergency — ${cameraName}`;
-    summary = `Pedestrian posture collapse detected on ${cameraName}. Subject horizontal for > 15s with zero translation.`;
-    score = 91.5;
-    isEmergency = true;
-    confidence = 0.94;
-    incidentEvidence = {
-      motionless_seconds: 24,
-      hazardous_location: true,
-      bystander_assisting: false,
-      person_attempting_to_stand: false,
-    };
-  }
-
-  const { label } = getCategoryScoring(category);
-
   return {
-    detected: true,
-    category,
-    categoryLabel: label,
-    confidence,
-    timestamp_s: 3.2,
-    title,
-    summary,
-    isEmergency,
-    score,
-    modelUsed: "Township Guardian Heuristics v2",
+    detected: false,
+    category: null,
+    categoryLabel: "AI Analysis Unavailable",
+    confidence: 0,
+    timestamp_s: 0,
+    title: `AI analysis unavailable — ${cameraName}`,
+    summary: `No visual analysis was performed. ${reason}`,
+    isEmergency: false,
+    score: 0,
+    modelUsed: "none",
     isGeminiAi: false,
+    aiUnavailable: true,
+    unavailableReason: reason,
     keyframes,
-    evidence: incidentEvidence,
+    evidence: {},
   };
 }
 
 /**
  * Sanitizes and normalizes evidence parameters for an incident.
  * Filters out internal software/technical keys (model_used, is_gemini, video_job_id, filename)
- * and guarantees domain-specific incident telemetry parameters describing what actually happened.
+ * Does NOT fabricate missing values.
  */
 export function sanitizeIncidentEvidence(
   category: string,
@@ -525,74 +350,8 @@ export function sanitizeIncidentEvidence(
     }
   }
 
-  // Ensure domain-specific physical evidence parameters exist based on taxonomy
-  switch (category) {
-    case "person_fall":
-      if (clean.motionless_seconds === undefined) clean.motionless_seconds = 24;
-      if (clean.hazardous_location === undefined) clean.hazardous_location = true;
-      if (clean.bystander_assisting === undefined) clean.bystander_assisting = false;
-      if (clean.person_attempting_to_stand === undefined) clean.person_attempting_to_stand = false;
-      break;
-
-    case "road_collision":
-      if (clean.vehicles_involved === undefined) clean.vehicles_involved = 2;
-      if (clean.traffic_blocked === undefined) clean.traffic_blocked = true;
-      if (clean.motionless_after_impact === undefined) clean.motionless_after_impact = false;
-      if (clean.persons_involved === undefined) clean.persons_involved = 2;
-      break;
-
-    case "fire_smoke":
-      if (clean.smoke_or_flame_visible === undefined) clean.smoke_or_flame_visible = true;
-      if (clean.spreading === undefined) clean.spreading = true;
-      if (clean.people_in_vicinity === undefined) clean.people_in_vicinity = false;
-      if (clean.blocks_emergency_access === undefined) clean.blocks_emergency_access = true;
-      break;
-
-    case "wildlife_intrusion":
-      if (clean.animal_species === undefined) clean.animal_species = "Wild Boar (Sus scrofa)";
-      if (clean.pack_size === undefined) clean.pack_size = 1;
-      if (clean.proximity_to_pedestrians === undefined) clean.proximity_to_pedestrians = "8 meters";
-      if (clean.aggressive_behavior === undefined) clean.aggressive_behavior = false;
-      break;
-
-    case "restricted_area_intrusion":
-      if (clean.height_fall_hazard === undefined) clean.height_fall_hazard = true;
-      if (clean.entry_method === undefined) clean.entry_method = "unauthorized_climbing";
-      if (clean.danger_zone === undefined) clean.danger_zone = "rooftop_ledge";
-      break;
-
-    case "parking_obstruction":
-      if (clean.blocks_emergency_access === undefined) clean.blocks_emergency_access = true;
-      if (clean.duration_minutes === undefined) clean.duration_minutes = 25;
-      if (clean.blocks_traffic_lane === undefined) clean.blocks_traffic_lane = true;
-      break;
-
-    case "fallen_tree_storm_damage":
-      if (clean.road_lanes_blocked === undefined) clean.road_lanes_blocked = 2;
-      if (clean.power_lines_contacted === undefined) clean.power_lines_contacted = false;
-      if (clean.vehicle_damaged === undefined) clean.vehicle_damaged = false;
-      break;
-
-    case "flash_flood":
-      if (clean.water_depth_cm === undefined) clean.water_depth_cm = 45;
-      if (clean.rate_of_rise === undefined) clean.rate_of_rise = "rapid";
-      if (clean.vehicles_submerged === undefined) clean.vehicles_submerged = 1;
-      break;
-
-    case "pipe_burst_leakage":
-      if (clean.pressure_drop_bar === undefined) clean.pressure_drop_bar = 3.8;
-      if (clean.flow_rate_loss_pct === undefined) clean.flow_rate_loss_pct = 45;
-      if (clean.road_subsidence_risk === undefined) clean.road_subsidence_risk = true;
-      break;
-
-    default:
-      if (Object.keys(clean).length === 0) {
-        clean.incident_confirmed = true;
-        clean.risk_level = "high";
-      }
-      break;
-  }
-
+  // Only evidence actually reported by the analysis is kept. Missing parameters stay unknown
+  // (the prioritization engine treats unknown as uncertainty); we never invent observations.
   return clean;
 }
 

@@ -5,6 +5,7 @@ import {
   Camera,
 } from "@/types";
 import { Button } from "@/components/ui/Button";
+import { SimulatedLiveCctv } from "@/components/views/SimulatedLiveCctv";
 import { Badge } from "@/components/ui/Badge";
 import {
   formatDateTime,
@@ -177,6 +178,8 @@ export function VideoAnalysisView({
           ))}
         </div>
       </div>
+
+      <SimulatedLiveCctv cameras={cameras} onUploadVideo={onUploadVideo} />
 
       {/* 2. Video Upload Section & Processing Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

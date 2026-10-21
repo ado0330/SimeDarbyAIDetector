@@ -74,7 +74,7 @@ class AssignRequest(BaseModel):
 
 
 ACTION_TYPES = ("note", "camera_reviewed", "patrol_dispatched", "owner_contacted", "area_secured",
-                "external_services_contacted")
+                "external_services_contacted", "sop_step_completed", "escalation")
 
 
 class ActionRequest(BaseModel):

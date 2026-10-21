@@ -28,6 +28,7 @@ interface SidebarProps {
   criticalIncidentCount: number;
   isStreamConnected: boolean;
   mode: string;
+  backendStatus: "connecting" | "connected" | "disconnected";
 }
 
 export function Sidebar({
@@ -37,7 +38,18 @@ export function Sidebar({
   criticalIncidentCount,
   isStreamConnected,
   mode,
+  backendStatus,
 }: SidebarProps) {
+  // Real backend health: Connected (API answered), Disconnected (unreachable => UI shows stale/local data only),
+  // Demo Mode (API connected but running the labelled simulation mode, data is not from live detection).
+  const status =
+    backendStatus === "disconnected"
+      ? { label: "DISCONNECTED", dot: "bg-rose-500", chip: "bg-rose-950/80 text-rose-300 border-rose-700/60", pulse: false }
+      : backendStatus === "connecting"
+      ? { label: "CONNECTING", dot: "bg-amber-400", chip: "bg-amber-950/70 text-amber-300 border-amber-700/50", pulse: true }
+      : mode === "simulation"
+      ? { label: "CONNECTED · DEMO MODE", dot: "bg-sky-400", chip: "bg-sky-950/70 text-sky-300 border-sky-700/50", pulse: true }
+      : { label: "CONNECTED", dot: "bg-emerald-400", chip: "bg-teal-950/80 text-teal-300 border-teal-700/50", pulse: true };
   const navItems = [
     { id: "overview" as NavView, label: "Overview", icon: LayoutDashboard },
     {
@@ -63,11 +75,11 @@ export function Sidebar({
       {/* System Status Banner */}
       <div className="px-4 py-2.5 mx-3 mt-3 rounded-md bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
         <span className="text-slate-400 font-medium flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className={cn("w-2 h-2 rounded-full", status.dot, status.pulse && "animate-pulse")} />
           System Status:
         </span>
-        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider uppercase bg-teal-950/80 text-teal-300 border border-teal-700/50">
-          OPERATIONAL
+        <span className={cn("px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider uppercase border", status.chip)}>
+          {status.label}
         </span>
       </div>
 
@@ -119,7 +131,7 @@ export function Sidebar({
           <div className="flex items-center space-x-2">
             <Radio className={cn("w-3.5 h-3.5", isStreamConnected ? "text-emerald-400 animate-pulse" : "text-amber-400")} />
             <span className="text-[11px]">
-              {isStreamConnected ? "Live Feed (SSE)" : "Township Operations Active"}
+              {backendStatus === "disconnected" ? "No server connection" : isStreamConnected ? "Live Feed (SSE)" : "Polling Active"}
             </span>
           </div>
           <span className="text-[10px] font-mono text-slate-400">v0.1.0-proto</span>

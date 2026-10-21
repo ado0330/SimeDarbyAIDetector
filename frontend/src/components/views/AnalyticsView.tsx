@@ -1,6 +1,7 @@
 import React from "react";
 import { AnalyticsSummary, PriorityLevel } from "@/types";
 import { formatDuration } from "@/lib/utils";
+import { ControlledTestPanel } from "@/components/views/ControlledTestPanel";
 import {
   BarChart,
   Bar,
@@ -340,6 +341,9 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
           </p>
         </div>
       </div>
+
+      {/* Impact evidence: only human-recorded controlled-test measurements */}
+      <ControlledTestPanel />
     </div>
   );
 }

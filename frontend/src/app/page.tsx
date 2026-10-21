@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Incident,
   IncidentDetail,
@@ -27,6 +27,7 @@ import {
   computeDynamicAnalytics,
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
+import { CriticalAlertCenter } from "@/components/layout/CriticalAlertCenter";
 import { analyzeVideoWithGemini, sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
@@ -58,6 +59,7 @@ export default function Home() {
   // Platform State
   const [mode, setMode] = useState<string>("simulation");
   const [isStreamConnected, setIsStreamConnected] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -80,6 +82,7 @@ export default function Home() {
       ]);
 
       let latestItems: Incident[] = [];
+      setBackendStatus(incRes.status === "fulfilled" ? "connected" : "disconnected");
       if (incRes.status === "fulfilled") {
         latestItems = incRes.value.items;
         setIncidents(incRes.value.items);
@@ -155,6 +158,11 @@ export default function Home() {
     initPlatform();
   }, [fetchData]);
 
+  const selectedIncidentRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedIncidentRef.current = selectedIncident?.id || null;
+  }, [selectedIncident?.id]);
+
   // Server-Sent Events (SSE) Live Subscription
   useEffect(() => {
     let unsubscribe: () => void = () => { };
@@ -166,6 +174,11 @@ export default function Home() {
         } else if (event.type === "queue_changed") {
           setIsStreamConnected(true);
           fetchData();
+          if (event.incident_id && selectedIncidentRef.current === event.incident_id) {
+            api.getIncident(event.incident_id)
+              .then((updated) => setSelectedIncident(updated))
+              .catch(() => {});
+          }
         }
       });
     } catch {
@@ -200,178 +213,94 @@ export default function Home() {
     }
   };
 
-  // Incident Actions
+  // Incident Actions.
+  // A success toast / UI change is shown ONLY after the server confirms the mutation. On failure we show an
+  // explicit "NOT SAVED" error and re-throw so the calling dialog stays open instead of looking successful.
+  const failAction = (verb: string, id: string, e: unknown): never => {
+    const msg = e instanceof Error ? e.message : "Backend unreachable";
+    showToast(`NOT SAVED — could not ${verb} ${id}: ${msg}`, "error");
+    throw e instanceof Error ? e : new Error(msg);
+  };
+
+  const syncFromServer = (id: string, incident: IncidentDetail) => {
+    setSelectedIncident((prev) => (prev && prev.id === id ? incident : prev));
+    fetchData();
+  };
+
   const handleAcknowledge = async (id: string, note?: string) => {
     try {
       const res = await api.acknowledge(id, note);
-      showToast(`Incident ${id} acknowledged successfully.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      setIncidents((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, status: "acknowledged", acknowledged_at: new Date().toISOString() } : i))
-      );
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident((prev) =>
-          prev ? { ...prev, status: "acknowledged", acknowledged_at: new Date().toISOString() } : null
-        );
-      }
-      showToast(`Incident ${id} acknowledged.`);
+      showToast(`Incident ${id} acknowledged (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("acknowledge", id, e);
     }
   };
 
   const handleAssign = async (id: string, responderId: string, note?: string) => {
     try {
       const res = await api.assign(id, responderId, note);
-      showToast(`Responder assigned to ${id}.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      const responder = responders.find((r) => r.id === responderId);
-      setIncidents((prev) =>
-        prev.map((i) =>
-          i.id === id
-            ? {
-              ...i,
-              assigned_to: responderId,
-              assigned_to_name: responder?.name || responderId,
-              status: "in_progress",
-            }
-            : i
-        )
-      );
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident((prev) =>
-          prev
-            ? {
-              ...prev,
-              assigned_to: responderId,
-              assigned_to_name: responder?.name || responderId,
-              status: "in_progress",
-            }
-            : null
-        );
-      }
-      showToast(`Responder assigned to ${id}.`);
+      showToast(`Responder assigned to ${id} (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("assign a responder to", id, e);
     }
   };
 
   const handleRecordAction = async (id: string, actionType: string, note: string) => {
     try {
       const res = await api.recordAction(id, actionType, note);
-      showToast(`Action log recorded for ${id}.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      showToast(`Action log recorded for ${id}: ${actionType}`);
+      showToast(`Action log recorded for ${id} (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("record an action on", id, e);
     }
   };
 
   const handleOverridePriority = async (id: string, level: PriorityLevel | null, reason: string) => {
     try {
       const res = await api.overridePriority(id, level, reason);
-      showToast(`Priority override updated for ${id}.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      if (level) {
-        setIncidents((prev) =>
-          prev.map((i) =>
-            i.id === id
-              ? {
-                ...i,
-                priority_level: level,
-                priority_overridden: true,
-                override_reason: reason,
-              }
-              : i
-          )
-        );
-        if (selectedIncident && selectedIncident.id === id) {
-          setSelectedIncident((prev) =>
-            prev
-              ? {
-                ...prev,
-                priority_level: level,
-                priority_overridden: true,
-                override_reason: reason,
-              }
-              : null
-          );
-        }
-      }
-      showToast(`Priority override updated for ${id}.`);
+      showToast(`Priority override updated for ${id} (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("override priority of", id, e);
     }
   };
 
   const handleResolve = async (id: string, resolutionType: "resolved" | "false_positive", note?: string) => {
     try {
       const res = await api.resolve(id, resolutionType, note);
-      showToast(`Incident ${id} marked as ${resolutionType.replace("_", " ")}.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      setIncidents((prev) =>
-        prev.map((i) =>
-          i.id === id
-            ? {
-              ...i,
-              status: resolutionType,
-              resolved_at: new Date().toISOString(),
-              resolution_type: resolutionType,
-              resolution_note: note,
-            }
-            : i
-        )
-      );
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident((prev) =>
-          prev
-            ? {
-              ...prev,
-              status: resolutionType,
-              resolved_at: new Date().toISOString(),
-              resolution_type: resolutionType,
-              resolution_note: note,
-            }
-            : null
-        );
-      }
-      showToast(`Incident ${id} marked as ${resolutionType.replace("_", " ")}.`);
+      showToast(`Incident ${id} marked as ${resolutionType.replace("_", " ")} (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("resolve", id, e);
     }
   };
 
   const handleReopen = async (id: string, reason: string) => {
     try {
       const res = await api.reopen(id, reason);
-      showToast(`Incident ${id} reopened.`);
-      if (selectedIncident && selectedIncident.id === id) {
-        setSelectedIncident(res.incident);
-      }
-      fetchData();
-    } catch {
-      setIncidents((prev) =>
-        prev.map((i) =>
-          i.id === id
-            ? {
-              ...i,
-              status: "acknowledged",
-            }
-            : i
-        )
-      );
-      showToast(`Incident ${id} reopened.`);
+      showToast(`Incident ${id} reopened (confirmed by server).`);
+      syncFromServer(id, res.incident);
+    } catch (e) {
+      failAction("reopen", id, e);
     }
+  };
+
+  // Supervisor escalation for an unacknowledged critical alert: persisted to the audit trail (server-confirmed).
+  const handleEscalate = async (id: string, supervisor: string, elapsedSeconds: number) => {
+    await api.recordAction(
+      id,
+      "escalation",
+      `[AUTO-ESCALATION] Critical alert unacknowledged for ${Math.round(elapsedSeconds)}s. Escalated to ${supervisor}.`
+    );
+    showToast(`Incident ${id} escalated to ${supervisor} (logged).`, "error");
+    fetchData();
+  };
+
+  // Dashboard / queue quick-actions have no dialog to keep open; the error toast is already shown.
+  const quickAcknowledge = (id: string, note: string) => {
+    handleAcknowledge(id, note).catch(() => {});
   };
 
   // Video Analysis Upload
@@ -381,7 +310,13 @@ export default function Home() {
       showToast(`Clip "${file.name}" uploaded to backend pipeline.`);
       fetchData();
     } catch (e: any) {
-      // Client-side & Vercel standalone video analysis engine
+      // Server answered with an error (validation, size, corrupt file...): surface it, do not mask it.
+      if (!(e instanceof TypeError)) {
+        showToast(`Upload rejected by server: ${e?.message || "unknown error"}`, "error");
+        return;
+      }
+      // Backend unreachable (network failure) => explicit browser-only DEMO MODE. Nothing is persisted.
+      showToast("Backend unreachable — running browser-only Demo Mode (results are NOT saved).", "error");
       const blobUrl = URL.createObjectURL(file);
       const cam = cameras.find((c) => c.id === cameraId) || cameras[0] || {
         id: cameraId || "CAM-PARK-01",
@@ -422,6 +357,28 @@ export default function Home() {
         const thumbUrl = analysis.keyframes[0]?.dataUrl || (await extractVideoThumbnail(file));
         const now = new Date().toISOString();
 
+        // 0. AI could not really analyse the clip: report that honestly. No incident, and NOT "normal activity".
+        if (analysis.aiUnavailable) {
+          setVideos((prev) =>
+            prev.map((j) =>
+              j.id === jobId
+                ? {
+                    ...newJob,
+                    status: "failed",
+                    progress: 1.0,
+                    candidate_count: 0,
+                    detector_available: false,
+                    detector_id: "none",
+                    error: `AI analysis unavailable: ${analysis.unavailableReason}`,
+                    completed_at: now,
+                  }
+                : j
+            )
+          );
+          showToast(`AI analysis unavailable for "${file.name}". No incident created — review the clip manually.`, "error");
+          return;
+        }
+
         // 1. Check if normal surveillance activity (No incident detected)
         if (
           !analysis.detected ||
@@ -438,7 +395,7 @@ export default function Home() {
             frames_analyzed: analysis.keyframes.length || 8,
             candidate_count: 0,
             duration_s: 16.5,
-            detector_id: analysis.isGeminiAi ? `gemini-${analysis.modelUsed}` : "township-guardian-v2",
+            detector_id: `gemini-${analysis.modelUsed}`,
             completed_at: now,
           };
 
@@ -461,7 +418,7 @@ export default function Home() {
           frames_analyzed: analysis.keyframes.length || 8,
           candidate_count: 1,
           duration_s: 16.5,
-          detector_id: analysis.isGeminiAi ? `gemini-${analysis.modelUsed}` : "township-guardian-v2",
+          detector_id: `gemini-${analysis.modelUsed}`,
           completed_at: now,
         };
 
@@ -505,7 +462,7 @@ export default function Home() {
           },
           status: "accepted",
           incident_id: incidentId,
-          reviewed_by: "AI Auto-Promote (Township Vision)",
+          reviewed_by: "AI auto-promote — awaiting human verification",
           reviewed_at: now,
           created_at: now,
           source: "video_analysis",
@@ -544,8 +501,8 @@ export default function Home() {
           emergency_rule_triggered: analysis.isEmergency,
           priority_overridden: false,
           detection_confidence: analysis.confidence,
-          verification_status: "verified",
-          needs_verification: false,
+          verification_status: "unverified",
+          needs_verification: true,
           uncertainty: "low",
           priority_explanation: analysis.summary,
           recommended_action: `Dispatch immediate response team to ${cam.name}. Verify CCTV telemetry feed.`,
@@ -556,6 +513,8 @@ export default function Home() {
             video_job_id: jobId,
             video_timestamp_s: analysis.timestamp_s,
             source_file: file.name,
+            local_only: true,
+            ai_detected_unverified: true,
           },
           seconds_since_detection: 1,
           queue_position: 1,
@@ -565,9 +524,9 @@ export default function Home() {
         setIncidents((prev) => [newIncident, ...prev]);
 
         showToast(
-          `AI Alert: ${analysis.categoryLabel} detected (${(
+          `AI-detected (UNVERIFIED, demo mode, not saved): ${analysis.categoryLabel} (${(
             analysis.confidence * 100
-          ).toFixed(0)}% conf). Incident ${incidentId} created.`,
+          ).toFixed(0)}% model confidence). Operator must verify ${incidentId}.`,
           "error"
         );
       } catch (analysisErr: any) {
@@ -577,42 +536,27 @@ export default function Home() {
     }
   };
 
-  // Candidate Review
+  // Candidate Review (server-confirmed only)
   const handleReviewCandidate = async (id: number, decision: "accept" | "reject", note?: string) => {
     try {
       await api.reviewCandidate(id, decision, note);
-      showToast(`Candidate #${id} ${decision === "accept" ? "accepted & prioritized" : "rejected"}.`);
+      showToast(`Candidate #${id} ${decision === "accept" ? "accepted & prioritized" : "rejected"} (confirmed by server).`);
       fetchData();
-    } catch {
-      setCandidates((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: decision === "accept" ? "accepted" : "rejected" } : c))
-      );
-      if (decision === "reject") {
-        const cand = candidates.find((c) => c.id === id);
-        if (cand?.incident_id) {
-          setIncidents((prev) =>
-            prev.map((inc) =>
-              inc.id === cand.incident_id
-                ? { ...inc, status: "false_positive", resolution_type: "false_positive" }
-                : inc
-            )
-          );
-        }
-      }
-      showToast(`Candidate #${id} ${decision === "accept" ? "accepted & prioritized" : "rejected"}.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Backend unreachable";
+      showToast(`NOT SAVED — candidate #${id} review failed: ${msg}`, "error");
+      throw e instanceof Error ? e : new Error(msg);
     }
   };
 
   const handleClearHistory = async (includeActive: boolean = false) => {
     try {
       const res = await api.clearIncidentHistory(includeActive);
-      showToast(res.message || "Incident history cleared successfully.");
+      showToast(res.message || "Incident history cleared (confirmed by server).");
       await fetchData();
-    } catch {
-      if (includeActive) {
-        setIncidents([]);
-      }
-      showToast("Incident history cleared successfully.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Backend unreachable";
+      showToast(`NOT SAVED — history was not cleared: ${msg}`, "error");
     }
   };
 
@@ -670,6 +614,7 @@ export default function Home() {
         criticalIncidentCount={criticalCount}
         isStreamConnected={isStreamConnected}
         mode={mode}
+        backendStatus={backendStatus}
       />
 
       {/* Main Content Area */}
@@ -681,6 +626,21 @@ export default function Home() {
           onRefresh={fetchData}
           isRefreshing={isRefreshing}
         />
+
+        {/* Critical alert banner: audible alarm, unacknowledged countdown, supervisor escalation */}
+        <CriticalAlertCenter
+          incidents={incidents}
+          backendConnected={backendStatus === "connected"}
+          onAcknowledge={(id) => quickAcknowledge(id, "Acknowledged from critical alert banner")}
+          onOpen={handleSelectIncident}
+          onEscalate={handleEscalate}
+        />
+
+        {backendStatus === "disconnected" && (
+          <div className="bg-rose-100 border-b border-rose-300 text-rose-900 text-xs font-semibold px-6 py-1.5">
+            Backend DISCONNECTED — data shown may be stale and no action will be saved until the connection returns.
+          </div>
+        )}
 
         {/* Global Toast Notification */}
         {toastMessage && (
@@ -707,7 +667,7 @@ export default function Home() {
                 analytics={analytics}
                 onSelectIncident={handleSelectIncident}
                 onNavigateToIncidents={() => setCurrentView("incidents")}
-                onAcknowledgeIncident={(id) => handleAcknowledge(id, "Acknowledged from dashboard spotlight")}
+                onAcknowledgeIncident={(id) => quickAcknowledge(id, "Acknowledged from dashboard spotlight")}
                 onNavigateToVideo={() => setCurrentView("video")}
                 onNavigateToMap={() => setCurrentView("map")}
               />
@@ -717,7 +677,7 @@ export default function Home() {
               <ActiveIncidentsView
                 incidents={incidents}
                 onSelectIncident={handleSelectIncident}
-                onAcknowledgeIncident={(id) => handleAcknowledge(id, "Acknowledged from incident queue")}
+                onAcknowledgeIncident={(id) => quickAcknowledge(id, "Acknowledged from incident queue")}
                 selectedIncidentId={selectedIncident?.id}
               />
             )}

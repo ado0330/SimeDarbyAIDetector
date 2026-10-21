@@ -192,6 +192,8 @@ export function IncidentDetailModal({
           `[SOP Step ${stepIndex + 1} Done] ${stepText} — Verified by Control Room Operator`
         );
       } catch (err: any) {
+        // Server did not confirm: undo the local tick so the checklist never claims an unsaved step.
+        setCompletedSopSteps((prev) => ({ ...prev, [stepIndex]: false }));
         console.error("Failed to record SOP step:", err);
       }
     }

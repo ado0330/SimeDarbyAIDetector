@@ -134,7 +134,7 @@ If judges request a longer technical demonstration or ask technical questions, u
 - **Auto-Promotion:** Candidates meeting confidence thresholds are ingested directly through the prioritization engine into the live queue, emitting a broker event to all connected SOC clients.
 
 ### C. In-Modal Video Player & HTTP 206 Streaming Architecture
-- **Backend:** `FastAPI` endpoint `/api/video/jobs/{job_id}/stream` supports RFC 7233 HTTP 206 Partial Content (Byte-Range requests).
+- **Backend:** `FastAPI` endpoint `/api/videos/{job_id}/file` (with stream alias `/api/video/jobs/{job_id}/stream`) serves high-performance surveillance playback directly to the HTML5 video element.
 - **Frontend:** Native HTML5 `<video>` element with custom controls, jump-to-timestamp synchronization, and dual-mode toggle between raw MP4 stream and OpenCV/Gemini keyframe canvas HUD.
 
 ### D. Township GIS Map & Spatial Health

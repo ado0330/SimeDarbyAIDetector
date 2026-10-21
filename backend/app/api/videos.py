@@ -171,6 +171,8 @@ def get_video(job_id: str, db: Session = Depends(get_db)) -> Dict[str, Any]:
 
 @router.get("/videos/{job_id}/file")
 @router.head("/videos/{job_id}/file")
+@router.get("/video/jobs/{job_id}/stream")
+@router.head("/video/jobs/{job_id}/stream")
 def get_video_file(job_id: str, db: Session = Depends(get_db)):
     job = vs.get_job(db, job_id)
     path = get_settings().upload_dir / job.stored_filename

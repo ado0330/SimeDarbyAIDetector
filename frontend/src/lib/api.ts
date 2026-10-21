@@ -21,6 +21,29 @@ const getApiBaseUrl = (): string => {
   return "";
 };
 
+export interface EvaluationTrial {
+  id?: number;
+  arm: "manual" | "globaleye";
+  scenario: string;
+  detection_seconds: number | null;
+  acknowledgement_seconds: number | null;
+  false_alarms: number;
+  missed: boolean;
+  notes?: string | null;
+  recorded_by?: string;
+  recorded_at?: string;
+}
+
+export interface EvaluationArmSummary {
+  trials: number;
+  median_detection_seconds: number | null;
+  median_acknowledgement_seconds: number | null;
+  false_alarms: number;
+  missed_incidents: number;
+}
+
+export type EvaluationSummary = Record<"manual" | "globaleye", EvaluationArmSummary>;
+
 const BASE_URL = getApiBaseUrl();
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -243,6 +266,19 @@ export const api = {
     fetchJson<{ candidate: VideoCandidate; mutation?: any }>(`/api/candidates/${id}/review`, {
       method: "POST",
       body: JSON.stringify({ decision, note }),
+    }),
+
+  // Controlled-test evidence (manual monitoring vs GlobalEye). Only human-recorded measurements.
+  getEvaluation: () =>
+    fetchJson<{ trials: EvaluationTrial[]; summary: EvaluationSummary }>("/api/evaluation/trials"),
+  addEvaluationTrial: (body: Omit<EvaluationTrial, "id" | "recorded_at" | "recorded_by">) =>
+    fetchJson<{ trials: EvaluationTrial[]; summary: EvaluationSummary }>("/api/evaluation/trials", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  clearEvaluation: () =>
+    fetchJson<{ trials: EvaluationTrial[]; summary: EvaluationSummary }>("/api/evaluation/trials", {
+      method: "DELETE",
     }),
 
   // Demo Controls

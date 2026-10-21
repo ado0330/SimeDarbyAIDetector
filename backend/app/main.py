@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import database
-from app.api import incidents, platform, videos
+from app.api import evaluation, incidents, platform, videos
 from app.config import get_settings
 from app.errors import ServiceError
 from app.services.events import broker
@@ -91,6 +91,7 @@ def create_app() -> FastAPI:
     app.include_router(platform.router)
     app.include_router(incidents.router)
     app.include_router(videos.router)
+    app.include_router(evaluation.router)
     return app
 
 
