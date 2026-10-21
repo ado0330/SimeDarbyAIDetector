@@ -1,8 +1,31 @@
 export type PriorityLevel = "critical" | "high" | "medium" | "low";
-export type IncidentCategory = "road_collision" | "person_fall" | "parking_obstruction" | "fire_smoke";
+export type IncidentCategory =
+  | "road_collision"
+  | "person_fall"
+  | "parking_obstruction"
+  | "fire_smoke"
+  | "wildlife_intrusion"
+  | "restricted_area_intrusion"
+  | "pipe_burst_leakage"
+  | "flash_flood"
+  | "lift_entrapment"
+  | "physical_altercation"
+  | "medical_emergency"
+  | "drowning_water_distress"
+  | "unauthorized_trespass"
+  | "gas_leak_explosion_risk"
+  | "drainage_blockage"
+  | "fallen_tree_storm_damage"
+  | "power_outage_electrical"
+  | "illegal_dumping"
+  | "custom_safety_hazard"
+  | string;
+
 export type IncidentStatus = "new" | "acknowledged" | "in_progress" | "resolved" | "false_positive" | "closed";
-export type SourceType = "simulation" | "video_upload";
+export type SourceType = "simulation" | "video_upload" | "iot_sensor" | "resident_report" | "multi_source_correlated" | string;
 export type VerificationStatus = "unverified" | "verified" | "false_positive";
+export type IncidentLifecycleState = "detected" | "suspected" | "sensor_reported" | "human_reported" | "confirmed" | "false_positive";
+export type DetectionMethod = "cctv_vision" | "iot_telemetry" | "human_report" | "external_integration" | "multi_source_correlated" | "manual_entry";
 
 export interface ScoreFactor {
   kind: "baseline" | "evidence" | "unknown";

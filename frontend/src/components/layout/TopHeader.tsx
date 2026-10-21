@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, RefreshCw } from "lucide-react";
+import { User, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface TopHeaderProps {
@@ -7,6 +7,8 @@ interface TopHeaderProps {
   subtitle?: string;
   onRefresh: () => void;
   isRefreshing?: boolean;
+  hasGeminiKey?: boolean;
+  onOpenGeminiModal?: () => void;
 }
 
 export function TopHeader({
@@ -14,6 +16,8 @@ export function TopHeader({
   subtitle,
   onRefresh,
   isRefreshing = false,
+  hasGeminiKey = false,
+  onOpenGeminiModal,
 }: TopHeaderProps) {
   const [timeStr, setTimeStr] = useState<string>("");
 
@@ -48,6 +52,24 @@ export function TopHeader({
           <span className="text-xs font-mono font-medium text-slate-700">{timeStr}</span>
           <span className="text-[10px] text-slate-400">Township Ops Center</span>
         </div>
+
+        {/* Gemini Vision AI Status & Setup Button */}
+        {onOpenGeminiModal && (
+          <button
+            onClick={onOpenGeminiModal}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
+              hasGeminiKey
+                ? "bg-teal-50 text-teal-800 border-teal-300 hover:bg-teal-100 shadow-2xs"
+                : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 animate-pulse"
+            }`}
+            title="Configure Google Gemini Vision AI API Key"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${hasGeminiKey ? "text-teal-600" : "text-amber-600"}`} />
+            <span className="hidden sm:inline">
+              {hasGeminiKey ? "Gemini AI: Connected" : "Connect Gemini API Key"}
+            </span>
+          </button>
+        )}
 
         {/* Refresh button */}
         <Button

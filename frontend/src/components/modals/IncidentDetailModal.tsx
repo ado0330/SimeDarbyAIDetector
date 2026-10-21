@@ -15,6 +15,7 @@ import {
   formatTimeAgo,
   formatCategory,
 } from "@/lib/utils";
+import { getTaxonomyCategory } from "@/lib/taxonomy";
 import {
   CheckCircle,
   UserPlus,
@@ -344,9 +345,12 @@ export function IncidentDetailModal({
               {/* Key Indicators Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Category</span>
+                  <span className="text-slate-500 text-[11px] block">Category & Domain</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block">
                     {formatCategory(incident.category)}
+                  </span>
+                  <span className="text-[10px] text-teal-700 font-medium block">
+                    {getTaxonomyCategory(incident.category).domainName}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">

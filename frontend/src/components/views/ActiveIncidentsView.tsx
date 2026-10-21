@@ -13,6 +13,7 @@ import {
   formatTimeAgo,
   formatCategory,
 } from "@/lib/utils";
+import { TAXONOMY_CATALOGUE, INCIDENT_DOMAINS } from "@/lib/taxonomy";
 import {
   Search,
   Filter,
@@ -178,10 +179,19 @@ export function ActiveIncidentsView({
             className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Incident Categories</option>
-            <option value="road_collision">Road Collision</option>
-            <option value="person_fall">Person Down / Fall</option>
-            <option value="parking_obstruction">Parking Obstruction</option>
-            <option value="fire_smoke">Suspected Fire / Smoke</option>
+            {INCIDENT_DOMAINS.map((dom) => {
+              const cats = Object.values(TAXONOMY_CATALOGUE).filter((c) => c.domain === dom.id);
+              if (cats.length === 0) return null;
+              return (
+                <optgroup key={dom.id} label={dom.name}>
+                  {cats.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
 
           {/* Source Filter */}

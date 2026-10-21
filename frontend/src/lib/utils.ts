@@ -135,11 +135,26 @@ export function getStatusStyles(status: IncidentStatus) {
 export function formatCategory(cat: string): string {
   const map: Record<string, string> = {
     road_collision: "Road Collision",
-    person_fall: "Person Down / Fall",
-    parking_obstruction: "Parking Obstruction",
+    person_fall: "Person Fall / Motionless",
+    parking_obstruction: "Emergency Access Obstruction",
     fire_smoke: "Suspected Fire / Smoke",
+    wildlife_intrusion: "Wildlife Intrusion",
+    restricted_area_intrusion: "Restricted Danger Zone (Rooftop)",
+    pipe_burst_leakage: "Water Main Pipe Burst",
+    flash_flood: "Flash Flooding / Inundation",
+    lift_entrapment: "Elevator Passenger Entrapment",
+    physical_altercation: "Physical Altercation / Brawl",
+    medical_emergency: "Acute Medical Emergency",
+    drowning_water_distress: "Water Distress / Drowning Risk",
+    unauthorized_trespass: "Perimeter Security Breach",
+    gas_leak_explosion_risk: "Gas Leak / Explosion Risk",
+    drainage_blockage: "Drainage / Culvert Blockage",
+    fallen_tree_storm_damage: "Fallen Tree / Storm Damage",
+    power_outage_electrical: "Electrical / Substation Trip",
+    illegal_dumping: "Illegal Waste Dumping",
+    custom_safety_hazard: "Custom Safety Hazard",
   };
-  return map[cat] || cat.replace(/_/g, " ");
+  return map[cat] || cat.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function formatDuration(seconds?: number | null): string {

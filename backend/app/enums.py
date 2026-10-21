@@ -12,6 +12,39 @@ class Category(StrEnum):
     PERSON_FALL = "person_fall"
     PARKING_OBSTRUCTION = "parking_obstruction"
     FIRE_SMOKE = "fire_smoke"
+    WILDLIFE_INTRUSION = "wildlife_intrusion"
+    RESTRICTED_AREA_INTRUSION = "restricted_area_intrusion"
+    PIPE_BURST_LEAKAGE = "pipe_burst_leakage"
+    FLASH_FLOOD = "flash_flood"
+    LIFT_ENTRAPMENT = "lift_entrapment"
+    PHYSICAL_ALTERCATION = "physical_altercation"
+    MEDICAL_EMERGENCY = "medical_emergency"
+    DROWNING_WATER_DISTRESS = "drowning_water_distress"
+    UNAUTHORIZED_TRESPASS = "unauthorized_trespass"
+    GAS_LEAK_EXPLOSION_RISK = "gas_leak_explosion_risk"
+    DRAINAGE_BLOCKAGE = "drainage_blockage"
+    FALLEN_TREE_STORM_DAMAGE = "fallen_tree_storm_damage"
+    POWER_OUTAGE_ELECTRICAL = "power_outage_electrical"
+    ILLEGAL_DUMPING = "illegal_dumping"
+    CUSTOM_SAFETY_HAZARD = "custom_safety_hazard"
+
+
+class LifecycleState(StrEnum):
+    DETECTED = "detected"
+    SUSPECTED = "suspected"
+    SENSOR_REPORTED = "sensor_reported"
+    HUMAN_REPORTED = "human_reported"
+    CONFIRMED = "confirmed"
+    FALSE_POSITIVE = "false_positive"
+
+
+class DetectionMethod(StrEnum):
+    CCTV_VISION = "cctv_vision"
+    IOT_TELEMETRY = "iot_telemetry"
+    HUMAN_REPORT = "human_report"
+    EXTERNAL_INTEGRATION = "external_integration"
+    MULTI_SOURCE_CORRELATED = "multi_source_correlated"
+    MANUAL_ENTRY = "manual_entry"
 
 
 class PriorityLevel(StrEnum):
@@ -82,4 +115,19 @@ CATEGORY_LABELS = {
     Category.PERSON_FALL.value: "Person fall / person down",
     Category.PARKING_OBSTRUCTION.value: "Parking obstruction",
     Category.FIRE_SMOKE.value: "Suspected fire / smoke",
+    Category.WILDLIFE_INTRUSION.value: "Wildlife intrusion (wild animal)",
+    Category.RESTRICTED_AREA_INTRUSION.value: "Restricted danger zone (rooftop / height)",
+    Category.PIPE_BURST_LEAKAGE.value: "Water main pipe burst / leakage",
+    Category.FLASH_FLOOD.value: "Flash flooding / inundation",
+    Category.LIFT_ENTRAPMENT.value: "Elevator passenger entrapment",
+    Category.PHYSICAL_ALTERCATION.value: "Physical altercation / public affray",
+    Category.MEDICAL_EMERGENCY.value: "Acute medical emergency",
+    Category.DROWNING_WATER_DISTRESS.value: "Water distress / drowning risk",
+    Category.UNAUTHORIZED_TRESPASS.value: "Perimeter security breach",
+    Category.GAS_LEAK_EXPLOSION_RISK.value: "Gas leak / explosion risk",
+    Category.DRAINAGE_BLOCKAGE.value: "Drainage / culvert blockage",
+    Category.FALLEN_TREE_STORM_DAMAGE.value: "Fallen tree / storm damage",
+    Category.POWER_OUTAGE_ELECTRICAL.value: "Substation trip / power blackout",
+    Category.ILLEGAL_DUMPING.value: "Illegal waste dumping",
+    Category.CUSTOM_SAFETY_HAZARD.value: "Custom safety hazard",
 }

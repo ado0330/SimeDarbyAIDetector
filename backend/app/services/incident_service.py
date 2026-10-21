@@ -36,6 +36,21 @@ TITLES = {
     Category.PERSON_FALL.value: "Possible person down",
     Category.PARKING_OBSTRUCTION.value: "Parking obstruction",
     Category.FIRE_SMOKE.value: "Suspected fire / smoke",
+    Category.WILDLIFE_INTRUSION.value: "Wildlife intrusion detected",
+    Category.RESTRICTED_AREA_INTRUSION.value: "Restricted danger zone breach",
+    Category.PIPE_BURST_LEAKAGE.value: "Water main pipe burst / leak",
+    Category.FLASH_FLOOD.value: "Roadway flash flooding detected",
+    Category.LIFT_ENTRAPMENT.value: "Elevator passenger entrapment",
+    Category.PHYSICAL_ALTERCATION.value: "Physical altercation detected",
+    Category.MEDICAL_EMERGENCY.value: "Acute medical emergency",
+    Category.DROWNING_WATER_DISTRESS.value: "Water distress / drowning risk",
+    Category.UNAUTHORIZED_TRESPASS.value: "Perimeter security breach",
+    Category.GAS_LEAK_EXPLOSION_RISK.value: "Gas leak / explosion risk",
+    Category.DRAINAGE_BLOCKAGE.value: "Monsoon drainage blockage",
+    Category.FALLEN_TREE_STORM_DAMAGE.value: "Fallen tree storm obstruction",
+    Category.POWER_OUTAGE_ELECTRICAL.value: "Power blackout / substation fault",
+    Category.ILLEGAL_DUMPING.value: "Illegal waste dumping",
+    Category.CUSTOM_SAFETY_HAZARD.value: "Custom township safety hazard",
 }
 
 

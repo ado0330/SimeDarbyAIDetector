@@ -89,6 +89,30 @@ def recommend(
             recs.append(Recommendation("evacuate_area", "Consider initiating local evacuation procedures for the affected area.",
                                        "People are reported near the hazard."))
 
+    elif category == Category.WILDLIFE_INTRUSION.value:
+        recs.append(Recommendation("alert_residents", "Broadcast localized alert to park visitors and nearby residents.",
+                                   "Wild animals may pose an aggressive hazard to joggers and children."))
+        recs.append(Recommendation("dispatch_wildlife_warden", "Dispatch township wildlife control unit and contact PERHILITAN.",
+                                   "Trained personnel must manage wild animal capture and relocation."))
+
+    elif category == Category.RESTRICTED_AREA_INTRUSION.value:
+        recs.append(Recommendation("trigger_intercom_warning", "Engage CCTV live audio speaker warning to instruct trespasser to retreat.",
+                                   "Immediate verbal deterrence to prevent fall from height."))
+        recs.append(Recommendation("dispatch_rooftop_security", "Dispatch building security patrol to inspect access stairs and lock roof hatch.",
+                                   "Ensure physical isolation of hazardous zone."))
+
+    elif category == Category.PIPE_BURST_LEAKAGE.value:
+        recs.append(Recommendation("isolate_water_valve", "Dispatch plumbing emergency team to close section isolation valve.",
+                                   "Prevent localized road washout and ground subsidence."))
+        recs.append(Recommendation("monitor_downstream_flood", "Check downstream stormwater culverts for secondary flooding risk.",
+                                   "Correlate with potential roadway pooling."))
+
+    elif category == Category.FLASH_FLOOD.value:
+        recs.append(Recommendation("deploy_flood_signboards", "Activate electronic flood warning signboards and divert traffic.",
+                                   "Submerged roadway presents vehicle stalling and entrapment risk."))
+        recs.append(Recommendation("check_spillway_pumps", "Verify retention lake spillway and automated stormwater pump operations.",
+                                   "Drainage infrastructure status check."))
+
     if not recs:
         recs.append(Recommendation("review", "Review the incident and assign an appropriate responder.", "Default advisory action."))
     return recs

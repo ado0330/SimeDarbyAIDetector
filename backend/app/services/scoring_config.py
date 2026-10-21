@@ -76,6 +76,21 @@ BASELINES: Dict[str, Dict[str, float]] = {
     C.PERSON_FALL.value: {"severity": 45, "immediacy": 55, "people_at_risk": 20, "secondary_hazard": 10},
     C.PARKING_OBSTRUCTION.value: {"severity": 15, "immediacy": 15, "people_at_risk": 5, "secondary_hazard": 20},
     C.FIRE_SMOKE.value: {"severity": 85, "immediacy": 80, "people_at_risk": 55, "secondary_hazard": 80},
+    C.WILDLIFE_INTRUSION.value: {"severity": 65, "immediacy": 75, "people_at_risk": 60, "secondary_hazard": 35},
+    C.RESTRICTED_AREA_INTRUSION.value: {"severity": 80, "immediacy": 80, "people_at_risk": 40, "secondary_hazard": 70},
+    C.PIPE_BURST_LEAKAGE.value: {"severity": 60, "immediacy": 65, "people_at_risk": 30, "secondary_hazard": 60},
+    C.FLASH_FLOOD.value: {"severity": 75, "immediacy": 80, "people_at_risk": 65, "secondary_hazard": 70},
+    C.LIFT_ENTRAPMENT.value: {"severity": 80, "immediacy": 85, "people_at_risk": 70, "secondary_hazard": 30},
+    C.PHYSICAL_ALTERCATION.value: {"severity": 70, "immediacy": 75, "people_at_risk": 50, "secondary_hazard": 40},
+    C.MEDICAL_EMERGENCY.value: {"severity": 85, "immediacy": 90, "people_at_risk": 30, "secondary_hazard": 10},
+    C.DROWNING_WATER_DISTRESS.value: {"severity": 95, "immediacy": 95, "people_at_risk": 40, "secondary_hazard": 50},
+    C.UNAUTHORIZED_TRESPASS.value: {"severity": 55, "immediacy": 60, "people_at_risk": 25, "secondary_hazard": 30},
+    C.GAS_LEAK_EXPLOSION_RISK.value: {"severity": 90, "immediacy": 90, "people_at_risk": 75, "secondary_hazard": 85},
+    C.DRAINAGE_BLOCKAGE.value: {"severity": 40, "immediacy": 45, "people_at_risk": 20, "secondary_hazard": 50},
+    C.FALLEN_TREE_STORM_DAMAGE.value: {"severity": 60, "immediacy": 65, "people_at_risk": 35, "secondary_hazard": 55},
+    C.POWER_OUTAGE_ELECTRICAL.value: {"severity": 65, "immediacy": 65, "people_at_risk": 50, "secondary_hazard": 50},
+    C.ILLEGAL_DUMPING.value: {"severity": 35, "immediacy": 30, "people_at_risk": 15, "secondary_hazard": 40},
+    C.CUSTOM_SAFETY_HAZARD.value: {"severity": 50, "immediacy": 50, "people_at_risk": 30, "secondary_hazard": 30},
 }
 
 # Evidence fields the engine would *like* to know per category. Missing ones are reported as
@@ -85,6 +100,21 @@ EXPECTED_FIELDS: Dict[str, Tuple[str, ...]] = {
     C.PERSON_FALL.value: ("person_motionless_seconds", "hazardous_location"),
     C.PARKING_OBSTRUCTION.value: ("blocks_emergency_access",),
     C.FIRE_SMOKE.value: ("smoke_or_flame_visible", "people_in_vicinity"),
+    C.WILDLIFE_INTRUSION.value: ("proximity_to_pedestrians", "aggressive_behavior"),
+    C.RESTRICTED_AREA_INTRUSION.value: ("height_fall_hazard", "unauthorized_entry"),
+    C.PIPE_BURST_LEAKAGE.value: ("road_subsidence_risk",),
+    C.FLASH_FLOOD.value: ("water_depth_cm",),
+    C.LIFT_ENTRAPMENT.value: ("passengers_count",),
+    C.PHYSICAL_ALTERCATION.value: ("weapons_detected",),
+    C.MEDICAL_EMERGENCY.value: ("consciousness_level",),
+    C.DROWNING_WATER_DISTRESS.value: ("persons_in_water",),
+    C.UNAUTHORIZED_TRESPASS.value: ("perimeter_sector",),
+    C.GAS_LEAK_EXPLOSION_RISK.value: ("ppm_concentration",),
+    C.DRAINAGE_BLOCKAGE.value: ("culvert_headroom_remaining",),
+    C.FALLEN_TREE_STORM_DAMAGE.value: ("power_lines_contacted",),
+    C.POWER_OUTAGE_ELECTRICAL.value: ("affected_substation",),
+    C.ILLEGAL_DUMPING.value: ("chemical_odor",),
+    C.CUSTOM_SAFETY_HAZARD.value: (),
 }
 
 
@@ -178,6 +208,26 @@ RULES: Tuple[EmergencyRule, ...] = (
         "R-ACCESS-BLOCKED",
         "Blocking an emergency access route is treated as at least high priority.",
         tuple(c.value for c in Category), (Condition("blocks_emergency_access", "is_true"),), "high", False),
+    EmergencyRule(
+        "R-WILDLIFE-PROXIMITY",
+        "Wildlife intrusion in active residential/pedestrian areas is treated as high priority.",
+        (C.WILDLIFE_INTRUSION.value,), (), "high", True),
+    EmergencyRule(
+        "R-RESTRICTED-ROOFTOP",
+        "Unauthorized access to rooftop ledges or high-voltage substations is potentially fatal.",
+        (C.RESTRICTED_AREA_INTRUSION.value,), (), "high", True),
+    EmergencyRule(
+        "R-DROWNING-DISTRESS",
+        "Any water distress or drowning indication is treated as immediate critical emergency.",
+        (C.DROWNING_WATER_DISTRESS.value,), (), "critical", True),
+    EmergencyRule(
+        "R-GAS-LEAK",
+        "Gas leak or explosion risk is treated as critical emergency.",
+        (C.GAS_LEAK_EXPLOSION_RISK.value,), (), "critical", True),
+    EmergencyRule(
+        "R-LIFT-ENTRAPMENT",
+        "Passenger elevator entrapment requires urgent intervention.",
+        (C.LIFT_ENTRAPMENT.value,), (), "high", True),
 )
 
 CONFIG_VERSION = "2026.10-proto-1"

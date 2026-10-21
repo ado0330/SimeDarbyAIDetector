@@ -26,9 +26,11 @@ import {
   createFallbackDetail,
 } from "@/lib/mockData";
 import { extractVideoThumbnail } from "@/lib/utils";
+import { analyzeVideoWithGemini, getStoredGeminiApiKey } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
 import { IncidentDetailModal } from "@/components/modals/IncidentDetailModal";
+import { GeminiApiKeyModal } from "@/components/modals/GeminiApiKeyModal";
 import { OverviewView } from "@/components/views/OverviewView";
 import { ActiveIncidentsView } from "@/components/views/ActiveIncidentsView";
 import { TownshipMapView } from "@/components/views/TownshipMapView";
@@ -39,6 +41,14 @@ import { CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<NavView>("overview");
+
+  // Gemini Vision AI Key State
+  const [isGeminiModalOpen, setIsGeminiModalOpen] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(false);
+
+  useEffect(() => {
+    setHasGeminiKey(Boolean(getStoredGeminiApiKey()));
+  }, []);
 
   // Core Data States
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -149,7 +159,7 @@ export default function Home() {
 
   // Server-Sent Events (SSE) Live Subscription
   useEffect(() => {
-    let unsubscribe: () => void = () => {};
+    let unsubscribe: () => void = () => { };
 
     try {
       unsubscribe = api.subscribeQueueEvents((event) => {
@@ -228,11 +238,11 @@ export default function Home() {
         prev.map((i) =>
           i.id === id
             ? {
-                ...i,
-                assigned_to: responderId,
-                assigned_to_name: responder?.name || responderId,
-                status: "in_progress",
-              }
+              ...i,
+              assigned_to: responderId,
+              assigned_to_name: responder?.name || responderId,
+              status: "in_progress",
+            }
             : i
         )
       );
@@ -240,11 +250,11 @@ export default function Home() {
         setSelectedIncident((prev) =>
           prev
             ? {
-                ...prev,
-                assigned_to: responderId,
-                assigned_to_name: responder?.name || responderId,
-                status: "in_progress",
-              }
+              ...prev,
+              assigned_to: responderId,
+              assigned_to_name: responder?.name || responderId,
+              status: "in_progress",
+            }
             : null
         );
       }
@@ -279,11 +289,11 @@ export default function Home() {
           prev.map((i) =>
             i.id === id
               ? {
-                  ...i,
-                  priority_level: level,
-                  priority_overridden: true,
-                  override_reason: reason,
-                }
+                ...i,
+                priority_level: level,
+                priority_overridden: true,
+                override_reason: reason,
+              }
               : i
           )
         );
@@ -291,11 +301,11 @@ export default function Home() {
           setSelectedIncident((prev) =>
             prev
               ? {
-                  ...prev,
-                  priority_level: level,
-                  priority_overridden: true,
-                  override_reason: reason,
-                }
+                ...prev,
+                priority_level: level,
+                priority_overridden: true,
+                override_reason: reason,
+              }
               : null
           );
         }
@@ -317,12 +327,12 @@ export default function Home() {
         prev.map((i) =>
           i.id === id
             ? {
-                ...i,
-                status: resolutionType,
-                resolved_at: new Date().toISOString(),
-                resolution_type: resolutionType,
-                resolution_note: note,
-              }
+              ...i,
+              status: resolutionType,
+              resolved_at: new Date().toISOString(),
+              resolution_type: resolutionType,
+              resolution_note: note,
+            }
             : i
         )
       );
@@ -330,12 +340,12 @@ export default function Home() {
         setSelectedIncident((prev) =>
           prev
             ? {
-                ...prev,
-                status: resolutionType,
-                resolved_at: new Date().toISOString(),
-                resolution_type: resolutionType,
-                resolution_note: note,
-              }
+              ...prev,
+              status: resolutionType,
+              resolved_at: new Date().toISOString(),
+              resolution_type: resolutionType,
+              resolution_note: note,
+            }
             : null
         );
       }
@@ -356,9 +366,9 @@ export default function Home() {
         prev.map((i) =>
           i.id === id
             ? {
-                ...i,
-                status: "acknowledged",
-              }
+              ...i,
+              status: "acknowledged",
+            }
             : i
         )
       );
@@ -370,10 +380,10 @@ export default function Home() {
   const handleUploadVideo = async (file: File, cameraId?: string) => {
     try {
       const job = await api.uploadVideo(file, cameraId);
-      showToast(`Clip "${file.name}" uploaded. Processing queued.`);
+      showToast(`Clip "${file.name}" uploaded to backend pipeline.`);
       fetchData();
     } catch (e: any) {
-      // Client-side fallback for standalone / cloud demo deployment (e.g. Vercel)
+      // Client-side & Vercel standalone video analysis engine
       const blobUrl = URL.createObjectURL(file);
       const cam = cameras.find((c) => c.id === cameraId) || cameras[0] || {
         id: cameraId || "CAM-PARK-01",
@@ -385,51 +395,7 @@ export default function Home() {
       const candidateId = Math.floor(Date.now() % 900000) + 100000;
       const incidentId = `INC-VID-${candidateId}`;
 
-      // Analyze file name for category heuristics
-      const lower = file.name.toLowerCase();
-      let category = "person_fall";
-      let category_label = "Person Fall / Motionless";
-      let explanation = `Pedestrian posture collapse detected on ${cam.name}. Subject horizontal for > 15s with zero translation.`;
-      let score = 91.5;
-      let severity: PriorityLevel = "critical";
-      let confidence = 0.94;
-      let isEmergency = true;
-
-      if (lower.includes("fire") || lower.includes("smoke") || lower.includes("flame")) {
-        category = "fire_smoke";
-        category_label = "Suspected Fire / Smoke";
-        explanation = `Visual flame flicker and thermal plume expansion identified on ${cam.name}.`;
-        score = 96.0;
-        severity = "critical";
-        confidence = 0.97;
-        isEmergency = true;
-      } else if (lower.includes("fight") || lower.includes("assault") || lower.includes("violence") || lower.includes("brawl")) {
-        category = "physical_altercation";
-        category_label = "Physical Altercation";
-        explanation = `Rapid multi-person bounding-box centroid fluctuation detected on ${cam.name}.`;
-        score = 84.5;
-        severity = "high";
-        confidence = 0.89;
-        isEmergency = false;
-      } else if (lower.includes("crash") || lower.includes("car") || lower.includes("collision") || lower.includes("vehicle")) {
-        category = "road_collision";
-        category_label = "Road Collision";
-        explanation = `High-velocity deceleration and vehicle pathway obstruction detected on ${cam.name}.`;
-        score = 78.5;
-        severity = "high";
-        confidence = 0.95;
-        isEmergency = false;
-      } else if (lower.includes("trash") || lower.includes("dump") || lower.includes("rubbish") || lower.includes("litter")) {
-        category = "parking_obstruction";
-        category_label = "Unattended Obstruction";
-        explanation = `Stationary deposit dropped in unauthorized zone on ${cam.name}.`;
-        score = 42.0;
-        severity = "low";
-        confidence = 0.91;
-        isEmergency = false;
-      }
-
-      // Step 1: Immediately show the processing job in table
+      // Step 1: Immediately show processing job in table
       const newJob: VideoJob = {
         id: jobId,
         original_filename: file.name,
@@ -437,9 +403,9 @@ export default function Home() {
         camera_id: cam.id,
         status: "processing",
         progress: 0.35,
-        frames_analyzed: 8,
+        frames_analyzed: 6,
         candidate_count: 0,
-        detector_id: "posture-heuristic-v2",
+        detector_id: hasGeminiKey ? "gemini-1.5-flash-vlm" : "multi-hazard-vision-v2",
         detector_available: true,
         video_available: true,
         video_url: blobUrl,
@@ -447,55 +413,65 @@ export default function Home() {
       };
 
       setVideos((prev) => [newJob, ...prev]);
-      showToast(`Analyzing clip "${file.name}"... Vision pipeline sampling frames.`, "success");
+      showToast(
+        hasGeminiKey
+          ? `Sampling video frames & querying Google Gemini Vision AI for "${file.name}"...`
+          : `Sampling video frames & analyzing "${file.name}" with vision pipeline...`,
+        "success"
+      );
 
-      // Extract thumbnail async in browser
-      const thumbUrl = await extractVideoThumbnail(file);
+      // Step 2: Extract frames and query Gemini Multimodal Vision API
+      try {
+        const analysis = await analyzeVideoWithGemini(file, cam.name);
+        const thumbUrl = analysis.keyframes[0]?.dataUrl || (await extractVideoThumbnail(file));
+        const now = new Date().toISOString();
+        const severity: PriorityLevel = analysis.score >= 90 ? "critical" : analysis.score >= 75 ? "high" : "medium";
 
-      // Step 2: Complete processing after realistic delay (1.2s)
-      setTimeout(() => {
         const completedJob: VideoJob = {
           ...newJob,
           status: "completed",
           progress: 1.0,
-          frames_analyzed: Math.floor(Math.random() * 20 + 28),
+          frames_analyzed: analysis.keyframes.length || 8,
           candidate_count: 1,
-          duration_s: 18.4,
-          completed_at: new Date().toISOString(),
+          duration_s: 16.5,
+          detector_id: analysis.isGeminiAi ? `gemini-${analysis.modelUsed}` : "township-guardian-v2",
+          completed_at: now,
         };
 
         setVideos((prev) => prev.map((j) => (j.id === jobId ? completedJob : j)));
 
-        const now = new Date().toISOString();
         const newCandidate: VideoCandidate = {
           id: candidateId,
           video_job_id: jobId,
-          category,
-          timestamp_s: 3.5,
-          end_timestamp_s: 7.8,
-          confidence,
-          bbox: { x: 140, y: 190, w: 220, h: 105 },
+          category: analysis.category,
+          timestamp_s: analysis.timestamp_s,
+          end_timestamp_s: analysis.timestamp_s + 4.5,
+          confidence: analysis.confidence,
+          bbox: { x: 120, y: 160, w: 240, h: 140 },
           evidence: {
             filename: file.name,
-            aspect_ratio_shift: 0.34,
-            posture_state: "horizontal_static",
+            model: analysis.modelUsed,
+            is_gemini: analysis.isGeminiAi,
+            ...analysis.evidence,
           },
           details: {
-            explanation,
-            source: "Client Vision AI / Heuristics",
+            explanation: analysis.summary,
+            source: analysis.isGeminiAi
+              ? `Google Gemini Vision (${analysis.modelUsed})`
+              : "Township Guardian Heuristics v2",
           },
           frame_url: thumbUrl,
-          model_id: "posture-heuristic-v2",
-          model_version: "2.4.0",
+          model_id: analysis.modelUsed,
+          model_version: analysis.isGeminiAi ? "Gemini 1.5 Flash" : "2.4.0",
           preview: {
-            severity: score >= 90 ? 95 : 75,
-            immediacy: score >= 90 ? 90 : 70,
+            severity: analysis.score >= 90 ? 95 : 75,
+            immediacy: analysis.score >= 90 ? 90 : 70,
             people_at_risk: 70,
             secondary_hazard: 60,
-            composite_score: score,
+            composite_score: analysis.score,
             score_level: severity,
             level: severity,
-            emergency: isEmergency,
+            emergency: analysis.isEmergency,
             factors: [],
             unknown_fields: [],
             needs_verification: false,
@@ -503,27 +479,29 @@ export default function Home() {
             uncertainty: "low",
             uncertainty_reasons: [],
             config_version: "2.0",
-            explanation,
+            explanation: analysis.summary,
           },
           status: "accepted",
           incident_id: incidentId,
-          reviewed_by: "AI Auto-Promote (Client Vision)",
+          reviewed_by: analysis.isGeminiAi
+            ? "AI Auto-Promote (Gemini Vision)"
+            : "AI Auto-Promote (Township Vision)",
           reviewed_at: now,
           created_at: now,
           source: "video_analysis",
           source_clip: file.name,
-          urgent_review: isEmergency,
+          urgent_review: analysis.isEmergency,
         };
 
         setCandidates((prev) => [newCandidate, ...prev]);
 
-        // Create the Incident in the active queue
+        // Create the Incident in the active queue as a Danger Incident
         const newIncident: Incident = {
           id: incidentId,
-          title: `${category_label} — ${cam.name}`,
-          category: category as any,
-          category_label,
-          description: explanation,
+          title: `${analysis.title} — ${cam.name}`,
+          category: analysis.category as any,
+          category_label: analysis.categoryLabel,
+          description: analysis.summary,
           location_id: cam.location_id,
           location_name: cam.name,
           camera_id: cam.id,
@@ -535,21 +513,21 @@ export default function Home() {
           created_at: now,
           updated_at: now,
           status: "new",
-          severity_score: score >= 90 ? 95 : 75,
-          immediacy_score: score >= 90 ? 90 : 70,
+          severity_score: analysis.score >= 90 ? 95 : 75,
+          immediacy_score: analysis.score >= 90 ? 90 : 70,
           people_at_risk_score: 70,
           secondary_hazard_score: 60,
-          priority_score: score,
-          rank_score: score,
+          priority_score: analysis.score,
+          rank_score: analysis.score,
           priority_level: severity,
           computed_priority_level: severity,
-          emergency_rule_triggered: isEmergency,
+          emergency_rule_triggered: analysis.isEmergency,
           priority_overridden: false,
-          detection_confidence: confidence,
+          detection_confidence: analysis.confidence,
           verification_status: "verified",
           needs_verification: false,
           uncertainty: "low",
-          priority_explanation: explanation,
+          priority_explanation: analysis.summary,
           recommended_action: `Dispatch immediate response team to ${cam.name}. Verify CCTV telemetry feed.`,
           is_simulated: false,
           detection_count: 1,
@@ -557,10 +535,13 @@ export default function Home() {
             video_job_id: jobId,
             file_name: file.name,
             thumbnail: thumbUrl,
+            model_used: analysis.modelUsed,
+            is_gemini: analysis.isGeminiAi,
           },
           metadata: {
             video_job_id: jobId,
-            video_timestamp_s: 3.5,
+            video_timestamp_s: analysis.timestamp_s,
+            ai_model: analysis.modelUsed,
           },
           seconds_since_detection: 1,
           queue_position: 1,
@@ -570,10 +551,15 @@ export default function Home() {
         setIncidents((prev) => [newIncident, ...prev]);
 
         showToast(
-          `Analysis complete: ${category_label} detected (${(confidence * 100).toFixed(0)}% confidence). Queued as ${incidentId}!`,
+          `${analysis.isGeminiAi ? "✨ Gemini Vision AI" : "Vision AI"}: ${analysis.categoryLabel} detected (${(
+            analysis.confidence * 100
+          ).toFixed(0)}% conf). Concluded as Danger Incident ${incidentId}!`,
           "success"
         );
-      }, 1200);
+      } catch (analysisErr: any) {
+        console.error("Frame analysis error:", analysisErr);
+        showToast(`Video analysis error: ${analysisErr.message || "Failed to process frames"}`, "error");
+      }
     }
   };
 
@@ -670,6 +656,8 @@ export default function Home() {
           subtitle={viewHeaders[currentView].subtitle}
           onRefresh={fetchData}
           isRefreshing={isRefreshing}
+          hasGeminiKey={hasGeminiKey}
+          onOpenGeminiModal={() => setIsGeminiModalOpen(true)}
         />
 
         {/* Global Toast Notification */}
@@ -721,6 +709,8 @@ export default function Home() {
                 onReviewCandidate={handleReviewCandidate}
                 onSelectIncident={handleSelectIncident}
                 onRefresh={fetchData}
+                hasGeminiKey={hasGeminiKey}
+                onOpenGeminiModal={() => setIsGeminiModalOpen(true)}
               />
             )}
 
@@ -766,6 +756,20 @@ export default function Home() {
         onOverridePriority={handleOverridePriority}
         onResolve={handleResolve}
         onReopen={handleReopen}
+      />
+
+      {/* Gemini Vision AI Setup Modal */}
+      <GeminiApiKeyModal
+        isOpen={isGeminiModalOpen}
+        onClose={() => setIsGeminiModalOpen(false)}
+        onKeySaved={(hasKey) => {
+          setHasGeminiKey(hasKey);
+          showToast(
+            hasKey
+              ? "✨ Google Gemini Vision AI connected! Video clips will now use multimodal AI frame analysis."
+              : "Gemini API key cleared."
+          );
+        }}
       />
     </div>
   );

@@ -28,35 +28,36 @@ FALLBACK_MODELS = [
     "gemini-2.0-flash",
 ]
 
-PROMPT = """You are an expert CCTV security operations AI for a smart township community (Sime Darby Property).
-Analyze these sampled video frames captured chronologically at 1-second intervals from a security camera.
+PROMPT = """You are an expert CCTV security and township safety operations AI for Sime Darby Property smart townships.
+Analyze these sampled video frames captured chronologically from a CCTV security camera.
 
-Determine if any of the following 4 security/safety incident categories occurred in this footage:
-1. "road_collision": Vehicle crash, car collision, motorcycle skid, rear-end impact, vehicle hitting pedestrian or barrier.
-2. "person_fall": A person collapsed, fell, tripped, or is lying motionless/unresponsive on the ground or bench.
-3. "parking_obstruction": A vehicle parked illegally blocking emergency egress, fire hydrant, driveway, or double-parked.
-4. "fire_smoke": Open flames, thick smoke plume, hazardous burning, or suspected fire.
+Determine if any security, life safety, or danger incident occurred in this footage.
+Classify into one of these specific township safety categories:
+1. "fire_smoke": Open flames, thick smoke plume, hazardous burning, fire flare, or thermal hazard.
+2. "wildlife_intrusion": Wild or hazardous animals (wild boars, monkeys, venomous snakes, monitor lizards, stray aggressive packs) entering residential neighborhoods, parks, or pedestrian trails.
+3. "restricted_area_intrusion": Unauthorized persons in high-danger restricted zones (persons on rooftop edges, climbing roof structures, electrical substations, construction perimeters, dangerous heights, retention pond banks).
+4. "person_fall": A person collapsed, fell, tripped, slipped, or is lying motionless / unresponsive on the ground or walkway.
+5. "road_collision": Vehicle collision, car crash, motorcycle skid, vehicle hitting pedestrian or cyclist.
+6. "parking_obstruction": Vehicle blocking emergency egress route, fire hydrant, or double parked.
+7. "pipe_burst_leakage": High-pressure water main burst or street flooding from plumbing failure.
+8. "flash_flood": Rapid roadway or path inundation from storm/monsoon overflow.
 
 If no incident occurred (normal pedestrian/traffic activity), set "detected": false and "category": null.
 
 IMPORTANT TITLE AND SUMMARY RULES:
-- The "title" MUST be specific, descriptive, and unique to the exact visual scene in THIS video (e.g. mention subject's clothing colors, exact setting like stairs/sidewalk/crosswalk/road/corridor, fall type, or vehicle colors/models). NEVER use generic repeated titles like "Person Collapsed on Lakeside Walkway" unless that exact setting is visible.
+- The "title" MUST be specific, descriptive, and unique to the exact visual scene in THIS video (e.g. mention subject's clothing colors, animals, rooftop location, vehicle colors/models). NEVER use generic repeated titles unless that exact setting is visible.
 - The "summary" MUST describe the actual visual scene, sequence of events, and specific subjects or vehicles observed in the frames.
 
 Respond STRICTLY with a valid JSON object matching this schema (do not wrap in markdown quotes if possible):
 {
   "detected": true,
-  "category": "road_collision",
+  "category": "fire_smoke" | "wildlife_intrusion" | "restricted_area_intrusion" | "person_fall" | "road_collision" | "parking_obstruction" | "pipe_burst_leakage" | "flash_flood",
   "confidence": 0.94,
   "timestamp_s": 3.0,
   "title": "Specific Descriptive Title of Incident",
   "summary": "Detailed, specific visual description of the incident including colors, vehicles, person actions, and exact surroundings.",
   "evidence": {
-    "vehicles_involved": 2,
-    "traffic_blocked": true,
-    "motionless_seconds": null,
-    "people_at_risk": 0,
-    "secondary_hazard": true,
+    "hazard_level": "critical",
     "details": "Specific visual details about the hazard observed in the frames."
   }
 }
@@ -260,8 +261,8 @@ def analyze_video_with_gemini(
     detected = bool(parsed.get("detected", False))
     raw_category = parsed.get("category")
     category: Optional[str] = None
-    if raw_category in (Category.ROAD_COLLISION.value, Category.PERSON_FALL.value,
-                         Category.PARKING_OBSTRUCTION.value, Category.FIRE_SMOKE.value):
+    valid_categories = {c.value for c in Category}
+    if raw_category in valid_categories:
         category = raw_category
 
     target_ts = float(parsed.get("timestamp_s") or 0.0)

@@ -27,6 +27,7 @@ import {
   Info,
   Loader2,
   Filter,
+  Sparkles,
 } from "lucide-react";
 
 interface VideoAnalysisViewProps {
@@ -37,6 +38,8 @@ interface VideoAnalysisViewProps {
   onReviewCandidate: (id: number, decision: "accept" | "reject", note?: string) => Promise<void>;
   onSelectIncident: (id: string) => void;
   onRefresh: () => void;
+  hasGeminiKey?: boolean;
+  onOpenGeminiModal?: () => void;
 }
 
 export function VideoAnalysisView({
@@ -47,6 +50,8 @@ export function VideoAnalysisView({
   onReviewCandidate,
   onSelectIncident,
   onRefresh,
+  hasGeminiKey = false,
+  onOpenGeminiModal,
 }: VideoAnalysisViewProps) {
   const [selectedCameraId, setSelectedCameraId] = useState<string>(cameras[0]?.id || "CAM-PARK-01");
   const [isUploading, setIsUploading] = useState(false);
@@ -133,6 +138,32 @@ export function VideoAnalysisView({
             </div>
           )}
 
+          {/* Gemini AI Multimodal Vision Banner */}
+          <div className="p-3 rounded-lg border border-teal-200 bg-teal-50/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950">
+                <Sparkles className="w-4 h-4 text-teal-600" />
+                <span>Google Gemini Vision AI</span>
+              </div>
+              {onOpenGeminiModal && (
+                <button
+                  type="button"
+                  onClick={onOpenGeminiModal}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer border ${
+                    hasGeminiKey
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"
+                      : "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+                  }`}
+                >
+                  {hasGeminiKey ? "Connected (Flash 1.5)" : "Connect API Key"}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-600 leading-snug">
+              Multimodal video frame analysis detects <strong>火灾 (Fire)</strong>, <strong>野生动物闯入 (Wildlife)</strong>, <strong>人在 Rooftop / 高危场所 (Rooftop Intrusion)</strong>, <strong>跌倒 (Falls)</strong>, and <strong>车祸 (Collisions)</strong>.
+            </p>
+          </div>
+
           {/* Camera Assignment */}
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
@@ -216,15 +247,14 @@ export function VideoAnalysisView({
                         {job.original_filename}
                       </span>
                       <span
-                        className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase ${
-                          job.status === "completed"
+                        className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase ${job.status === "completed"
                             ? "bg-emerald-100 text-emerald-800"
                             : job.status === "processing"
-                            ? "bg-amber-100 text-amber-800 animate-pulse"
-                            : job.status === "failed"
-                            ? "bg-rose-100 text-rose-800"
-                            : "bg-slate-200 text-slate-700"
-                        }`}
+                              ? "bg-amber-100 text-amber-800 animate-pulse"
+                              : job.status === "failed"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-slate-200 text-slate-700"
+                          }`}
                       >
                         {job.status}
                       </span>
@@ -312,13 +342,12 @@ export function VideoAnalysisView({
               return (
                 <div
                   key={c.id}
-                  className={`p-4 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
-                    c.status === "pending"
+                  className={`p-4 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${c.status === "pending"
                       ? isUrgent
                         ? "bg-rose-50/40"
                         : "bg-white"
                       : "bg-slate-50/50"
-                  }`}
+                    }`}
                 >
                   {/* Left: Frame thumbnail & Candidate details */}
                   <div className="flex items-start space-x-4 min-w-0 flex-1">
@@ -348,13 +377,12 @@ export function VideoAnalysisView({
                         </span>
 
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            c.status === "pending"
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${c.status === "pending"
                               ? "bg-amber-100 text-amber-800 border border-amber-300"
                               : c.status === "accepted"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : "bg-slate-200 text-slate-700 border border-slate-300"
-                          }`}
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                : "bg-slate-200 text-slate-700 border border-slate-300"
+                            }`}
                         >
                           {c.status.replace("_", " ")}
                         </span>
