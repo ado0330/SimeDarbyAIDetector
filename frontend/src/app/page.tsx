@@ -548,9 +548,9 @@ export default function Home() {
             ...newJob,
             status: "completed",
             progress: 1.0,
-            frames_analyzed: analysis.keyframes.length || 8,
+            frames_analyzed: analysis.keyframes.length || 6,
             candidate_count: 0,
-            duration_s: 16.5,
+            duration_s: analysis.duration_s || 8.0,
             detector_id: `gemini-${analysis.modelUsed}`,
             completed_at: now,
           };
@@ -571,9 +571,9 @@ export default function Home() {
           ...newJob,
           status: "completed",
           progress: 1.0,
-          frames_analyzed: analysis.keyframes.length || 8,
+          frames_analyzed: analysis.keyframes.length || 6,
           candidate_count: 1,
-          duration_s: 16.5,
+          duration_s: analysis.duration_s || 8.0,
           detector_id: `gemini-${analysis.modelUsed}`,
           completed_at: now,
         };

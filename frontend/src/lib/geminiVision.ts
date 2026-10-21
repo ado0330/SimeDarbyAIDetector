@@ -24,6 +24,7 @@ export interface GeminiVisionResult {
   categoryLabel: string;
   confidence: number;
   timestamp_s: number;
+  duration_s?: number;
   title: string;
   summary: string;
   isEmergency: boolean;
@@ -90,16 +91,21 @@ export async function testGeminiApiKey(key: string): Promise<{ valid: boolean; e
   }
 }
 
+export interface ExtractedKeyframesData {
+  keyframes: GeminiKeyframe[];
+  duration: number;
+}
+
 /**
  * Extract chronological keyframes from a video file using HTML5 Video and Canvas.
  */
 export function extractVideoKeyframes(
   file: File | string,
   maxFrames: number = 6
-): Promise<GeminiKeyframe[]> {
+): Promise<ExtractedKeyframesData> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") {
-      resolve([]);
+      resolve({ keyframes: [], duration: 0 });
       return;
     }
 
@@ -130,7 +136,10 @@ export function extractVideoKeyframes(
             // ignore cleanup errors
           }
         }
-        resolve(frames);
+        resolve({
+          keyframes: frames,
+          duration: isFinite(duration) && duration > 0 ? parseFloat(duration.toFixed(1)) : 8.0,
+        });
       };
 
       const timer = setTimeout(() => {
@@ -185,7 +194,7 @@ export function extractVideoKeyframes(
         cleanup();
       };
     } catch {
-      resolve([]);
+      resolve({ keyframes: [], duration: 0 });
     }
   });
 }
@@ -203,8 +212,8 @@ export async function analyzeVideoWithGemini(
 ): Promise<GeminiVisionResult> {
   const apiKey = (customKey || getStoredGeminiApiKey()).trim();
 
-  // Step 1: Extract keyframes from video
-  const keyframes = await extractVideoKeyframes(file, 6);
+  // Step 1: Extract keyframes and real duration from video
+  const { keyframes, duration } = await extractVideoKeyframes(file, 6);
 
   // Step 2: Query serverless vision endpoint
   if (keyframes.length > 0) {
@@ -241,6 +250,7 @@ export async function analyzeVideoWithGemini(
               categoryLabel: "Normal Activity (No Incident)",
               confidence: Number(json.confidence) || 0.95,
               timestamp_s: Number(json.timestamp_s) || 0.0,
+              duration_s: duration,
               title: json.title || `Normal Activity Verified — ${cameraName}`,
               summary:
                 json.summary ||
@@ -262,6 +272,7 @@ export async function analyzeVideoWithGemini(
             categoryLabel: label,
             confidence: Number(json.confidence) || 0.92,
             timestamp_s: Number(json.timestamp_s) || 2.0,
+            duration_s: duration,
             title: json.title || `${label} Detected`,
             summary: json.summary || `Multimodal CCTV scan detected ${label}.`,
             isEmergency,
@@ -283,7 +294,7 @@ export async function analyzeVideoWithGemini(
     keyframes.length === 0
       ? "Frames could not be extracted from this clip in the browser."
       : "The Gemini vision service is unreachable or not configured. No incident was created; review the clip manually.";
-  return buildAiUnavailableResult(cameraName, keyframes, reason);
+  return buildAiUnavailableResult(cameraName, keyframes, reason, duration);
 }
 
 /**
@@ -294,7 +305,8 @@ export async function analyzeVideoWithGemini(
 export function buildAiUnavailableResult(
   cameraName: string,
   keyframes: GeminiKeyframe[],
-  reason: string
+  reason: string,
+  duration?: number
 ): GeminiVisionResult {
   return {
     detected: false,
@@ -302,6 +314,7 @@ export function buildAiUnavailableResult(
     categoryLabel: "AI Analysis Unavailable",
     confidence: 0,
     timestamp_s: 0,
+    duration_s: duration || 0,
     title: `AI analysis unavailable — ${cameraName}`,
     summary: `No visual analysis was performed. ${reason}`,
     isEmergency: false,
