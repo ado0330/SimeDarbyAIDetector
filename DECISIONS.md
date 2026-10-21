@@ -99,3 +99,22 @@ Resolved the issue where the "Evidence Parameters" card in the Incident Details 
 2. **Standardized Domain Parameter Sanitization (`frontend/src/lib/geminiVision.ts`):** Implemented `sanitizeIncidentEvidence(category, rawEvidence)` which strips all technical keys (`model_used`, `is_gemini`, `thumbnail`, `video_job_id`, `filename`, `status`) and ensures domain parameters matching the GlobalEye incident taxonomy exist (e.g., `motionless_seconds`, `hazardous_location`, `bystander_assisting` for falls; `vehicles_involved`, `traffic_blocked` for collisions; `smoke_or_flame_visible`, `spreading` for fires; `animal_species`, `pack_size` for wildlife).
 3. **Modal UI Refinement (`frontend/src/components/modals/IncidentDetailModal.tsx`):** Updated the Evidence Parameters display to filter out any technical keys and render human-readable domain labels (e.g., "Motionless Duration: 24s", "Traffic Flow Blocked: Yes", "Wildlife Species: Wild Boar") with clean units and badges.
 4. **Prompt Enforcement (`route.ts`, `gemini_analyzer.py`):** Added explicit prompt instructions forbidding AI model or software references in the `evidence` JSON object and instructing the model to extract real physical incident attributes observed in the video frames.
+
+## D-021 — Operational Realism: Sime Darby Auxiliary Police (Polis Bantuan) & Field Ranger Workflow (2026-10-21) — accepted
+Implemented dedicated operational governance, patrol dispatch telemetry, and field ranger integration matching real-world municipal and township security operations across Sime Darby Property developments (City of Elmina):
+1. **Interactive Standard Operating Procedure (SOP) Protocol (`IncidentDetailModal.tsx`):**
+   - Transformed static text SOP guidelines into interactive compliance checklists connected directly to the incident's category lifecycle in `taxonomy.ts`.
+   - Added live completion progress tracking (e.g. `2 of 3 Steps Logged (67%)`), visual checkmark toggles, and compliance badges.
+   - Checking off any SOP step automatically dispatches an audit log entry (`sop_step_completed`) into `incident.events` and `incident.audit`, recording the exact timestamp and operator accountability record.
+2. **Auxiliary Police Patrol Fleet & Proximity Dispatch Engine (`frontend/src/lib/auxiliaryUnits.ts`):**
+   - Configured a realistic 5-unit on-duty fleet for City of Elmina: `PB-01 Alpha` (Toyota Hilux 4x4), `PB-02 Bravo` (Honda CB500X Rapid Motorcycle), `PB-03 Charlie` (Park Ranger Bicycle Unit), `PB-04 Delta` (Hazard & Rescue Van), and `PB-05 Echo` (Traffic Marshal Proton X70).
+   - Implemented `findNearestAuxiliaryUnit` which calculates real Euclidean canvas distance to the incident camera coordinate and derives realistic transit distance (in meters) and driving ETA (in minutes).
+   - Added **1-Click Dispatch** which assigns the unit, sets status to `in_progress`, auto-logs the dispatch transit note, and checks off the corresponding SOP dispatch step.
+3. **Field Ranger WhatsApp & Telegram SITREP Terminal (`IncidentDetailModal.tsx`):**
+   - Created `generateWhatsAppSitrep` formatting an official, structured emergency situation report containing incident ID, priority score, sector, camera node, GPS coordinates, observed evidence parameters, assigned unit, and control room dispatch contact.
+   - Added 1-click **"Copy SITREP (WhatsApp Format)"** (with animated clipboard feedback) and **"Transmit to Field Unit"** (via `openWhatsAppDispatch` using `wa.me/?text=...`).
+   - Added a dedicated **"SOP & Ranger Dispatch"** tab in the modal displaying the full on-shift fleet roster table and dispatch actions.
+4. **Township GIS Schematic Map Integration (`TownshipMapView.tsx`):**
+   - Added an interactive **"Auxiliary Patrol Fleet (5)"** layer toggle on the map canvas.
+   - Rendered blue `PB` patrol markers with radar pulse rings at unit positions and dynamic dashed dispatch trajectory lines with transit ETA badges connecting units to active incidents.
+   - Added an Auxiliary Police Sector Unit info card in the Zone Inspector sidebar with direct officer phone contacts.

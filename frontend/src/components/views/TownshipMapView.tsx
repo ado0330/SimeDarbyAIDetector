@@ -13,6 +13,11 @@ import {
   formatTimeAgo,
 } from "@/lib/utils";
 import {
+  AUXILIARY_PATROL_FLEET,
+  AuxiliaryUnit,
+  findNearestAuxiliaryUnit,
+} from "@/lib/auxiliaryUnits";
+import {
   MapPin,
   Camera,
   Layers,
@@ -22,6 +27,10 @@ import {
   Maximize2,
   Info,
   CheckCircle2,
+  Car,
+  Radio,
+  PhoneCall,
+  Navigation,
 } from "lucide-react";
 
 interface TownshipMapViewProps {
@@ -148,6 +157,7 @@ export function TownshipMapView({
   const [selectedZoneId, setSelectedZoneId] = useState<string>("LOC-PARK");
   const [showCameras, setShowCameras] = useState(true);
   const [showIncidents, setShowIncidents] = useState(true);
+  const [showPatrolUnits, setShowPatrolUnits] = useState(true);
 
   // Active incidents
   const activeIncidents = incidents.filter(
@@ -197,6 +207,19 @@ export function TownshipMapView({
           <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
             <input
               type="checkbox"
+              checked={showPatrolUnits}
+              onChange={(e) => setShowPatrolUnits(e.target.checked)}
+              className="rounded text-sky-600 focus:ring-sky-500"
+            />
+            <span className="text-[11px] font-medium flex items-center gap-1">
+              <Car className="w-3 h-3 text-sky-600" />
+              Auxiliary Patrol Fleet (5)
+            </span>
+          </label>
+
+          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+            <input
+              type="checkbox"
               checked={showIncidents}
               onChange={(e) => setShowIncidents(e.target.checked)}
               className="rounded text-rose-600 focus:ring-rose-500"
@@ -220,6 +243,8 @@ export function TownshipMapView({
               <span>High Alert</span>
               <span className="inline-block w-2 h-2 rounded-full bg-teal-400 ml-1" />
               <span>Online CCTV</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-sky-400 ml-1" />
+              <span>PB Patrol Unit</span>
             </div>
           </div>
 
@@ -370,6 +395,123 @@ export function TownshipMapView({
                     </g>
                   );
                 })}
+
+            {/* Auxiliary Patrol Units */}
+            {showPatrolUnits &&
+              AUXILIARY_PATROL_FLEET.map((u) => {
+                const isSelectedZoneUnit = u.assignedZoneId === selectedZoneId;
+                return (
+                  <g key={u.id} className="cursor-pointer group">
+                    <title>{`${u.callsign} — ${u.officerInCharge} (${u.vehicleModel}) — Status: ${u.status}`}</title>
+                    {/* Soft radar pulse ring */}
+                    <circle
+                      cx={u.coordinates.x}
+                      cy={u.coordinates.y}
+                      r={isSelectedZoneUnit ? "16" : "13"}
+                      fill="#38bdf8"
+                      opacity="0.2"
+                      className="pointer-events-none"
+                    />
+                    {/* Unit body */}
+                    <circle
+                      cx={u.coordinates.x}
+                      cy={u.coordinates.y}
+                      r={isSelectedZoneUnit ? "9" : "7.5"}
+                      fill="#0284c7"
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                      className="transition-transform group-hover:scale-110"
+                    />
+                    {/* Inner symbol */}
+                    <text
+                      x={u.coordinates.x}
+                      y={u.coordinates.y + 2.5}
+                      fill="#ffffff"
+                      fontSize="6.5"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      className="pointer-events-none select-none"
+                    >
+                      PB
+                    </text>
+                    {/* Unit Code Label */}
+                    <text
+                      x={u.coordinates.x}
+                      y={u.coordinates.y - 11}
+                      fill="#7dd3fc"
+                      fontSize="8"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      stroke="#0f172a"
+                      strokeWidth="2"
+                      paintOrder="stroke"
+                      className="pointer-events-none select-none"
+                    >
+                      {u.unitCode}
+                    </text>
+                  </g>
+                );
+              })}
+
+            {/* Active Dispatch Trajectory Lines */}
+            {showPatrolUnits &&
+              showIncidents &&
+              activeIncidents.map((inc) => {
+                let coords = { x: 500, y: 300 };
+                if (inc.camera_id && CAMERA_COORDINATES[inc.camera_id]) {
+                  coords = CAMERA_COORDINATES[inc.camera_id];
+                } else if (inc.location_id && ZONE_LAYOUTS[inc.location_id]) {
+                  coords = {
+                    x: ZONE_LAYOUTS[inc.location_id].labelX,
+                    y: ZONE_LAYOUTS[inc.location_id].labelY + 28,
+                  };
+                }
+
+                // Find assigned unit or nearest unit
+                let unit = AUXILIARY_PATROL_FLEET.find(
+                  (u) => u.id === inc.assigned_to || u.callsign === inc.assigned_to_name
+                );
+                if (!unit) {
+                  unit = findNearestAuxiliaryUnit(inc.location_id, inc.camera_id).unit;
+                }
+
+                const midX = (unit.coordinates.x + coords.x) / 2;
+                const midY = (unit.coordinates.y + coords.y) / 2;
+
+                return (
+                  <g key={`traj-${inc.id}`} className="pointer-events-none opacity-80">
+                    <line
+                      x1={unit.coordinates.x}
+                      y1={unit.coordinates.y}
+                      x2={coords.x}
+                      y2={coords.y}
+                      stroke="#38bdf8"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 4"
+                    />
+                    <rect
+                      x={midX - 22}
+                      y={midY - 7}
+                      width="44"
+                      height="14"
+                      rx="3"
+                      fill="#0f172a"
+                      stroke="#0284c7"
+                      strokeWidth="0.8"
+                    />
+                    <text
+                      x={midX}
+                      y={midY + 3}
+                      fill="#7dd3fc"
+                      fontSize="7.5"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      ETA 1.5m
+                    </text>
+                  </g>
+                );
+              })}
 
             {/* Active Incident Urgency Pins */}
             {showIncidents &&
@@ -536,6 +678,54 @@ export function TownshipMapView({
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Zone Assigned Auxiliary Police Patrol */}
+            <div>
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
+                <span className="flex items-center gap-1.5">
+                  <Car className="w-3.5 h-3.5 text-sky-600" />
+                  Auxiliary Police (Polis Bantuan)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold text-[10px]">
+                  Sector Unit
+                </span>
+              </div>
+
+              {(() => {
+                const sectorUnit =
+                  AUXILIARY_PATROL_FLEET.find((u) => u.assignedZoneId === selectedZoneId) ||
+                  AUXILIARY_PATROL_FLEET[0];
+                return (
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mt-2 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-slate-900 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-sky-500" />
+                        <span>{sectorUnit.callsign}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {sectorUnit.status === "on_patrol" ? "On Patrol" : "Available"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-600">
+                      Officer: <span className="font-medium text-slate-800">{sectorUnit.officerInCharge}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      {sectorUnit.vehicleModel} &bull; Plate {sectorUnit.plateNumber}
+                    </div>
+                    <div className="pt-1.5 flex items-center justify-between border-t border-slate-200 text-[11px]">
+                      <span className="text-slate-500 font-mono text-[10px]">{sectorUnit.gpsLocation}</span>
+                      <a
+                        href={`tel:${sectorUnit.contactNumber}`}
+                        className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 text-[11px]"
+                      >
+                        <PhoneCall className="w-3 h-3" />
+                        Call Unit
+                      </a>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
