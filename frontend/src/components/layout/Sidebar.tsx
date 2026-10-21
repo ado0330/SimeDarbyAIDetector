@@ -119,7 +119,7 @@ export function Sidebar({
           <div className="flex items-center space-x-2">
             <Radio className={cn("w-3.5 h-3.5", isStreamConnected ? "text-emerald-400 animate-pulse" : "text-amber-400")} />
             <span className="text-[11px]">
-              {isStreamConnected ? "Live Feed (SSE)" : "Polling Fallback"}
+              {isStreamConnected ? "Live Feed (SSE)" : "Township Operations Active"}
             </span>
           </div>
           <span className="text-[10px] font-mono text-slate-400">v0.1.0-proto</span>
