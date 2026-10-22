@@ -42,6 +42,13 @@ export interface SampleClip {
 
 export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   {
+    id: "sample-fire-and-smoke",
+    name: "Fire & Smoke",
+    filename: "sample_fire_and_smoke.mp4",
+    url: "/samples/sample_fire_and_smoke.mp4",
+    size: "4.1 MB",
+  },
+  {
     id: "sample-person-fall",
     name: "Person Fall",
     filename: "sample_person_fall.mp4",
@@ -49,11 +56,11 @@ export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
     size: "4.0 MB",
   },
   {
-    id: "sample-fallen-tree",
-    name: "Fallen Tree",
-    filename: "sample_fallen_tree.mp4",
-    url: "/samples/sample_fallen_tree.mp4",
-    size: "2.7 MB",
+    id: "sample-car-accident",
+    name: "Car accident",
+    filename: "sample_car_accident.mp4",
+    url: "/samples/sample_car_accident.mp4",
+    size: "5.4 MB",
   },
   {
     id: "sample-wildlife-intrusion",
@@ -63,11 +70,11 @@ export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
     size: "1.8 MB",
   },
   {
-    id: "sample-car-accident",
-    name: "Car accident",
-    filename: "sample_car_accident.mp4",
-    url: "/samples/sample_car_accident.mp4",
-    size: "5.4 MB",
+    id: "sample-fallen-tree",
+    name: "Fallen Tree",
+    filename: "sample_fallen_tree.mp4",
+    url: "/samples/sample_fallen_tree.mp4",
+    size: "2.7 MB",
   },
 ];
 
@@ -185,7 +192,7 @@ export function VideoAnalysisView({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {SAMPLE_VIDEO_CLIPS.map((clip) => (
             <div
               key={clip.id}
