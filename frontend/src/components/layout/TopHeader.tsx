@@ -36,17 +36,17 @@ export function TopHeader({
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/90 px-6 flex items-center justify-between shrink-0 z-20">
+    <header className="min-h-20 bg-white border-b border-slate-200/90 px-4 py-4 sm:px-6 flex flex-wrap gap-3 items-center justify-between shrink-0 z-20">
       <div>
-        <h2 className="text-base font-bold text-slate-900 tracking-tight leading-none">{title}</h2>
+        <h2 className="text-2xl font-bold text-[#172B4D] tracking-tight leading-tight">{title}</h2>
         {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
       </div>
 
       <div className="flex items-center space-x-3">
         {/* Clock */}
         <div className="hidden md:flex flex-col text-right pr-3 border-r border-slate-200">
-          <span className="text-xs font-mono font-medium text-slate-700">{timeStr}</span>
-          <span className="text-[10px] text-slate-400">Township Ops Center</span>
+          <span className="text-[13px] tabular-nums font-semibold text-slate-700">{timeStr}</span>
+          <span className="text-xs text-slate-400">Township Ops Center</span>
         </div>
 
         {/* Refresh button */}
@@ -69,7 +69,7 @@ export function TopHeader({
           </div>
           <div className="hidden xl:block text-left leading-tight">
             <div className="text-xs font-semibold text-slate-800">Control Supervisor</div>
-            <div className="text-[10px] text-slate-500">Security Operations Center</div>
+            <div className="text-xs text-slate-500">Security Operations Center</div>
           </div>
         </div>
       </div>

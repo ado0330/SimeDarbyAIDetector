@@ -92,13 +92,13 @@ export function GeminiApiKeyModal({
               <Sparkles className="w-5 h-5 text-teal-300" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
+              <h3 className="font-semibold text-base text-white flex items-center gap-2">
                 Google Gemini Vision AI Setup
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-teal-500/30 text-teal-200 border border-teal-400/30">
+                <span className="px-2 py-0.5 rounded text-xs tabular-nums  bg-teal-500/30 text-teal-200 border border-teal-400/30">
                   Multimodal
                 </span>
               </h3>
-              <p className="text-xs text-teal-200/80">
+              <p className="text-sm text-teal-200/80">
                 AI video clip hazard detection for Sime Darby townships
               </p>
             </div>
@@ -119,7 +119,7 @@ export function GeminiApiKeyModal({
               <ShieldAlert className="w-4 h-4 text-teal-700" />
               <span>Multi-Hazard Danger Incidents Detected:</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-slate-700">
                 <Flame className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                 <span><strong>Fire & Smoke</strong>: Flames, thick plumes</span>
@@ -157,7 +157,7 @@ export function GeminiApiKeyModal({
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] text-teal-700 hover:text-teal-900 flex items-center gap-1 hover:underline font-medium"
+                className="text-xs text-teal-700 hover:text-teal-900 flex items-center gap-1 hover:underline font-medium"
               >
                 <span>Get API key from Google AI Studio</span>
                 <ExternalLink className="w-3 h-3" />
@@ -173,7 +173,7 @@ export function GeminiApiKeyModal({
                   setTestResult(null);
                 }}
                 placeholder="AIzaSy..."
-                className="w-full h-10 rounded-lg border border-slate-300 pl-3 pr-10 text-xs font-mono bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
+                className="w-full h-10 rounded-lg border border-slate-300 pl-3 pr-10 text-xs tabular-nums bg-white focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
               />
               <button
                 type="button"
@@ -183,7 +183,7 @@ export function GeminiApiKeyModal({
                 {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-sm text-slate-500">
               Your key is saved locally in your browser storage and transmitted directly to Google Gemini Vision endpoints for video keyframe analysis.
             </p>
           </div>
@@ -202,7 +202,7 @@ export function GeminiApiKeyModal({
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold">Authentication Successful!</div>
-                    <div className="text-[11px]">
+                    <div className="text-xs">
                       Connected to Gemini 1.5 Flash Vision. Video uploads will now use multimodal AI frame analysis.
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export function GeminiApiKeyModal({
                   <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold">Connection Failed</div>
-                    <div className="text-[11px]">{testResult.error}</div>
+                    <div className="text-xs">{testResult.error}</div>
                   </div>
                 </>
               )}

@@ -78,14 +78,14 @@ export function Sidebar({
           <span className={cn("w-2 h-2 rounded-full", status.dot, status.pulse && "animate-pulse")} />
           System Status:
         </span>
-        <span className={cn("px-2 py-0.5 rounded text-[10px] font-mono font-semibold tracking-wider uppercase border", status.chip)}>
+        <span className={cn("px-2 py-0.5 rounded text-xs tabular-nums font-semibold tracking-normal  border", status.chip)}>
           {status.label}
         </span>
       </div>
 
       {/* Navigation List */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">
+        <div className="text-xs font-semibold text-slate-400 tracking-normal px-3 mb-2">
           Operations
         </div>
         {navItems.map((item) => {
@@ -96,7 +96,7 @@ export function Sidebar({
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={cn(
-                "w-full flex items-center justify-between px-3 py-2.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                "w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
                 isActive
                   ? "bg-teal-600 text-white font-semibold shadow-xs"
                   : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
@@ -109,7 +109,7 @@ export function Sidebar({
               {item.badge !== undefined && (
                 <span
                   className={cn(
-                    "px-1.5 py-0.2 rounded-full text-[10px] font-bold",
+                    "px-1.5 py-0.2 rounded-full text-xs font-bold",
                     item.criticalBadge
                       ? "bg-rose-500 text-white"
                       : isActive
@@ -130,13 +130,13 @@ export function Sidebar({
         <div className="flex items-center justify-between text-slate-400">
           <div className="flex items-center space-x-2">
             <Radio className={cn("w-3.5 h-3.5", isStreamConnected || backendStatus === "demo" ? "text-emerald-400 animate-pulse" : "text-amber-400")} />
-            <span className="text-[11px]">
+            <span className="text-xs">
               {backendStatus === "connected" ? (isStreamConnected ? "Live Feed (SSE)" : "Polling Active") : "Township Operations Active"}
             </span>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">v0.1.0-proto</span>
+          <span className="text-xs tabular-nums text-slate-400">v0.1.0-proto</span>
         </div>
-        <p className="text-[10px] text-slate-400 mt-1.5 leading-tight">
+        <p className="text-sm text-slate-400 mt-1.5 leading-tight">
           PEOPLE — Safety & Security Command
         </p>
       </div>

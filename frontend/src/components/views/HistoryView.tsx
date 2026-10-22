@@ -128,7 +128,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 min-w-[260px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search complete incident archive by ID, title, zone, or keyword..."
@@ -144,7 +144,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
               size="sm"
               variant="outline"
               onClick={handleExportCsv}
-              className="text-xs h-9 text-slate-700 hover:text-slate-900 border-slate-300"
+              className="text-sm h-9 text-slate-700 hover:text-slate-900 border-slate-300"
             >
               <Download className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
               Export CSV ({filtered.length} records)
@@ -170,13 +170,13 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
           <div className="flex items-center space-x-1 text-slate-500 mr-1">
             <Filter className="w-3.5 h-3.5" />
-            <span className="font-semibold text-[11px] uppercase tracking-wider">Archive Filters:</span>
+            <span className="font-semibold text-xs tracking-normal">Archive Filters:</span>
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
+            className="h-7 px-2 text-xs rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Statuses</option>
             <option value="resolved">Resolved</option>
@@ -189,7 +189,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
+            className="h-7 px-2 text-xs rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Priorities</option>
             <option value="critical">Critical</option>
@@ -201,7 +201,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-7 px-2 text-[11px] rounded border border-slate-200 bg-slate-50 font-medium"
+            className="h-7 px-2 text-xs rounded border border-slate-200 bg-slate-50 font-medium"
           >
             <option value="all">All Incident Categories</option>
             {INCIDENT_DOMAINS.map((dom) => {
@@ -227,7 +227,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                 setPriorityFilter("all");
                 setCategoryFilter("all");
               }}
-              className="text-[11px] text-teal-700 hover:text-teal-900 font-semibold ml-auto cursor-pointer"
+              className="text-xs text-teal-700 hover:text-teal-900 font-semibold ml-auto cursor-pointer"
             >
               Reset Filters
             </button>
@@ -241,11 +241,11 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
           <div className="flex items-center space-x-2">
             <History className="w-4 h-4 text-teal-700" />
             <span>Incident Audit & Historical Archive</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold">
+            <span className="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-xs font-bold">
               {filtered.length}
             </span>
           </div>
-          <span className="text-[11px] text-slate-500 font-normal">
+          <span className="text-xs text-slate-500 font-normal">
             Persistent storage in SQLite &bull; Complete audit trail preserved
           </span>
         </div>
@@ -254,19 +254,19 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
           <div className="p-12 text-center text-xs text-slate-500 space-y-1">
             <FileSpreadsheet className="w-8 h-8 text-slate-300 mx-auto mb-2" />
             <div className="font-semibold text-slate-700">No historical records match criteria</div>
-            <p className="text-[11px] text-slate-400">Try adjusting your filters or search keywords.</p>
+            <p className="text-sm text-slate-500">Try adjusting your filters or search keywords.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+            <table className="w-full text-left text-[13px] font-medium">
+              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold tracking-normal text-xs">
                 <tr>
-                  <th className="p-3">Incident ID</th>
-                  <th className="p-3">Priority</th>
+                  <th className="p-3 min-w-[115px] whitespace-nowrap">Incident ID</th>
+                  <th className="p-3 min-w-[180px] whitespace-nowrap">Priority</th>
                   <th className="p-3">Title & Category</th>
                   <th className="p-3">Location / Zone</th>
                   <th className="p-3">Detected Time</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3 min-w-[175px] whitespace-nowrap">Status</th>
                   <th className="p-3">Responder</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
@@ -280,14 +280,14 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                     <tr
                       key={inc.id}
                       onClick={() => onSelectIncident(inc.id)}
-                      className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                      className={`cursor-pointer transition-colors ${inc.priority_level === "critical" ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-slate-50/80"}`}
                     >
-                      <td className="p-3 font-mono text-[11px] font-bold text-slate-800">
+                      <td className="p-3 min-w-[115px] whitespace-nowrap tabular-nums text-[13px] font-semibold text-slate-800">
                         {inc.id}
                       </td>
 
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${prio.pill}`}>
+                      <td className="p-3 min-w-[180px] whitespace-nowrap">
+                        <span className={prio.pill}>
                           {prio.label} ({inc.priority_score.toFixed(0)})
                         </span>
                       </td>
@@ -296,28 +296,28 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                         <div className="font-semibold text-slate-900 leading-snug">
                           {inc.title}
                         </div>
-                        <div className="text-[10px] text-teal-700 uppercase tracking-wider font-semibold mt-0.5">
+                        <div className="text-xs text-teal-700 tracking-normal font-semibold mt-0.5">
                           {formatCategory(inc.category)}
                         </div>
                       </td>
 
                       <td className="p-3 text-slate-600">
                         <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[150px]">
+                          <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                          <span className="whitespace-nowrap">
                             {inc.location_name || inc.location_id}
                           </span>
                         </div>
                       </td>
 
-                      <td className="p-3 text-slate-500 whitespace-nowrap">
-                        <div className="font-mono text-[11px]">{formatDateTime(inc.detected_at)}</div>
-                        <div className="text-[10px] text-slate-400">{formatTimeAgo(inc.detected_at)}</div>
+                      <td className="p-3 min-w-[235px] text-slate-700 whitespace-nowrap">
+                        <div className="tabular-nums text-[13px]">{formatDateTime(inc.detected_at)}</div>
+                        <div className="mt-1 text-xs font-normal text-slate-500">{formatTimeAgo(inc.detected_at)}</div>
                       </td>
 
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium border flex items-center gap-1 w-max ${status.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                      <td className="p-3 min-w-[175px] whitespace-nowrap">
+                        <span className={status.badge}>
+                          <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${status.dot}`} />
                           {status.label}
                         </span>
                       </td>
@@ -392,7 +392,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                 Also purge active incidents (complete database reset)
               </span>
             </label>
-            <p className="text-[11px] text-slate-500 pl-6 leading-relaxed">
+            <p className="text-sm text-slate-500 pl-6 leading-relaxed">
               {includeActiveInClear
                 ? "Warning: All active incident queue alerts and all historical records will be permanently deleted."
                 : "Default: Only resolved, closed, and false-positive records will be cleared. Active incidents in the triage queue will remain untouched."}

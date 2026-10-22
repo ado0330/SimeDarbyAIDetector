@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn, getPriorityStyles } from "@/lib/utils";
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: "default" | "critical" | "high" | "medium" | "low" | "outline" | "emergency" | "simulated";
@@ -9,13 +9,13 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export function Badge({ variant = "default", className, children, ...props }: BadgeProps) {
   const variants = {
     default: "bg-slate-100 text-slate-700 border-slate-200",
-    critical: "bg-rose-50 text-rose-800 border-rose-300 font-semibold",
-    high: "bg-amber-50 text-amber-900 border-amber-300 font-medium",
-    medium: "bg-sky-50 text-sky-800 border-sky-300 font-medium",
-    low: "bg-slate-100 text-slate-700 border-slate-300",
+    critical: getPriorityStyles("critical").badge,
+    high: getPriorityStyles("high").badge,
+    medium: getPriorityStyles("medium").badge,
+    low: getPriorityStyles("low").badge,
     outline: "bg-transparent text-slate-700 border-slate-300",
-    emergency: "bg-rose-600 text-white border-rose-700 font-bold uppercase tracking-wider",
-    simulated: "bg-slate-200 text-slate-800 border-slate-300 font-mono text-[10px] tracking-wide",
+    emergency: "bg-rose-600 text-white border-rose-700 font-bold tracking-normal",
+    simulated: "bg-slate-200 text-slate-800 border-slate-300 tabular-nums text-xs tracking-normal",
   };
 
   return (

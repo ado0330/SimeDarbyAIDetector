@@ -82,12 +82,12 @@ export function ControlledTestPanel() {
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-teal-700" />
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          <h3 className="text-base font-semibold text-slate-900 tracking-normal">
             Controlled Test: Manual Monitoring vs GlobalEye
           </h3>
         </div>
         {total > 0 && (
-          <button onClick={clear} className="text-[11px] text-slate-500 hover:text-rose-700 inline-flex items-center gap-1">
+          <button onClick={clear} className="text-xs text-slate-500 hover:text-rose-700 inline-flex items-center gap-1">
             <Trash2 className="w-3 h-3" /> Clear trials
           </button>
         )}
@@ -116,13 +116,13 @@ export function ControlledTestPanel() {
               {rows.map((r) => (
                 <tr key={r.key} className="border-b border-slate-100">
                   <td className="py-2 text-slate-700">{r.label}</td>
-                  <td className="py-2 font-mono">{summary ? r.f(summary.manual[r.key]) : "—"}</td>
-                  <td className="py-2 font-mono">{summary ? r.f(summary.globaleye[r.key]) : "—"}</td>
+                  <td className="py-2 tabular-nums">{summary ? r.f(summary.manual[r.key]) : "—"}</td>
+                  <td className="py-2 tabular-nums">{summary ? r.f(summary.globaleye[r.key]) : "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-[10px] text-slate-500 mt-2">
+          <p className="text-sm text-slate-500 mt-2">
             Computed only from {total} recorded trial{total === 1 ? "" : "s"}. Small samples are indicative, not statistically conclusive.
           </p>
         </div>

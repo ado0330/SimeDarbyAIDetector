@@ -81,14 +81,14 @@ export function OverviewView({
         {/* KPI 1: Active Incidents */}
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Active Incidents</span>
+            <span className="text-xs font-semibold tracking-normal">Active Incidents</span>
             <AlertTriangle className="w-4 h-4 text-slate-400" />
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-slate-900">{activeIncidents.length}</span>
             <span className="text-xs text-slate-500">requiring attention</span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Critical / High:</span>
             <span className="font-semibold text-rose-700">{criticalCount + highCount}</span>
           </div>
@@ -97,14 +97,14 @@ export function OverviewView({
         {/* KPI 2: Critical Urgency */}
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Critical Urgency</span>
+            <span className="text-xs font-semibold tracking-normal">Critical Urgency</span>
             <ShieldAlert className="w-4 h-4 text-rose-600" />
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-rose-700">{criticalCount}</span>
             <span className="text-xs text-slate-500">priority tier</span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>High Priority:</span>
             <span className="font-semibold text-amber-700">{highCount}</span>
           </div>
@@ -113,14 +113,14 @@ export function OverviewView({
         {/* KPI 3: Awaiting Acknowledgment */}
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Awaiting Ack</span>
+            <span className="text-xs font-semibold tracking-normal">Awaiting Ack</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-amber-700">{pendingAckCount}</span>
             <span className="text-xs text-slate-500">unreviewed alerts</span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Status:</span>
             <span className={pendingAckCount > 0 ? "font-semibold text-amber-700" : "font-semibold text-emerald-700"}>
               {pendingAckCount > 0 ? "Action Required" : "All Acknowledged"}
@@ -131,7 +131,7 @@ export function OverviewView({
         {/* KPI 4: Mean Ack Time */}
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Avg Acknowledge Time</span>
+            <span className="text-xs font-semibold tracking-normal">Avg Acknowledge Time</span>
             <TrendingUp className="w-4 h-4 text-teal-600" />
           </div>
           <div className="flex items-baseline space-x-2">
@@ -144,7 +144,7 @@ export function OverviewView({
               {analytics?.acknowledgement_sample_size ? `${analytics.acknowledgement_sample_size} acked` : "stored metrics"}
             </span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Total Logged Incidents:</span>
             <span className="font-semibold text-slate-700">{analytics?.totals?.incidents ?? incidents.length}</span>
           </div>
@@ -156,10 +156,10 @@ export function OverviewView({
         <div className="bg-white rounded-lg border-2 border-slate-300 p-5 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-200">
             <div className="flex items-center space-x-2.5">
-              <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-xs font-bold">
+              <span className="px-2 py-0.5 rounded bg-slate-900 text-white tabular-nums text-xs font-bold">
                 RANK #1
               </span>
-              <span className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${topPrioStyles?.pill}`}>
+              <span className={topPrioStyles?.pill}>
                 Priority {topPrioStyles?.label} ({topIncident.priority_score.toFixed(1)}/100)
               </span>
               {topIncident.emergency_rule_triggered && (
@@ -186,10 +186,10 @@ export function OverviewView({
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-3">
               <div>
-                <span className="text-[11px] font-semibold text-teal-700 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-teal-700 tracking-normal">
                   {formatCategory(topIncident.category)}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">
+                <h3 className="text-lg font-semibold text-slate-900 tracking-tight mt-0.5">
                   {topIncident.title}
                 </h3>
               </div>
@@ -225,10 +225,10 @@ export function OverviewView({
             {/* Quick Action Box */}
             <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+                <span className="text-xs font-semibold text-slate-500 tracking-normal block mb-1">
                   Advisory Action
                 </span>
-                <p className="text-xs text-slate-800 font-medium leading-normal mb-3">
+                <p className="text-sm text-slate-800 font-medium leading-normal mb-3">
                   {topIncident.recommended_action || "Inspect CCTV feed and verify situation on the ground."}
                 </p>
               </div>
@@ -263,8 +263,8 @@ export function OverviewView({
           <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
             <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">All Clear in Township</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-slate-900">All Clear in Township</h3>
+          <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
             No active incidents currently require operator attention. All surveillance streams and township sectors are clear.
           </p>
           {onNavigateToVideo && (
@@ -273,7 +273,7 @@ export function OverviewView({
                 variant="secondary"
                 size="sm"
                 onClick={onNavigateToVideo}
-                className="text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-50 text-xs font-semibold"
+                className="text-teal-800 border-teal-200 bg-teal-50/50 hover:bg-teal-50 text-sm font-semibold"
               >
                 <Video className="w-3.5 h-3.5 mr-1.5 text-teal-700" />
                 Upload Footage or Test Sample Video &rarr;
@@ -288,14 +288,14 @@ export function OverviewView({
         {/* Left Column: Active Queue Preview */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
               Active Queue Summary ({activeIncidents.length})
             </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={onNavigateToIncidents}
-              className="text-teal-700 hover:text-teal-900 text-xs font-semibold p-0 h-auto"
+              className="text-teal-700 hover:text-teal-900 text-sm font-semibold p-0 h-auto"
             >
               View Full Incident Queue &rarr;
             </Button>
@@ -314,20 +314,20 @@ export function OverviewView({
                   <div
                     key={inc.id}
                     onClick={() => onSelectIncident(inc.id)}
-                    className="p-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer flex items-center justify-between gap-4"
+                    className="group p-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer flex flex-wrap items-center justify-between gap-3"
                   >
                     <div className="flex items-center space-x-3 min-w-0">
-                      <span className="w-6 text-center font-mono text-xs font-bold text-slate-500">
+                      <span className="w-6 text-center tabular-nums text-xs font-bold text-slate-500">
                         #{idx + 1}
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${prio.pill}`}>
+                      <span className={prio.pill}>
                         {prio.label} ({inc.priority_score.toFixed(0)})
                       </span>
                       <div className="min-w-0">
                         <div className="text-xs font-semibold text-slate-900 truncate">
                           {inc.title}
                         </div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5 truncate">
+                        <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 truncate">
                           <span>{inc.location_name || inc.location_id}</span>
                           <span>&bull;</span>
                           <span>{formatTimeAgo(inc.detected_at)}</span>
@@ -335,12 +335,12 @@ export function OverviewView({
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-3 shrink-0">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border flex items-center gap-1 ${status.badge}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                    <div className="ml-auto flex min-w-[165px] items-center justify-end gap-2 shrink-0">
+                      <span className={status.badge}>
+                        <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${status.dot}`} />
                         {status.label}
                       </span>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                      <ArrowRight className="w-7 h-7 shrink-0 rounded-md p-1.5 text-slate-400 transition-colors group-hover:bg-slate-100 group-hover:text-slate-600" />
                     </div>
                   </div>
                 );
@@ -352,7 +352,7 @@ export function OverviewView({
         {/* Right Column: Township Operations & Quick Actions */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+            <h3 className="text-lg font-semibold text-slate-900 tracking-tight flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-teal-600" />
               Township Surveillance Operations
             </h3>
@@ -369,19 +369,19 @@ export function OverviewView({
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900">CCTV Video Ingest</div>
-                      <div className="text-[11px] text-slate-500">Live AI Vision Analysis</div>
+                      <div className="text-xs text-slate-500">Live AI Vision Analysis</div>
                     </div>
                   </div>
                   <Button
                     size="sm"
                     variant="primary"
                     onClick={onNavigateToVideo}
-                    className="h-7 text-xs px-3"
+                    className="h-7 text-sm px-3"
                   >
                     Upload Clip
                   </Button>
                 </div>
-                <p className="text-xs text-slate-600 leading-snug">
+                <p className="text-sm text-slate-600 leading-snug">
                   Upload footage clips to analyze posture heuristics, falls, and perimeter security events.
                 </p>
               </div>
@@ -397,19 +397,19 @@ export function OverviewView({
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900">Township GIS Map</div>
-                      <div className="text-[11px] text-slate-500">City of Elmina Sectors</div>
+                      <div className="text-xs text-slate-500">City of Elmina Sectors</div>
                     </div>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={onNavigateToMap}
-                    className="h-7 text-xs px-3 text-sky-700 border-sky-200 hover:bg-sky-50"
+                    className="h-7 text-sm px-3 text-sky-700 border-sky-200 hover:bg-sky-50"
                   >
                     Open Map
                   </Button>
                 </div>
-                <p className="text-xs text-slate-600 leading-snug">
+                <p className="text-sm text-slate-600 leading-snug">
                   Inspect camera network locations, township zones, and live alert clusters across City of Elmina.
                 </p>
               </div>
@@ -421,7 +421,7 @@ export function OverviewView({
                 <UserCheck className="w-3.5 h-3.5 text-teal-700" />
                 Human-in-the-Loop Governance
               </div>
-              <p className="text-[11px] leading-relaxed text-slate-500">
+              <p className="text-sm leading-relaxed text-slate-500">
                 All algorithmic scoring and vision detections serve as advisory intelligence. Final dispatch and resolution authority remains with control room operators.
               </p>
             </div>

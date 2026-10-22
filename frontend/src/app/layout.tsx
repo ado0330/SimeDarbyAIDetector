@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import React from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "GlobalEye — Sime Darby Property Security Operations",
@@ -19,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-slate-100 text-slate-800 antialiased selection:bg-teal-700 selection:text-white">
+    <html lang="en" className={inter.variable}>
+      <body className="bg-slate-100 text-[#172B4D] antialiased selection:bg-teal-700 selection:text-white">
         {children}
       </body>
     </html>

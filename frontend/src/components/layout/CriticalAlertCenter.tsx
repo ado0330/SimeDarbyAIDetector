@@ -113,7 +113,7 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
           id="alert-sound-toggle"
           type="button"
           onClick={toggleSound}
-          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-800 cursor-pointer transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 cursor-pointer transition-colors"
         >
           {soundOn ? (
             <>
@@ -141,14 +141,14 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
       className="bg-rose-700 text-white px-6 py-3 flex flex-wrap items-center gap-4 border-b-4 border-rose-900 shadow-lg">
       <AlertOctagon className="w-7 h-7 shrink-0 text-white animate-pulse" />
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-rose-200">
+        <div className="text-xs font-bold tracking-normal text-rose-200">
           Critical alert · {unacked.length} unacknowledged
         </div>
         <div className="text-sm font-bold truncate">
           {top.title} <span className="font-normal text-rose-100">— {top.location_name || top.camera_name || top.camera_id}</span>
         </div>
-        <div className="text-[11px] text-rose-100">
-          Unacknowledged for <b className="font-mono text-sm text-white">{mmss(elapsed)}</b>
+        <div className="text-xs text-rose-100">
+          Unacknowledged for <b className="tabular-nums text-sm text-white">{mmss(elapsed)}</b>
           {isEsc ? (
             <> · <b>ESCALATED to {ESCALATION_SUPERVISOR}</b> (logged in audit trail)</>
           ) : escFailed ? (
@@ -156,7 +156,7 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
           ) : !backendConnected ? (
             <> · backend disconnected: escalation cannot be recorded</>
           ) : (
-            <> · escalates to {ESCALATION_SUPERVISOR} in <b className="font-mono">{mmss(untilEsc)}</b></>
+            <> · escalates to {ESCALATION_SUPERVISOR} in <b className="tabular-nums">{mmss(untilEsc)}</b></>
           )}
         </div>
       </div>
@@ -165,7 +165,7 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
           id="alert-sound-toggle"
           type="button"
           onClick={toggleSound}
-          className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded transition-colors cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded transition-colors cursor-pointer ${
             soundOn
               ? "bg-rose-900/80 hover:bg-rose-950 text-white"
               : "bg-slate-900/80 hover:bg-slate-950 text-rose-300"

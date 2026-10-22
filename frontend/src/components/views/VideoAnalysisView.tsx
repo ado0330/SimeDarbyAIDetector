@@ -176,11 +176,11 @@ export function VideoAnalysisView({
         <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
           <div className="flex items-center space-x-2">
             <Download className="w-4 h-4 text-teal-700" />
-            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h4 className="text-[15px] font-semibold text-slate-900 tracking-normal">
               Download Sample Videos
             </h4>
           </div>
-          <span className="text-[11px] text-slate-500">
+          <span className="text-xs text-slate-500">
             {SAMPLE_VIDEO_CLIPS.length} Clips Available
           </span>
         </div>
@@ -196,7 +196,7 @@ export function VideoAnalysisView({
                   {clip.name}
                 </span>
                 {clip.size && (
-                  <span className="text-[11px] text-slate-500 font-mono">
+                  <span className="text-xs text-slate-500 tabular-nums">
                     {clip.size} &bull; MP4
                   </span>
                 )}
@@ -241,7 +241,7 @@ export function VideoAnalysisView({
         <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4">
           <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
             <Upload className="w-4 h-4 text-teal-700" />
-            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h4 className="text-[15px] font-semibold text-slate-900 tracking-normal">
               Upload CCTV Footage Clip
             </h4>
           </div>
@@ -294,7 +294,7 @@ export function VideoAnalysisView({
               <div className="space-y-2">
                 <Loader2 className="w-8 h-8 text-teal-600 animate-spin mx-auto" />
                 <div className="text-xs font-semibold text-slate-800">Processing upload...</div>
-                <div className="text-[11px] text-slate-500">Transmitting to vision worker</div>
+                <div className="text-xs text-slate-500">Transmitting to vision worker</div>
               </div>
             ) : (
               <div className="space-y-2">
@@ -302,7 +302,7 @@ export function VideoAnalysisView({
                 <div className="text-xs font-semibold text-slate-800">
                   Click to select CCTV video clip
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-sm text-slate-500">
                   MP4, AVI, MOV, WebM up to 150MB (max 300s duration)
                 </p>
               </div>
@@ -315,18 +315,18 @@ export function VideoAnalysisView({
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-2">
               <Video className="w-4 h-4 text-teal-700" />
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h4 className="text-[15px] font-semibold text-slate-900 tracking-normal">
                 Video Analysis Jobs ({videos.length})
               </h4>
             </div>
-            <span className="text-[11px] text-slate-500">Recent CCTV Ingests</span>
+            <span className="text-xs text-slate-500">Recent CCTV Ingests</span>
           </div>
 
           {videos.length === 0 ? (
             <div className="py-10 text-center text-xs text-slate-500 space-y-1">
               <FileVideo className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <div className="font-semibold text-slate-700">No CCTV clips processed yet</div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-sm text-slate-400">
                 Upload a video clip on the left to initiate frame extraction and pedestrian posture heuristics.
               </p>
             </div>
@@ -343,7 +343,7 @@ export function VideoAnalysisView({
                         {job.original_filename}
                       </span>
                       <span
-                        className={`px-2 py-0.2 rounded text-[10px] font-mono font-bold uppercase ${job.status === "completed"
+                        className={`px-2 py-0.2 rounded text-xs tabular-nums font-bold  ${job.status === "completed"
                             ? "bg-emerald-100 text-emerald-800"
                             : job.status === "processing"
                               ? "bg-amber-100 text-amber-800 animate-pulse"
@@ -356,7 +356,7 @@ export function VideoAnalysisView({
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-slate-500 flex items-center gap-3">
+                    <div className="text-xs text-slate-500 flex items-center gap-3">
                       <span>Camera: {job.camera_id || "Unspecified"}</span>
                       <span>&bull;</span>
                       <span>{job.frames_analyzed} frames analyzed</span>
@@ -379,7 +379,7 @@ export function VideoAnalysisView({
                         ? "Normal (0 Incidents)"
                         : `${job.candidate_count} ${job.candidate_count === 1 ? "candidate" : "candidates"}`}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-xs text-slate-400">
                       {formatTimeAgo(job.created_at)}
                     </div>
                   </div>
@@ -395,16 +395,16 @@ export function VideoAnalysisView({
         <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
                 Extracted Event Candidates (Human Review Required)
               </h3>
               {pendingCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[11px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-xs font-bold">
                   {pendingCount} Pending
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               Review posture-heuristic detections before they enter the active township incident queue.
             </p>
           </div>
@@ -429,7 +429,7 @@ export function VideoAnalysisView({
           <div className="p-10 text-center text-xs text-slate-500 space-y-1">
             <Info className="w-6 h-6 text-slate-400 mx-auto mb-1" />
             <div className="font-semibold text-slate-700">No candidates found</div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-sm text-slate-400">
               {filterStatus === "pending"
                 ? "All candidate detections have been reviewed."
                 : "No candidates currently in this view."}
@@ -462,11 +462,11 @@ export function VideoAnalysisView({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="text-[10px] text-slate-400 text-center px-1">
+                        <div className="text-xs text-slate-400 text-center px-1">
                           Frame preview
                         </div>
                       )}
-                      <span className="absolute bottom-1 right-1 px-1 py-0.2 bg-black/80 text-white font-mono text-[9px] rounded">
+                      <span className="absolute bottom-1 right-1 px-1 py-0.2 bg-black/80 text-white tabular-nums text-xs rounded">
                         {c.timestamp_s.toFixed(1)}s
                       </span>
                     </div>
@@ -474,12 +474,12 @@ export function VideoAnalysisView({
                     {/* Details */}
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-slate-900 text-white">
+                        <span className="px-2 py-0.5 rounded text-xs font-bold  bg-slate-900 text-white">
                           Candidate #{c.id}
                         </span>
 
                         <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${c.status === "pending"
+                          className={`px-2 py-0.5 rounded text-xs font-bold  ${c.status === "pending"
                               ? "bg-amber-100 text-amber-800 border border-amber-300"
                               : c.status === "accepted"
                                 ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
@@ -490,12 +490,12 @@ export function VideoAnalysisView({
                         </span>
 
                         {isUrgent && (
-                          <Badge variant="emergency" className="text-[10px]">
+                          <Badge variant="emergency" className="text-xs">
                             Urgent Review
                           </Badge>
                         )}
 
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-xs text-slate-500">
                           Clip: {c.source_clip || `Job ${c.video_job_id}`}
                         </span>
                       </div>
@@ -504,12 +504,12 @@ export function VideoAnalysisView({
                         {formatCategory(c.category)} &bull; Confidence: {c.confidence != null ? `${(c.confidence * 100).toFixed(0)}%` : "Heuristic"}
                       </div>
 
-                      <p className="text-xs text-slate-600 leading-snug">
+                      <p className="text-sm text-slate-600 leading-snug">
                         {c.details?.explanation ||
                           "Persistent horizontal bounding box aspect ratio detected without translation."}
                       </p>
 
-                      <div className="text-[11px] text-slate-400 flex items-center gap-3">
+                      <div className="text-xs text-slate-400 flex items-center gap-3">
                         <span>Extracted {formatTimeAgo(c.created_at)}</span>
                         {c.incident_id && (
                           <>
@@ -555,7 +555,7 @@ export function VideoAnalysisView({
                     ) : (
                       <div className="text-right text-xs text-slate-500">
                         <div>Reviewed by {c.reviewed_by || "Operator"}</div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           {c.reviewed_at ? formatDateTime(c.reviewed_at) : "Processed"}
                         </div>
                       </div>

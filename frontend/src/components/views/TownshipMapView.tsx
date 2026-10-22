@@ -187,10 +187,10 @@ export function TownshipMapView({
       <div className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center space-x-2">
           <Layers className="w-4 h-4 text-teal-700" />
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <h3 className="text-lg font-semibold text-slate-800 tracking-normal">
             Township Security GIS & Schematic Operations Map
           </h3>
-          <span className="text-[11px] text-slate-400">&bull; City of Elmina Operations Sector</span>
+          <span className="text-xs text-slate-400">&bull; City of Elmina Operations Sector</span>
         </div>
 
         <div className="flex items-center space-x-2 text-xs">
@@ -201,7 +201,7 @@ export function TownshipMapView({
               onChange={(e) => setShowCameras(e.target.checked)}
               className="rounded text-teal-600 focus:ring-teal-500"
             />
-            <span className="text-[11px] font-medium">Show 10 Cameras</span>
+            <span className="text-xs font-medium">Show 10 Cameras</span>
           </label>
 
           <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
@@ -211,7 +211,7 @@ export function TownshipMapView({
               onChange={(e) => setShowPatrolUnits(e.target.checked)}
               className="rounded text-sky-600 focus:ring-sky-500"
             />
-            <span className="text-[11px] font-medium flex items-center gap-1">
+            <span className="text-xs font-medium flex items-center gap-1">
               <Car className="w-3 h-3 text-sky-600" />
               Emergency Response Fleet (6)
             </span>
@@ -224,7 +224,7 @@ export function TownshipMapView({
               onChange={(e) => setShowIncidents(e.target.checked)}
               className="rounded text-rose-600 focus:ring-rose-500"
             />
-            <span className="text-[11px] font-medium">Show Active Pins ({activeIncidents.length})</span>
+            <span className="text-xs font-medium">Show Active Pins ({activeIncidents.length})</span>
           </label>
         </div>
       </div>
@@ -234,7 +234,7 @@ export function TownshipMapView({
         {/* SVG Interactive Canvas */}
         <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 p-3 overflow-hidden shadow-sm relative">
           {/* Map Compass & Legend */}
-          <div className="absolute top-5 left-5 z-10 bg-slate-950/80 backdrop-blur-xs border border-slate-700/80 rounded px-2.5 py-1.5 text-[10px] text-slate-300 space-y-1">
+          <div className="absolute top-5 left-5 z-10 bg-slate-950/80 backdrop-blur-xs border border-slate-700/80 rounded px-2.5 py-1.5 text-xs text-slate-300 space-y-1">
             <div className="font-semibold text-teal-400">TOWNSHIP SECTOR A</div>
             <div className="flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-rose-500" />
@@ -357,7 +357,7 @@ export function TownshipMapView({
                       fill="#94a3b8"
                       fontSize="9"
                       textAnchor="middle"
-                      className="select-none pointer-events-none uppercase tracking-wider"
+                      className="select-none pointer-events-none tracking-normal"
                     >
                       {layout.type}
                     </text>
@@ -602,14 +602,14 @@ export function TownshipMapView({
         <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div>
-              <div className="flex items-center space-x-1.5 text-slate-500 text-[11px] uppercase tracking-wider font-semibold">
+              <div className="flex items-center space-x-1.5 text-slate-500 text-xs tracking-normal font-semibold">
                 <MapPin className="w-3.5 h-3.5 text-teal-600" />
                 <span>Selected Sector</span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mt-1">
+              <h3 className="text-lg font-semibold text-slate-900 mt-1">
                 {selectedZone.name}
               </h3>
-              <p className="text-xs text-slate-600 mt-1 leading-normal">
+              <p className="text-sm text-slate-600 mt-1 leading-normal">
                 {selectedZone.description || "Designated zone in Sime Darby Property township plan."}
               </p>
             </div>
@@ -618,7 +618,7 @@ export function TownshipMapView({
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
                 <span>Active Incidents in Sector</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px]">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">
                   {zoneIncidents.length}
                 </span>
               </div>
@@ -639,10 +639,10 @@ export function TownshipMapView({
                         className="p-2.5 rounded border border-slate-200 hover:border-slate-300 hover:bg-slate-50 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`px-2 py-0.2 rounded text-[10px] font-bold uppercase ${prio.pill}`}>
+                          <span className={prio.pill}>
                             {prio.label} ({inc.priority_score.toFixed(0)})
                           </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-xs text-slate-400 tabular-nums">
                             {formatTimeAgo(inc.detected_at)}
                           </span>
                         </div>
@@ -660,7 +660,7 @@ export function TownshipMapView({
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
                 <span>Assigned CCTV Feeds</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px]">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">
                   {zoneCameras.length}
                 </span>
               </div>
@@ -669,10 +669,10 @@ export function TownshipMapView({
                 {zoneCameras.map((cam) => (
                   <div key={cam.id} className="p-2 bg-slate-50 rounded border border-slate-200">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-800 text-[11px]">{cam.id}</span>
+                      <span className="font-semibold text-slate-800 text-xs">{cam.id}</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500" title="Online" />
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                    <div className="text-xs text-slate-500 truncate mt-0.5">
                       {cam.name}
                     </div>
                   </div>
@@ -687,7 +687,7 @@ export function TownshipMapView({
                   <Car className="w-3.5 h-3.5 text-sky-600" />
                   Assigned Emergency Response Unit
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold text-[10px]">
+                <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold text-xs">
                   Sector Unit
                 </span>
               </div>
@@ -703,21 +703,21 @@ export function TownshipMapView({
                         <span className="w-2 h-2 rounded-full bg-sky-500" />
                         <span>{sectorUnit.callsign}</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                         {sectorUnit.status === "on_patrol" ? "On Patrol" : "Available"}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-600">
+                    <div className="text-xs text-slate-600">
                       Officer: <span className="font-medium text-slate-800">{sectorUnit.officerInCharge}</span>
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       {sectorUnit.vehicleModel} &bull; Plate {sectorUnit.plateNumber}
                     </div>
-                    <div className="pt-1.5 flex items-center justify-between border-t border-slate-200 text-[11px]">
-                      <span className="text-slate-500 font-mono text-[10px]">{sectorUnit.gpsLocation}</span>
+                    <div className="pt-1.5 flex items-center justify-between border-t border-slate-200 text-xs">
+                      <span className="text-slate-500 tabular-nums text-xs">{sectorUnit.gpsLocation}</span>
                       <a
                         href={`tel:${sectorUnit.contactNumber}`}
-                        className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 text-[11px]"
+                        className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 text-xs"
                       >
                         <PhoneCall className="w-3 h-3" />
                         Call Unit
@@ -730,7 +730,7 @@ export function TownshipMapView({
           </div>
 
           <div className="pt-3 border-t border-slate-200">
-            <p className="text-[10px] text-slate-400 leading-tight">
+            <p className="text-sm text-slate-400 leading-tight">
               Interactive schematic aligned with Sime Darby Property digital masterplan framework.
             </p>
           </div>

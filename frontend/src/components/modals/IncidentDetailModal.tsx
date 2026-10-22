@@ -308,7 +308,7 @@ export function IncidentDetailModal({
           {/* Top Metadata Header */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg bg-slate-50 border border-slate-200/90">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${prioStyles.pill}`}>
+              <span className={prioStyles.pill}>
                 Priority {prioStyles.label} ({incident.priority_score.toFixed(1)}/100)
               </span>
 
@@ -319,7 +319,7 @@ export function IncidentDetailModal({
                 </Badge>
               )}
 
-              <span className={`px-2.5 py-1 rounded text-xs font-medium border flex items-center gap-1.5 ${statusStyles.badge}`}>
+              <span className={statusStyles.badge}>
                 <span className={`w-2 h-2 rounded-full ${statusStyles.dot}`} />
                 {statusStyles.label}
               </span>
@@ -329,7 +329,7 @@ export function IncidentDetailModal({
               </Badge>
 
               {incident.priority_overridden && (
-                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-50 text-purple-800 border border-purple-200">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-800 border border-purple-200">
                   Manual Override Active
                 </span>
               )}
@@ -401,11 +401,11 @@ export function IncidentDetailModal({
                   <Activity className="w-4 h-4 text-teal-700" />
                   Dynamic Intelligence Assessment
                 </div>
-                <p className="text-xs text-slate-800 leading-relaxed font-medium">
+                <p className="text-sm text-slate-800 leading-relaxed font-medium">
                   {incident.priority_explanation}
                 </p>
                 {incident.override_reason && (
-                  <div className="mt-2.5 pt-2 border-t border-teal-200/80 text-[11px] text-purple-900">
+                  <div className="mt-2.5 pt-2 border-t border-teal-200/80 text-xs text-purple-900">
                     <span className="font-semibold">Administrator Override Reason:</span>{" "}
                     {incident.override_reason}
                   </div>
@@ -418,10 +418,10 @@ export function IncidentDetailModal({
                   <Info className="w-4 h-4 text-amber-700" />
                   Recommended Operational Action (Advisory)
                 </div>
-                <p className="text-xs text-amber-950 font-medium">
+                <p className="text-sm text-amber-950 font-medium">
                   {incident.recommended_action || "Review video feed and assign a security responder."}
                 </p>
-                <p className="text-[10px] text-amber-700 mt-1 italic">
+                <p className="text-sm text-amber-700 mt-1 italic">
                   * All recommendations are strictly advisory. The control room supervisor retains full response authority.
                 </p>
               </div>
@@ -429,16 +429,16 @@ export function IncidentDetailModal({
               {/* Key Indicators Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Category & Domain</span>
+                  <span className="text-slate-500 text-xs block">Category & Domain</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block">
                     {formatCategory(incident.category)}
                   </span>
-                  <span className="text-[10px] text-teal-700 font-medium block">
+                  <span className="text-xs text-teal-700 font-medium block">
                     {getTaxonomyCategory(incident.category).domainName}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Detection Confidence</span>
+                  <span className="text-slate-500 text-xs block">Detection Confidence</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block">
                     {incident.detection_confidence !== null && incident.detection_confidence !== undefined
                       ? `${(incident.detection_confidence * 100).toFixed(0)}%`
@@ -446,13 +446,13 @@ export function IncidentDetailModal({
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Human Verification</span>
+                  <span className="text-slate-500 text-xs block">Human Verification</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block capitalize">
                     {incident.verification_status.replace("_", " ")}
                   </span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                  <span className="text-slate-500 text-[11px] block">Assigned Responder(s)</span>
+                  <span className="text-slate-500 text-xs block">Assigned Responder(s)</span>
                   <span className="font-semibold text-slate-900 mt-0.5 block">
                     {incident.assigned_to_name || incident.assigned_to || "Unassigned"}
                   </span>
@@ -470,15 +470,15 @@ export function IncidentDetailModal({
                         <Video className="w-4 h-4 text-teal-400" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                        <h4 className="text-[15px] font-semibold text-white tracking-normal  flex items-center gap-2">
                           CCTV Recorded Footage & Evidence
                           {effectiveVideoUrl && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                               Footage Stream Ready
                             </span>
                           )}
                         </h4>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-sm text-slate-400">
                           {incident.camera_name || incident.camera_id ? `Source: ${incident.camera_name || incident.camera_id}` : "Uploaded Surveillance Feed"}
                           {videoTimestamp !== null && ` • Incident detected at ${videoTimestamp.toFixed(1)}s`}
                         </p>
@@ -546,7 +546,7 @@ export function IncidentDetailModal({
                               <button
                                 type="button"
                                 onClick={() => handleJumpToTimestamp(videoTimestamp)}
-                                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer text-[11px] font-medium"
+                                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-medium"
                               >
                                 <Clock className="w-3 h-3 text-teal-400" />
                                 Jump to Detection Point ({videoTimestamp.toFixed(1)}s)
@@ -555,7 +555,7 @@ export function IncidentDetailModal({
                             <button
                               type="button"
                               onClick={() => handleJumpToTimestamp(0)}
-                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] transition-colors cursor-pointer"
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition-colors cursor-pointer"
                             >
                               Rewind (0:00)
                             </button>
@@ -565,7 +565,7 @@ export function IncidentDetailModal({
                             href={effectiveVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-slate-400 hover:text-teal-300 text-[11px] flex items-center gap-1 transition-colors"
+                            className="text-slate-400 hover:text-teal-300 text-xs flex items-center gap-1 transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             Open Clip in New Window
@@ -588,7 +588,7 @@ export function IncidentDetailModal({
                                   <button
                                     type="button"
                                     onClick={() => handleJumpToTimestamp(item.timestamp_s!)}
-                                    className="absolute bottom-2 right-2 px-2 py-1 rounded bg-slate-950/90 hover:bg-teal-600 text-white text-[10px] font-medium border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
+                                    className="absolute bottom-2 right-2 px-2 py-1 rounded bg-slate-950/90 hover:bg-teal-600 text-white text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
                                   >
                                     <Play className="w-2.5 h-2.5" />
                                     Watch Video from {item.timestamp_s.toFixed(1)}s
@@ -600,10 +600,10 @@ export function IncidentDetailModal({
                                 No visual snapshot recorded
                               </div>
                             )}
-                            <div className="p-2.5 bg-slate-900 border-t border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
+                            <div className="p-2.5 bg-slate-900 border-t border-slate-800 text-xs text-slate-300 flex items-center justify-between">
                               <span className="truncate pr-2">{item.description || "Video analysis keyframe capture"}</span>
                               {typeof item.timestamp_s === "number" && (
-                                <span className="font-mono text-teal-400 font-semibold shrink-0">{item.timestamp_s.toFixed(1)}s</span>
+                                <span className="tabular-nums text-teal-400 font-semibold shrink-0">{item.timestamp_s.toFixed(1)}s</span>
                               )}
                             </div>
                           </div>
@@ -707,11 +707,11 @@ export function IncidentDetailModal({
 
                 return (
                   <div>
-                    <h4 className="text-xs font-semibold text-slate-900 mb-2">Evidence Parameters</h4>
+                    <h4 className="text-[15px] font-semibold text-slate-900 mb-2">Evidence Parameters</h4>
                     <div className="bg-slate-50 rounded-lg border border-slate-200 p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                       {entries.map(([k, v]) => (
                         <div key={k} className="p-2 bg-white rounded border border-slate-200 shadow-2xs">
-                          <span className="text-slate-500 text-[10px] block font-semibold uppercase tracking-wider mb-0.5">
+                          <span className="text-slate-500 text-xs block font-semibold tracking-normal mb-0.5">
                             {formatLabel(k)}
                           </span>
                           <span className="font-bold text-slate-900 text-xs">
@@ -739,19 +739,19 @@ export function IncidentDetailModal({
               {/* Sub-scores Table */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 bg-white border border-slate-200 rounded">
-                  <span className="text-slate-500 text-[10px] block">Severity (40%)</span>
+                  <span className="text-slate-500 text-xs block">Severity (40%)</span>
                   <span className="text-base font-bold text-slate-900">{incident.severity_score.toFixed(1)}/100</span>
                 </div>
                 <div className="p-3 bg-white border border-slate-200 rounded">
-                  <span className="text-slate-500 text-[10px] block">Immediacy (25%)</span>
+                  <span className="text-slate-500 text-xs block">Immediacy (25%)</span>
                   <span className="text-base font-bold text-slate-900">{incident.immediacy_score.toFixed(1)}/100</span>
                 </div>
                 <div className="p-3 bg-white border border-slate-200 rounded">
-                  <span className="text-slate-500 text-[10px] block">People at Risk (20%)</span>
+                  <span className="text-slate-500 text-xs block">People at Risk (20%)</span>
                   <span className="text-base font-bold text-slate-900">{incident.people_at_risk_score.toFixed(1)}/100</span>
                 </div>
                 <div className="p-3 bg-white border border-slate-200 rounded">
-                  <span className="text-slate-500 text-[10px] block">Secondary Hazard (15%)</span>
+                  <span className="text-slate-500 text-xs block">Secondary Hazard (15%)</span>
                   <span className="text-base font-bold text-slate-900">{incident.secondary_hazard_score.toFixed(1)}/100</span>
                 </div>
               </div>
@@ -773,10 +773,10 @@ export function IncidentDetailModal({
                         <tr key={i} className="hover:bg-slate-50">
                           <td className="p-2.5 font-medium text-slate-800">{f.label}</td>
                           <td className="p-2.5 capitalize text-slate-600">{f.dimension.replace(/_/g, " ")}</td>
-                          <td className="p-2.5 text-right font-mono font-medium">
+                          <td className="p-2.5 text-right tabular-nums font-medium">
                             {f.delta >= 0 ? `+${f.delta.toFixed(1)}` : f.delta.toFixed(1)}
                           </td>
-                          <td className="p-2.5 text-right font-mono font-bold text-teal-800">
+                          <td className="p-2.5 text-right tabular-nums font-bold text-teal-800">
                             {f.composite_delta >= 0 ? `+${f.composite_delta.toFixed(1)}` : f.composite_delta.toFixed(1)}
                           </td>
                         </tr>
@@ -792,18 +792,18 @@ export function IncidentDetailModal({
           {activeTab === "timeline" && (
             <div className="space-y-3">
               {incident.events?.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-6">No timeline events recorded.</p>
+                <p className="text-sm text-slate-500 text-center py-6">No timeline events recorded.</p>
               ) : (
                 <div className="relative border-l-2 border-slate-200 ml-3 pl-4 space-y-4 text-xs">
                   {incident.events.map((e) => (
                     <div key={e.id} className="relative">
                       <div className="absolute -left-[23px] top-1 w-3 h-3 rounded-full bg-teal-600 border-2 border-white ring-2 ring-slate-200" />
-                      <div className="flex items-center justify-between text-slate-500 text-[11px]">
+                      <div className="flex items-center justify-between text-slate-500 text-xs">
                         <span className="font-semibold text-slate-800">{e.event_type.replace(/_/g, " ").toUpperCase()}</span>
                         <span>{formatDateTime(e.created_at)}</span>
                       </div>
                       <p className="text-slate-700 mt-1">{e.message}</p>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Actor: {e.actor}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">Actor: {e.actor}</div>
                     </div>
                   ))}
                 </div>
@@ -815,7 +815,7 @@ export function IncidentDetailModal({
           {activeTab === "audit" && (
             <div className="space-y-3">
               {incident.audit?.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-6">No audit records.</p>
+                <p className="text-sm text-slate-500 text-center py-6">No audit records.</p>
               ) : (
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
                   <table className="w-full text-left text-xs">
@@ -833,7 +833,7 @@ export function IncidentDetailModal({
                           <td className="p-2.5 font-medium text-slate-800">{a.action.replace(/_/g, " ")}</td>
                           <td className="p-2.5 text-slate-600">{a.actor}</td>
                           <td className="p-2.5 text-slate-600 max-w-xs truncate">{a.reason || "—"}</td>
-                          <td className="p-2.5 text-right font-mono text-[11px] text-slate-500">
+                          <td className="p-2.5 text-right tabular-nums text-[13px] text-slate-500">
                             {formatDateTime(a.created_at)}
                           </td>
                         </tr>
@@ -963,14 +963,14 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-xs text-slate-600">
+          <p className="text-sm text-slate-600">
             Select one or more emergency response services for <strong>{incident.id}</strong> ({incident.title}).
             For major incidents such as vehicle collisions, you can dispatch both an <strong>Ambulance</strong> and <strong>Traffic Police</strong> simultaneously.
           </p>
 
           {/* Quick Preset Buttons */}
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
-            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+            <span className="text-xs font-bold text-slate-700 tracking-normal block">
               Quick Multi-Agency Presets:
             </span>
             <div className="flex flex-wrap gap-2">
@@ -1004,10 +1004,10 @@ export function IncidentDetailModal({
           {/* Multi-Select Responder Cards */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+              <label className="text-xs font-bold text-slate-800 tracking-normal">
                 Available Emergency Units & Responders
               </label>
-              <div className="flex items-center space-x-2 text-[11px]">
+              <div className="flex items-center space-x-2 text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedResponderIds(responders.map((r) => r.id))}
@@ -1054,12 +1054,12 @@ export function IncidentDetailModal({
                       <div className="text-xs font-bold text-slate-900 truncate flex items-center justify-between">
                         <span>{r.name}</span>
                         {isSelected && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-teal-200 text-teal-900">
+                          <span className="px-1.5 py-0.2 rounded text-xs font-bold bg-teal-200 text-teal-900">
                             Selected
                           </span>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                      <div className="text-xs text-slate-500 mt-0.5 leading-snug">
                         {r.role}
                       </div>
                     </div>
@@ -1135,7 +1135,7 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-xs text-slate-600">
+          <p className="text-sm text-slate-600">
             A manual override takes precedence over the automated prioritization engine. An audit trail entry with your mandatory reason will be recorded.
           </p>
           <div>
@@ -1227,7 +1227,7 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-xs text-slate-600">
+          <p className="text-sm text-slate-600">
             Reopening will place <strong>{incident.id}</strong> back in the active queue with status &quot;Acknowledged&quot;.
           </p>
           <div>

@@ -43,12 +43,14 @@ export function formatTimeAgo(isoString?: string | null): string {
   }
 }
 
+export const PRIORITY_BADGE_LAYOUT = "inline-flex items-center justify-center gap-1 whitespace-nowrap w-max max-w-full shrink-0 px-3 py-1.5 rounded-md text-xs font-bold leading-tight uppercase";
+
 export function getPriorityStyles(level: PriorityLevel) {
   switch (level) {
     case "critical":
       return {
-        badge: "bg-rose-50 text-rose-800 border-rose-300 ring-rose-500/20",
-        pill: "bg-rose-700 text-white",
+        badge: `${PRIORITY_BADGE_LAYOUT} bg-[#D32F2F] text-white border-transparent`,
+        pill: `${PRIORITY_BADGE_LAYOUT} bg-[#D32F2F] text-white border-transparent`,
         dot: "bg-rose-600",
         border: "border-l-rose-600",
         bgHover: "hover:bg-rose-50/40",
@@ -56,8 +58,8 @@ export function getPriorityStyles(level: PriorityLevel) {
       };
     case "high":
       return {
-        badge: "bg-amber-50 text-amber-900 border-amber-300 ring-amber-500/20",
-        pill: "bg-amber-600 text-white",
+        badge: `${PRIORITY_BADGE_LAYOUT} bg-[#F57C00] text-white border-transparent`,
+        pill: `${PRIORITY_BADGE_LAYOUT} bg-[#F57C00] text-white border-transparent`,
         dot: "bg-amber-500",
         border: "border-l-amber-500",
         bgHover: "hover:bg-amber-50/40",
@@ -65,8 +67,8 @@ export function getPriorityStyles(level: PriorityLevel) {
       };
     case "medium":
       return {
-        badge: "bg-sky-50 text-sky-800 border-sky-300 ring-sky-500/20",
-        pill: "bg-sky-700 text-white",
+        badge: `${PRIORITY_BADGE_LAYOUT} bg-[#1565C0] text-white border-transparent`,
+        pill: `${PRIORITY_BADGE_LAYOUT} bg-[#1565C0] text-white border-transparent`,
         dot: "bg-sky-500",
         border: "border-l-sky-500",
         bgHover: "hover:bg-sky-50/40",
@@ -75,8 +77,8 @@ export function getPriorityStyles(level: PriorityLevel) {
     case "low":
     default:
       return {
-        badge: "bg-slate-100 text-slate-700 border-slate-300 ring-slate-500/20",
-        pill: "bg-slate-600 text-white",
+        badge: `${PRIORITY_BADGE_LAYOUT} bg-[#616161] text-white border-transparent`,
+        pill: `${PRIORITY_BADGE_LAYOUT} bg-[#616161] text-white border-transparent`,
         dot: "bg-slate-400",
         border: "border-l-slate-400",
         bgHover: "hover:bg-slate-50",
@@ -85,47 +87,49 @@ export function getPriorityStyles(level: PriorityLevel) {
   }
 }
 
+export const STATUS_BADGE_LAYOUT = "inline-flex items-center justify-center gap-1.5 whitespace-nowrap w-max shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-semibold leading-tight";
+
 export function getStatusStyles(status: IncidentStatus) {
   switch (status) {
     case "new":
       return {
-        badge: "bg-blue-50 text-blue-800 border-blue-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-[#FFF3DB] text-[#986000] border-[#986000]/10`,
         label: "Awaiting Ack",
-        dot: "bg-blue-500 animate-pulse",
+        dot: "bg-[#986000]",
       };
     case "acknowledged":
       return {
-        badge: "bg-purple-50 text-purple-800 border-purple-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-[#E6F4EA] text-[#287D48] border-[#287D48]/10`,
         label: "Acknowledged",
-        dot: "bg-purple-500",
+        dot: "bg-[#287D48]",
       };
     case "in_progress":
       return {
-        badge: "bg-teal-50 text-teal-800 border-teal-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-teal-50 text-teal-800 border-teal-200`,
         label: "In Progress",
         dot: "bg-teal-600",
       };
     case "resolved":
       return {
-        badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-emerald-50 text-emerald-800 border-emerald-200`,
         label: "Resolved",
         dot: "bg-emerald-600",
       };
     case "false_positive":
       return {
-        badge: "bg-slate-100 text-slate-600 border-slate-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-slate-100 text-slate-600 border-slate-200`,
         label: "False Positive",
         dot: "bg-slate-400",
       };
     case "closed":
       return {
-        badge: "bg-slate-100 text-slate-500 border-slate-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-slate-100 text-slate-500 border-slate-200`,
         label: "Closed",
         dot: "bg-slate-400",
       };
     default:
       return {
-        badge: "bg-slate-100 text-slate-700 border-slate-200",
+        badge: `${STATUS_BADGE_LAYOUT} bg-slate-100 text-slate-700 border-slate-200`,
         label: status,
         dot: "bg-slate-400",
       };

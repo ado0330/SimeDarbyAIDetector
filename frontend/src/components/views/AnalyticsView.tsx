@@ -74,14 +74,14 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Incidents</span>
-            <Database className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-semibold tracking-normal">Total Incidents</span>
+            <Database className="w-4 h-4 text-slate-500" />
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-slate-900">{analytics.totals.incidents}</span>
             <span className="text-xs text-slate-500">records</span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Video-derived:</span>
             <span className="font-semibold text-teal-800">{analytics.totals.from_video_analysis}</span>
           </div>
@@ -89,7 +89,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
 
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Avg Acknowledge Time</span>
+            <span className="text-xs font-semibold tracking-normal">Avg Acknowledge Time</span>
             <Clock className="w-4 h-4 text-teal-600" />
           </div>
           <div className="flex items-baseline space-x-2">
@@ -102,7 +102,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
               ({analytics.acknowledgement_sample_size} acked)
             </span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Awaiting Ack:</span>
             <span className="font-semibold text-amber-700">{analytics.totals.awaiting_acknowledgement}</span>
           </div>
@@ -110,7 +110,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
 
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Avg Resolution Time</span>
+            <span className="text-xs font-semibold tracking-normal">Avg Resolution Time</span>
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline space-x-2">
@@ -123,7 +123,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
               ({analytics.resolution_sample_size} resolved)
             </span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Resolved Cases:</span>
             <span className="font-semibold text-emerald-700">{analytics.totals.resolved}</span>
           </div>
@@ -131,8 +131,8 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
 
         <div className="bg-white rounded-lg border border-slate-200 p-4.5 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">False Positive Rate</span>
-            <AlertTriangle className="w-4 h-4 text-slate-400" />
+            <span className="text-xs font-semibold tracking-normal">False Positive Rate</span>
+            <AlertTriangle className="w-4 h-4 text-slate-500" />
           </div>
           <div className="flex items-baseline space-x-2">
             <span className="text-2xl font-bold text-slate-900">
@@ -144,7 +144,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
               ({analytics.totals.false_positive} cases)
             </span>
           </div>
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Audit preserved:</span>
             <span className="font-semibold text-slate-700">100% verified</span>
           </div>
@@ -158,18 +158,18 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4 text-teal-700" />
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
                 Incidents by Category
               </h3>
             </div>
-            <span className="text-[11px] text-slate-400">All Persisted Records</span>
+            <span className="text-xs text-slate-500">All Persisted Records</span>
           </div>
 
           {categoryData.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 text-xs">
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500 text-xs">
               <BarChart3 className="w-8 h-8 text-slate-300 mb-2" />
               <span className="font-semibold text-slate-600">No Category Data Recorded</span>
-              <p className="text-[11px] text-slate-400 mt-0.5 max-w-xs">
+              <p className="text-sm text-slate-500 mt-0.5 max-w-xs">
                 Upload CCTV clips or ingest telemetry to populate category distribution.
               </p>
             </div>
@@ -182,11 +182,11 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
                   margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#64748b" }} />
+                  <XAxis type="number" tick={{ fontSize: 12, fill: "#64748b" }} />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fontSize: 10, fill: "#334155" }}
+                    tick={{ fontSize: 12, fill: "#334155" }}
                     width={110}
                   />
                   <Tooltip
@@ -210,18 +210,18 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4 text-teal-700" />
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
                 Priority Tier Distribution
               </h3>
             </div>
-            <span className="text-[11px] text-slate-400">Relative Urgency</span>
+            <span className="text-xs text-slate-500">Relative Urgency</span>
           </div>
 
           {priorityData.every((p) => p.count === 0) ? (
-            <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-slate-400 text-xs">
+            <div className="h-56 flex flex-col items-center justify-center text-center p-6 text-slate-500 text-xs">
               <ShieldCheck className="w-8 h-8 text-emerald-500 mb-2" />
               <span className="font-semibold text-slate-600">Zero Active Urgency Alerts</span>
-              <p className="text-[11px] text-slate-400 mt-0.5 max-w-xs">
+              <p className="text-sm text-slate-500 mt-0.5 max-w-xs">
                 Surveillance grid is all clear. No incidents currently classified under priority tiers.
               </p>
             </div>
@@ -280,11 +280,11 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-4 h-4 text-teal-700" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
               7-Day Incident Volume & Operational Trend
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400">Daily Ingest Rate (UTC / MYT)</span>
+          <span className="text-xs text-slate-500">Daily Ingest Rate (UTC / MYT)</span>
         </div>
 
         <div className="h-64">
@@ -297,10 +297,10 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748b" }} />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#64748b" }} />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 11, fill: "#64748b" }}
+                tick={{ fontSize: 12, fill: "#64748b" }}
                 domain={[0, (dataMax: number) => Math.max(4, Math.ceil((dataMax || 0) * 1.2))]}
               />
               <Tooltip
