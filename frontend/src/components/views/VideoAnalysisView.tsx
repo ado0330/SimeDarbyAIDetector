@@ -42,13 +42,6 @@ export interface SampleClip {
 
 export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   {
-    id: "sample-normal-activity",
-    name: "Normal Routine Surveillance",
-    filename: "cctv_live_stream.mp4",
-    url: "/samples/cctv_live_stream.mp4",
-    size: "0.3 MB",
-  },
-  {
     id: "sample-fire-and-smoke",
     name: "Fire & Smoke",
     filename: "sample_fire_and_smoke.mp4",
