@@ -566,15 +566,18 @@ export default function Home() {
           return;
         }
 
-        // 2. Incident detected: Major life safety threats (person fall / unconscious, fire, collision, high score) are critical
-        const isCritical =
-          analysis.score >= 90 ||
-          analysis.category === "person_fall" ||
-          analysis.category === "fire_smoke" ||
-          analysis.category === "road_collision" ||
-          (analysis.isEmergency && analysis.score >= 85);
+        // 2. Incident detected: Prioritization derived strictly from the multi-factor formula
+        const severity: PriorityLevel =
+          (analysis.priorityLevel as PriorityLevel) ||
+          (analysis.score >= 80 ? "critical" : analysis.score >= 60 ? "high" : analysis.score >= 35 ? "medium" : "low");
 
-        const severity: PriorityLevel = isCritical ? "critical" : analysis.score >= 70 ? "high" : "medium";
+        const isEmergency = Boolean(analysis.isEmergency);
+        const evScores = analysis.evidenceScores || {
+          severity: severity === "critical" ? 85 : severity === "high" ? 70 : 45,
+          immediacy: severity === "critical" ? 80 : severity === "high" ? 65 : 45,
+          people_at_risk: severity === "critical" ? 60 : 40,
+          secondary_hazard: severity === "critical" ? 60 : 30,
+        };
 
         const completedJob: VideoJob = {
           ...newJob,
@@ -608,14 +611,14 @@ export default function Home() {
           model_id: "vision-pipeline",
           model_version: "2.4.0",
           preview: {
-            severity: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
-            immediacy: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
-            people_at_risk: 70,
-            secondary_hazard: 60,
-            composite_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
+            severity: evScores.severity,
+            immediacy: evScores.immediacy,
+            people_at_risk: evScores.people_at_risk,
+            secondary_hazard: evScores.secondary_hazard,
+            composite_score: analysis.score,
             score_level: severity,
             level: severity,
-            emergency: isCritical || analysis.isEmergency,
+            emergency: isEmergency,
             factors: [],
             unknown_fields: [],
             needs_verification: false,
@@ -632,7 +635,7 @@ export default function Home() {
           created_at: now,
           source: "video_analysis",
           source_clip: file.name,
-          urgent_review: isCritical || analysis.isEmergency,
+          urgent_review: severity === "critical",
         };
 
         setCandidates((prev) => [newCandidate, ...prev]);
@@ -655,15 +658,15 @@ export default function Home() {
           created_at: now,
           updated_at: now,
           status: "new",
-          severity_score: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
-          immediacy_score: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
-          people_at_risk_score: 70,
-          secondary_hazard_score: 60,
-          priority_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
-          rank_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
+          severity_score: evScores.severity,
+          immediacy_score: evScores.immediacy,
+          people_at_risk_score: evScores.people_at_risk,
+          secondary_hazard_score: evScores.secondary_hazard,
+          priority_score: analysis.score,
+          rank_score: analysis.score,
           priority_level: severity,
           computed_priority_level: severity,
-          emergency_rule_triggered: isCritical || analysis.isEmergency,
+          emergency_rule_triggered: isEmergency,
           priority_overridden: false,
           detection_confidence: analysis.confidence,
           verification_status: "unverified",
@@ -688,7 +691,7 @@ export default function Home() {
 
         setIncidents((prev) => sortByPriority([newIncident, ...prev]));
 
-        if (severity === "critical" || newIncident.emergency_rule_triggered) {
+        if (severity === "critical") {
           playCriticalAlertSound(false);
         }
 

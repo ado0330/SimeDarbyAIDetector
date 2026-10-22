@@ -29,6 +29,13 @@ export interface GeminiVisionResult {
   summary: string;
   isEmergency: boolean;
   score: number;
+  priorityLevel?: "low" | "medium" | "high" | "critical";
+  evidenceScores?: {
+    severity: number;
+    immediacy: number;
+    people_at_risk: number;
+    secondary_hazard: number;
+  };
   modelUsed: string;
   isGeminiAi: boolean;
   /** True when no real visual analysis happened. Never treat as normal-activity verification. */
@@ -264,19 +271,21 @@ export async function analyzeVideoWithGemini(
             };
           }
 
-          // Real safety or security incident detected:
-          const { score, isEmergency, label } = getCategoryScoring(json.category, json.evidence);
+          // Real safety or security incident detected (follows deterministic formula):
+          const priorityData = calculatePriorityByFormula(json.category, json.evidence);
           return {
             detected: true,
             category: json.category,
-            categoryLabel: label,
+            categoryLabel: priorityData.label,
             confidence: Number(json.confidence) || 0.92,
             timestamp_s: Number(json.timestamp_s) || 2.0,
             duration_s: duration,
-            title: json.title || `${label} Detected`,
-            summary: json.summary || `Multimodal CCTV scan detected ${label}.`,
-            isEmergency,
-            score,
+            title: json.title || `${priorityData.label} Detected`,
+            summary: json.summary || `Multimodal CCTV scan detected ${priorityData.label}.`,
+            isEmergency: priorityData.isEmergency,
+            score: priorityData.score,
+            priorityLevel: priorityData.level,
+            evidenceScores: priorityData.scores,
             modelUsed: json.modelUsed || "gemini-3.5-flash-lite",
             isGeminiAi: true,
             keyframes,
@@ -368,43 +377,207 @@ export function sanitizeIncidentEvidence(
   return clean;
 }
 
-function getCategoryScoring(
+export function calculatePriorityByFormula(
   category: string,
-  evidence?: Record<string, any>
+  evidence: Record<string, any> = {}
 ): {
   score: number;
+  level: "low" | "medium" | "high" | "critical";
   isEmergency: boolean;
   label: string;
+  scores: {
+    severity: number;
+    immediacy: number;
+    people_at_risk: number;
+    secondary_hazard: number;
+  };
 } {
-  const isUnconscious = Boolean(
-    evidence?.unconscious ||
-    evidence?.person_unconscious ||
-    (typeof evidence?.motionless_seconds === "number" && evidence.motionless_seconds >= 10) ||
-    (typeof evidence?.person_motionless_seconds === "number" && evidence.person_motionless_seconds >= 10)
-  );
+  // 1. Baselines from Sime Darby Township Guardian Prioritization Engine
+  const baselines: Record<
+    string,
+    { severity: number; immediacy: number; people_at_risk: number; secondary_hazard: number }
+  > = {
+    fire_smoke: { severity: 85, immediacy: 80, people_at_risk: 55, secondary_hazard: 80 },
+    road_collision: { severity: 70, immediacy: 70, people_at_risk: 50, secondary_hazard: 45 },
+    person_fall: { severity: 45, immediacy: 55, people_at_risk: 20, secondary_hazard: 10 },
+    wildlife_intrusion: { severity: 65, immediacy: 75, people_at_risk: 60, secondary_hazard: 35 },
+    fallen_tree_storm_damage: { severity: 60, immediacy: 65, people_at_risk: 35, secondary_hazard: 55 },
+    parking_obstruction: { severity: 15, immediacy: 15, people_at_risk: 5, secondary_hazard: 20 },
+    restricted_area_intrusion: { severity: 80, immediacy: 80, people_at_risk: 40, secondary_hazard: 70 },
+    pipe_burst_leakage: { severity: 60, immediacy: 65, people_at_risk: 30, secondary_hazard: 60 },
+    flash_flood: { severity: 75, immediacy: 80, people_at_risk: 65, secondary_hazard: 70 },
+  };
 
-  switch (category) {
-    case "fire_smoke":
-      return { score: 98.0, isEmergency: true, label: "Suspected Fire / Smoke" };
-    case "restricted_area_intrusion":
-      return { score: 95.0, isEmergency: true, label: "Restricted Danger Zone (Rooftop / Height)" };
-    case "person_fall":
-      return {
-        score: isUnconscious ? 96.0 : 93.0,
-        isEmergency: true,
-        label: isUnconscious ? "Person Fall / Unconscious" : "Person Fall / Motionless",
-      };
-    case "road_collision":
-      return { score: 95.0, isEmergency: true, label: "Road Collision / Vehicle Crash" };
-    case "wildlife_intrusion":
-      return { score: 91.0, isEmergency: true, label: "Wildlife Intrusion (Wild Animal)" };
-    case "fallen_tree_storm_damage":
-      return { score: 86.0, isEmergency: true, label: "Fallen Tree / Severe Storm Obstruction" };
-    case "parking_obstruction":
-      return { score: 55.0, isEmergency: false, label: "Emergency Access Obstruction" };
-    default:
-      return { score: 90.0, isEmergency: true, label: formatCategoryName(category) };
+  const base = baselines[category] || { severity: 50, immediacy: 50, people_at_risk: 30, secondary_hazard: 30 };
+  let sev = base.severity;
+  let imm = base.immediacy;
+  let ppl = base.people_at_risk;
+  let sec = base.secondary_hazard;
+
+  let isEmergency = false;
+  let floorLevel: "low" | "medium" | "high" | "critical" = "low";
+
+  // 2. Dynamic Evidence Modifiers
+  if (category === "person_fall") {
+    const isUnconscious = Boolean(evidence.unconscious || evidence.person_unconscious);
+    const motionlessSeconds = Number(evidence.motionless_seconds || evidence.person_motionless_seconds) || 0;
+
+    if (isUnconscious) {
+      sev += 40;
+      imm += 35;
+      ppl += 20;
+      isEmergency = true;
+      floorLevel = "high";
+    }
+    if (motionlessSeconds >= 60) {
+      sev += 25;
+      imm += 30;
+      isEmergency = true;
+      floorLevel = "high";
+    } else if (motionlessSeconds >= 30) {
+      sev += 10;
+      imm += 15;
+    } else if (motionlessSeconds >= 10) {
+      sev += 5;
+      imm += 5;
+    }
+    if (evidence.hazardous_location) {
+      sev += 15;
+      sec += 30;
+    }
+    if (evidence.fall_from_height) {
+      sev += 20;
+      floorLevel = "high";
+      isEmergency = true;
+    }
+    if (evidence.person_attempting_to_stand) {
+      sev -= 15;
+      imm -= 15;
+    }
+    if (evidence.bystander_assisting) {
+      imm -= 10;
+    }
+  } else if (category === "fire_smoke") {
+    if (evidence.spreading) {
+      sev += 10;
+      imm += 10;
+      ppl += 15;
+      sec += 10;
+      isEmergency = true;
+      floorLevel = "critical";
+    }
+    if (evidence.people_in_vicinity) {
+      ppl += 20;
+      if (evidence.smoke_or_flame_visible !== false) {
+        isEmergency = true;
+        floorLevel = "critical";
+      }
+    }
+    if (evidence.blocks_emergency_access) {
+      sec += 10;
+    }
+  } else if (category === "road_collision") {
+    if (evidence.person_motionless_after_impact || evidence.motionless_after_impact) {
+      sev += 15;
+      imm += 10;
+      isEmergency = true;
+      floorLevel = "critical";
+    }
+    const persons = Number(evidence.persons_involved) || 0;
+    if (persons >= 3) {
+      sev += 5;
+      ppl += 25;
+      isEmergency = true;
+      floorLevel = "critical";
+    } else if (persons >= 2) {
+      ppl += 12;
+    }
+    if (Number(evidence.vehicles_involved) >= 2) {
+      sev += 8;
+    }
+    if (evidence.blocks_emergency_access) {
+      imm += 10;
+      sec += 25;
+    }
+  } else if (category === "wildlife_intrusion") {
+    if (evidence.aggressive_behavior) {
+      sev += 15;
+      imm += 15;
+      ppl += 15;
+    }
+    if (evidence.proximity_to_pedestrians === "close" || evidence.proximity_to_pedestrians === "high") {
+      ppl += 15;
+    }
+  } else if (category === "fallen_tree_storm_damage") {
+    if (evidence.blocks_emergency_access) {
+      imm += 10;
+      sec += 25;
+      floorLevel = "high";
+    }
+    if (evidence.power_lines_contacted) {
+      sev += 20;
+      sec += 30;
+      floorLevel = "high";
+    }
+  } else if (category === "parking_obstruction") {
+    if (evidence.blocks_emergency_access) {
+      sev += 35;
+      imm += 40;
+      ppl += 20;
+      sec += 40;
+      floorLevel = "high";
+    }
+    if (evidence.blocks_traffic_lane) {
+      imm += 15;
+      sec += 15;
+    }
   }
+
+  // Clamping per dimension to [0, 100]
+  const clamp = (v: number) => Math.max(0, Math.min(100, v));
+  sev = clamp(sev);
+  imm = clamp(imm);
+  ppl = clamp(ppl);
+  sec = clamp(sec);
+
+  // Deterministic formula weights: 0.40 severity, 0.25 immediacy, 0.20 people_at_risk, 0.15 secondary_hazard
+  const composite_score = parseFloat((0.40 * sev + 0.25 * imm + 0.20 * ppl + 0.15 * sec).toFixed(1));
+
+  // Thresholds: critical: >= 80, high: >= 60, medium: >= 35, low: < 35
+  let level: "low" | "medium" | "high" | "critical" = "low";
+  if (composite_score >= 80) {
+    level = "critical";
+  } else if (composite_score >= 60) {
+    level = "high";
+  } else if (composite_score >= 35) {
+    level = "medium";
+  } else {
+    level = "low";
+  }
+
+  // Emergency floor enforcement
+  const rankOrder = { low: 1, medium: 2, high: 3, critical: 4 };
+  if (rankOrder[floorLevel] > rankOrder[level]) {
+    level = floorLevel;
+  }
+
+  let label = formatCategoryName(category);
+  if (category === "person_fall" && (evidence.unconscious || evidence.person_unconscious)) {
+    label = "Person Fall / Unconscious";
+  }
+
+  return {
+    score: composite_score,
+    level,
+    isEmergency,
+    label,
+    scores: {
+      severity: sev,
+      immediacy: imm,
+      people_at_risk: ppl,
+      secondary_hazard: sec,
+    },
+  };
 }
 
 export function formatCategoryName(cat: string): string {

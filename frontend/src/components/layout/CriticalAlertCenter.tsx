@@ -61,9 +61,9 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
     };
   }, []);
 
-  // Critical = critical tier or an emergency rule fired. Still "unacknowledged" only while status === "new".
+  // Critical = critical tier only while status === "new"
   const unacked = (now === 0 ? [] : incidents)
-    .filter((i) => i.status === "new" && (i.priority_level === "critical" || i.emergency_rule_triggered))
+    .filter((i) => i.status === "new" && i.priority_level === "critical")
     .map((i) => ({ i, elapsed: (now - Date.parse(i.created_at || i.detected_at)) / 1000 }))
     .sort((a, b) => b.i.rank_score - a.i.rank_score);
 

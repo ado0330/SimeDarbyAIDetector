@@ -196,16 +196,16 @@ RULES: Tuple[EmergencyRule, ...] = (
         "critical", True),
     EmergencyRule(
         "R-FALL-UNCONSCIOUS",
-        "An unconscious or unresponsive person fall is a life-threatening critical emergency.",
-        (C.PERSON_FALL.value,), (Condition("unconscious", "is_true"),), "critical", True),
+        "An unconscious person fall requires immediate high-priority medical intervention.",
+        (C.PERSON_FALL.value,), (Condition("unconscious", "is_true"),), "high", True),
     EmergencyRule(
         "R-FALL-UNRESPONSIVE",
-        "An unresponsive person fall is a life-threatening critical emergency.",
-        (C.PERSON_FALL.value,), (Condition("person_unconscious", "is_true"),), "critical", True),
+        "An unresponsive person fall requires immediate high-priority medical intervention.",
+        (C.PERSON_FALL.value,), (Condition("person_unconscious", "is_true"),), "high", True),
     EmergencyRule(
         "R-FALL-PERSISTENT",
         "A person who has stayed on the ground for 60 s or longer may need urgent help; verify immediately.",
-        (C.PERSON_FALL.value,), (Condition("person_motionless_seconds", "gte", 60),), "critical", True),
+        (C.PERSON_FALL.value,), (Condition("person_motionless_seconds", "gte", 60),), "high", True),
     EmergencyRule(
         "R-FALL-HEIGHT",
         "A fall from a height is potentially life-threatening.",
