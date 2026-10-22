@@ -42,6 +42,13 @@ export interface SampleClip {
 
 export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   {
+    id: "sample-normal-activity",
+    name: "Normal Routine Surveillance",
+    filename: "cctv_live_stream.mp4",
+    url: "/samples/cctv_live_stream.mp4",
+    size: "0.3 MB",
+  },
+  {
     id: "sample-fire-and-smoke",
     name: "Fire & Smoke",
     filename: "sample_fire_and_smoke.mp4",
@@ -57,7 +64,7 @@ export const SAMPLE_VIDEO_CLIPS: SampleClip[] = [
   },
   {
     id: "sample-car-accident",
-    name: "Car accident",
+    name: "Car Collision",
     filename: "sample_car_accident.mp4",
     url: "/samples/sample_car_accident.mp4",
     size: "5.4 MB",
@@ -338,60 +345,99 @@ export function VideoAnalysisView({
               </p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {videos.map((job) => (
-                <div
-                  key={job.id}
-                  className="p-3 rounded border border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900 truncate">
-                        {job.original_filename}
-                      </span>
-                      <span
-                        className={`px-2 py-0.2 rounded text-xs tabular-nums font-bold  ${job.status === "completed"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : job.status === "processing"
-                              ? "bg-amber-100 text-amber-800 animate-pulse"
-                              : job.status === "failed"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-slate-200 text-slate-700"
-                          }`}
-                      >
-                        {job.status}
-                      </span>
-                    </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {videos.map((job) => {
+                const isProcessing = job.status === "processing" || job.status === "queued";
+                const isFailed = job.status === "failed";
+                const isCompleted = job.status === "completed";
+                const hasIncident = (job.candidate_count || 0) > 0;
 
-                    <div className="text-xs text-slate-500 flex items-center gap-3">
-                      <span>Camera: {job.camera_id || "Unspecified"}</span>
-                      <span>&bull;</span>
-                      <span>{job.frames_analyzed} frames analyzed</span>
-                      {job.duration_s != null && (
-                        <>
-                          <span>&bull;</span>
-                          <span>{job.duration_s.toFixed(1)}s duration</span>
-                        </>
+                return (
+                  <div
+                    key={job.id}
+                    className="p-3 rounded border border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs"
+                  >
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-slate-900 truncate">
+                          {job.original_filename}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs tabular-nums font-bold inline-flex items-center gap-1 ${
+                            isCompleted
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              : isProcessing
+                                ? "bg-amber-100 text-amber-800 border border-amber-200 animate-pulse"
+                                : isFailed
+                                  ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                  : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {isProcessing && <Loader2 className="w-3 h-3 animate-spin" />}
+                          {isFailed && <XCircle className="w-3 h-3" />}
+                          {isCompleted && <CheckCircle className="w-3 h-3" />}
+                          {isProcessing
+                            ? "Processing"
+                            : isFailed
+                              ? "Analysis Failed"
+                              : isCompleted
+                                ? "Completed"
+                                : job.status}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-500 flex items-center gap-3">
+                        <span>Camera: {job.camera_id || "Unspecified"}</span>
+                        <span>&bull;</span>
+                        <span>{job.frames_analyzed || 0} frames analyzed</span>
+                        {job.duration_s != null && (
+                          <>
+                            <span>&bull;</span>
+                            <span>{job.duration_s.toFixed(1)}s duration</span>
+                          </>
+                        )}
+                      </div>
+
+                      {isFailed && job.error && (
+                        <div className="text-xs text-rose-600 font-medium truncate max-w-md flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          <span>{job.error}</span>
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  <div className="text-right shrink-0">
-                    <div
-                      className={`text-xs font-bold ${
-                        job.candidate_count === 0 ? "text-emerald-700" : "text-teal-800"
-                      }`}
-                    >
-                      {job.candidate_count === 0
-                        ? "Normal (0 Incidents)"
-                        : `${job.candidate_count} ${job.candidate_count === 1 ? "candidate" : "candidates"}`}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      {formatTimeAgo(job.created_at)}
+                    <div className="text-right shrink-0">
+                      {isProcessing ? (
+                        <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-amber-700">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Analyzing Video...</span>
+                        </div>
+                      ) : isFailed ? (
+                        <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-rose-700">
+                          <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Analysis Failed</span>
+                        </div>
+                      ) : hasIncident ? (
+                        <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-teal-800">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>
+                            Incident Detected ({job.candidate_count}{" "}
+                            {job.candidate_count === 1 ? "Incident" : "Incidents"})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1.5 text-xs font-bold text-emerald-700">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>No Incident Detected (Normal)</span>
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {formatTimeAgo(job.created_at)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

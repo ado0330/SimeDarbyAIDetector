@@ -717,6 +717,20 @@ export default function Home() {
         );
       } catch (analysisErr: any) {
         console.error("Frame analysis error:", analysisErr);
+        setVideos((prev) =>
+          prev.map((j) =>
+            j.id === jobId
+              ? {
+                  ...j,
+                  status: "failed",
+                  progress: 1.0,
+                  candidate_count: 0,
+                  error: analysisErr?.message || "Failed to process video frames",
+                  completed_at: new Date().toISOString(),
+                }
+              : j
+          )
+        );
         showToast(`Video analysis error: ${analysisErr.message || "Failed to process frames"}`, "error");
       }
     };

@@ -128,6 +128,12 @@ def process_video_job(job_id: str) -> None:
             job.progress = 0.85
             db.commit()
 
+            # If Gemini analysis returned an error (API failure, timeout, parse error), fail the job cleanly
+            if res.error:
+                log.warning("Gemini analysis returned error for job %s: %s", job.id, res.error)
+                _fail(db, job_id, f"Gemini analysis error: {res.error}")
+                return
+
             if res.detected and res.category:
                 s.frames_dir.mkdir(parents=True, exist_ok=True)
                 ref = _frame_filename(job.id, 1)
@@ -175,7 +181,7 @@ def process_video_job(job_id: str) -> None:
             job.frames_analyzed = 24
             job.progress = 1.0
             job.status, job.completed_at = VideoStatus.COMPLETED.value, utcnow()
-            job.error = res.error if not res.detected and res.error else None
+            job.error = None
             db.commit()
             return
 

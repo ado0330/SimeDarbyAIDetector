@@ -17,19 +17,17 @@ interface SimulatedLiveCctvProps {
 
 const LIVE_STREAM_CONFIG = {
   id: "live_cctv_01",
-  name: "Township Surveillance Camera 01 — Live CCTV Stream",
+  name: "Township Surveillance Camera 01 — Simulated CCTV Stream",
   locationName: "Main Gate Roundabout & Urban Access Corridor",
   defaultCameraId: "CAM-GATE-01",
   videoUrl: "/samples/cctv_live_stream.mp4",
   resolution: "1280x720 HD",
-  fps: 30,
-  bitrate: "3.8 Mbps",
-  latency: "24ms",
+  baseFps: 30,
 };
 
 /**
- * Continuous Live CCTV Surveillance Terminal.
- * Displays real-time camera tracking and telemetry from City of Elmina's camera network.
+ * Continuous Simulated CCTV Surveillance Terminal.
+ * Clearly labeled as simulated CCTV footage while providing authentic telemetry and controls.
  */
 export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
   const [selectedCameraId, setSelectedCameraId] = useState<string>(
@@ -38,15 +36,32 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
   const [clock, setClock] = useState<Date | null>(null);
   const [showTelemetryGrid, setShowTelemetryGrid] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  // Realistic dynamic telemetry values to avoid fixed static text
+  const [telemetry, setTelemetry] = useState({
+    bitrate: "3.8 Mbps",
+    latency: "24ms",
+    fps: 30,
+  });
+
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const selectedCamera = cameras.find((c) => c.id === selectedCameraId);
   const camName = selectedCamera?.name || LIVE_STREAM_CONFIG.locationName;
 
-  // Real-time CCTV digital clock (MYT / Asia/Kuala_Lumpur)
+  // Real-time CCTV digital clock & dynamic simulated telemetry jitter
   useEffect(() => {
-    const tick = () => setClock(new Date());
+    const tick = () => {
+      setClock(new Date());
+      // Natural telemetry variations (3.7 - 3.9 Mbps, 22 - 26ms latency)
+      const randomBitrate = (3.7 + Math.random() * 0.25).toFixed(1);
+      const randomLatency = Math.floor(22 + Math.random() * 5);
+      setTelemetry({
+        bitrate: `${randomBitrate} Mbps`,
+        latency: `${randomLatency}ms`,
+        fps: 30,
+      });
+    };
     tick();
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
@@ -76,14 +91,14 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
         <div className="flex items-center space-x-2.5">
           <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
           </span>
           <div>
             <h4 className="text-[15px] font-semibold text-slate-900 tracking-normal flex items-center gap-2">
-              Live CCTV Surveillance Stream
-              <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 ">
-                Active Feed
+              CCTV Monitoring Stream (Simulated Loop)
+              <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                Simulated Feed
               </span>
             </h4>
           </div>
@@ -103,14 +118,13 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
             {showTelemetryGrid ? "HUD Overlay: On" : "HUD Overlay: Off"}
           </button>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 border border-teal-200 text-xs font-bold text-teal-900 tracking-normal">
-            <Activity className="w-3 h-3 text-teal-600" /> Continuous Monitoring
+            <Activity className="w-3 h-3 text-teal-600" /> Continuous Simulation Playback
           </span>
         </div>
       </div>
 
       <p className="text-[13px] text-slate-600 leading-relaxed">
-        Continuous live surveillance telemetry feed linked directly to City of Elmina township CCTV camera nodes.
-        Operators can monitor real-time visual feeds and track live camera positions.
+        Simulated surveillance playback feed demonstrating real-time camera tracking and telemetry for City of Elmina township CCTV camera nodes. Operators can evaluate simulated live telemetry and automated visual monitoring.
       </p>
 
       {/* Main Stream Player & Controls Grid */}
@@ -135,16 +149,16 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
             <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 bg-gradient-to-t from-black/60 via-transparent to-black/60 tabular-nums">
               {/* Top Bar: Camera Info & Real-Time Clock */}
               <div className="flex items-center justify-between gap-2 text-xs text-white">
-                <div className="min-w-0 flex items-center space-x-2 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                  <span className="font-bold tracking-normal text-[11px] whitespace-nowrap">REC ● LIVE</span>
+                <div className="min-w-0 flex items-center space-x-2 bg-black/75 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="font-bold tracking-normal text-[11px] whitespace-nowrap text-amber-300">SIM ● PLAYBACK</span>
                   <span className="text-white/40">|</span>
                   <span className="text-teal-300 text-[11px] font-semibold whitespace-nowrap">{selectedCameraId}</span>
                   <span className="text-white/40">|</span>
                   <span className="text-slate-300 text-[11px] leading-tight hidden sm:inline">{camName}</span>
                 </div>
 
-                <div className="bg-black/70 px-2.5 py-1 rounded border border-white/10 text-[11px] whitespace-nowrap shrink-0 text-emerald-400 font-semibold backdrop-blur-xs">
+                <div className="bg-black/75 px-2.5 py-1 rounded border border-white/10 text-[11px] whitespace-nowrap shrink-0 text-emerald-400 font-semibold backdrop-blur-xs">
                   {clock ? clock.toISOString().replace("T", " ").slice(0, 19) : "2026-10-22 00:00:00"} MYT
                 </div>
               </div>
@@ -158,29 +172,31 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
 
               {/* Bottom Bar: Stream Specs & Status */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs text-slate-300 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between text-xs text-slate-300 bg-black/75 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <span>{LIVE_STREAM_CONFIG.resolution}</span>
                     <span>&bull;</span>
-                    <span>{LIVE_STREAM_CONFIG.fps} FPS</span>
+                    <span>{telemetry.fps} FPS</span>
                     <span>&bull;</span>
-                    <span>{LIVE_STREAM_CONFIG.bitrate}</span>
+                    <span>{telemetry.bitrate}</span>
                     <span>&bull;</span>
-                    <span>Latency: {LIVE_STREAM_CONFIG.latency}</span>
+                    <span>Latency: ~{telemetry.latency}</span>
+                    <span>&bull;</span>
+                    <span className="text-amber-300/90 font-medium">Simulated Loop</span>
                   </div>
-                  <div className="text-teal-300 font-semibold ">
-                    🏢 City of Elmina CCTV Network
+                  <div className="text-teal-300 font-semibold hidden md:inline">
+                    🏢 City of Elmina CCTV Network (Simulated)
                   </div>
                 </div>
 
                 {/* Real-Time Live Status Banner */}
                 <div className="p-2 rounded bg-black/85 border border-white/15 text-xs text-white backdrop-blur-md flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-slate-200 text-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Continuous Visual Tracking · Online Stream Telemetry
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                    Simulated Visual Tracking · Dynamic Camera Telemetry
                   </span>
-                  <span className="text-xs text-emerald-300 font-medium hidden sm:inline">
-                    Node Connected · 100% Signal
+                  <span className="text-xs text-teal-300 font-medium hidden sm:inline">
+                    Simulated Node Connected · Signal Nominal
                   </span>
                 </div>
               </div>
@@ -205,17 +221,17 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-800 tracking-normal flex items-center gap-1.5 text-xs">
                 <Video className="w-3.5 h-3.5 text-teal-600" />
-                Active CCTV Stream
+                Simulated CCTV Stream
               </span>
-              <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                Connected
+              <span className="px-2 py-0.5 rounded text-xs font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                Simulation Active
               </span>
             </div>
             <div className="text-xs font-bold text-slate-900">
               {LIVE_STREAM_CONFIG.name}
             </div>
             <div className="text-xs text-slate-500 leading-snug">
-              Direct RTSP/H.264 camera telemetry feed linked to township traffic monitoring infrastructure.
+              Simulated H.264 camera loop demonstrating township traffic and pedestrian monitoring telemetry.
             </div>
           </div>
 
@@ -223,7 +239,7 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
           <div>
             <label className="font-semibold text-slate-700 block mb-1 flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-teal-600" />
-              Source Camera Mapping
+              Source Camera Mapping (Simulated)
             </label>
             <select
               value={selectedCameraId}
@@ -241,7 +257,7 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
           {/* Camera Node Telemetry Specs */}
           <div className="p-3 rounded-lg bg-slate-50/70 border border-slate-200 space-y-2">
             <span className="font-bold text-slate-700 tracking-normal text-xs block">
-              Node Telemetry
+              Simulated Node Telemetry
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
@@ -253,7 +269,7 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
               <div>
                 <span className="text-slate-400 block text-xs">Signal Health</span>
                 <span className="font-semibold text-emerald-700 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> 99.8% (Optimal)
+                  <CheckCircle2 className="w-3 h-3 text-emerald-500" /> 99.8% Nominal (Simulated)
                 </span>
               </div>
               <div>
@@ -261,8 +277,8 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
                 <span className="tabular-nums text-slate-700">{LIVE_STREAM_CONFIG.resolution}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-xs">Framerate</span>
-                <span className="tabular-nums text-slate-700">{LIVE_STREAM_CONFIG.fps} FPS</span>
+                <span className="text-slate-400 block text-xs">Framerate & Bitrate</span>
+                <span className="tabular-nums text-slate-700">{telemetry.fps} FPS &bull; {telemetry.bitrate}</span>
               </div>
             </div>
           </div>
