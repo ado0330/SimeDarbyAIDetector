@@ -970,47 +970,6 @@ export function IncidentDetailModal({
             Control room operators can assign directly to the nearest PB patrol unit or dispatch external emergency services.
           </p>
 
-          {/* Quick Action: Assign to Nearest PB Patrol Unit */}
-          <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-300 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950 uppercase tracking-wide">
-                <span>🎯</span>
-                <span>Nearest PB Patrol Unit (Recommended)</span>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-200 text-teal-900 border border-teal-300">
-                ETA: {nearestUnitInfo.etaFormatted} ({nearestUnitInfo.distanceMeters}m away)
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-              <div>
-                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <span>{nearestUnitInfo.unit.callsign}</span>
-                  <span className="text-slate-400 font-normal">({nearestUnitInfo.unit.unitCode})</span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {nearestUnitInfo.unit.status === "on_patrol" ? "On Patrol" : "Available"}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-600 mt-0.5">
-                  Officer: <strong className="text-slate-700">{nearestUnitInfo.unit.officerInCharge}</strong> &bull; {nearestUnitInfo.unit.vehicleModel}
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="primary"
-                type="button"
-                onClick={() => {
-                  setSelectedResponderIds([nearestUnitInfo.unit.id]);
-                }}
-                className="text-xs font-semibold bg-teal-700 hover:bg-teal-800 cursor-pointer"
-              >
-                {selectedResponderIds.includes(nearestUnitInfo.unit.id)
-                  ? "✓ Nearest Unit Selected"
-                  : "Assign Nearest Unit"}
-              </Button>
-            </div>
-          </div>
-
           {/* Quick Preset Buttons */}
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
             <span className="text-xs font-bold text-slate-700 tracking-normal block">
@@ -1020,26 +979,23 @@ export function IncidentDetailModal({
               <button
                 type="button"
                 onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id])}
-                className="px-2.5 py-1 rounded text-xs font-semibold bg-teal-100 hover:bg-teal-200 text-teal-950 border border-teal-400 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 transition-colors cursor-pointer"
               >
-                <span>🎯</span>
-                <span>Nearest Unit: {nearestUnitInfo.unit.callsign} ({nearestUnitInfo.distanceMeters}m)</span>
+                Nearest Unit: {nearestUnitInfo.unit.callsign} ({nearestUnitInfo.distanceMeters}m)
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id, "ambulance"])}
-                className="px-2.5 py-1 rounded text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition-colors cursor-pointer"
               >
-                <span>🛡️ + 🚑</span>
-                <span>Medical: Nearest PB Unit + Ambulance</span>
+                Medical: Nearest PB Unit + Ambulance
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id, "fire-warden"])}
-                className="px-2.5 py-1 rounded text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1.5 rounded text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 transition-colors cursor-pointer"
               >
-                <span>🛡️ + 🚒</span>
-                <span>Fire / Hazard: Nearest PB Unit + Bomba</span>
+                Fire / Hazard: Nearest PB Unit + Bomba
               </button>
             </div>
           </div>
@@ -1118,22 +1074,24 @@ export function IncidentDetailModal({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate flex items-center justify-between gap-1">
-                          <span className="truncate">{r.name}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-slate-900 leading-tight">
+                            {r.name}
+                          </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {r.isNearest && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
-                                Nearest • {nearestUnitInfo.distanceMeters}m
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                                Nearest &bull; {nearestUnitInfo.distanceMeters}m
                               </span>
                             )}
                             {isSelected && (
-                              <span className="px-1.5 py-0.2 rounded text-xs font-bold bg-teal-200 text-teal-900">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-200 text-teal-900">
                                 Selected
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="text-xs text-slate-500 mt-0.5 leading-snug">
+                        <div className="text-xs text-slate-500 mt-1 leading-snug">
                           {r.role}
                         </div>
                       </div>
