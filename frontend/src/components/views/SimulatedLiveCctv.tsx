@@ -108,7 +108,7 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
         </div>
       </div>
 
-      <p className="text-sm text-slate-600 leading-relaxed">
+      <p className="text-[13px] text-slate-600 leading-relaxed">
         Continuous live surveillance telemetry feed linked directly to City of Elmina township CCTV camera nodes.
         Operators can monitor real-time visual feeds and track live camera positions.
       </p>
@@ -134,17 +134,17 @@ export function SimulatedLiveCctv({ cameras }: SimulatedLiveCctvProps) {
           {showTelemetryGrid && (
             <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 bg-gradient-to-t from-black/60 via-transparent to-black/60 tabular-nums">
               {/* Top Bar: Camera Info & Real-Time Clock */}
-              <div className="flex items-center justify-between text-xs text-white">
-                <div className="flex items-center space-x-2 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
+              <div className="flex items-center justify-between gap-2 text-xs text-white">
+                <div className="min-w-0 flex items-center space-x-2 bg-black/70 px-2.5 py-1 rounded border border-white/10 backdrop-blur-xs">
                   <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                  <span className="font-bold tracking-normal text-xs">REC ● LIVE</span>
+                  <span className="font-bold tracking-normal text-[11px] whitespace-nowrap">REC ● LIVE</span>
                   <span className="text-white/40">|</span>
-                  <span className="text-teal-300 text-xs font-semibold">{selectedCameraId}</span>
+                  <span className="text-teal-300 text-[11px] font-semibold whitespace-nowrap">{selectedCameraId}</span>
                   <span className="text-white/40">|</span>
-                  <span className="text-slate-300 text-xs hidden sm:inline">{camName}</span>
+                  <span className="text-slate-300 text-[11px] leading-tight hidden sm:inline">{camName}</span>
                 </div>
 
-                <div className="bg-black/70 px-2.5 py-1 rounded border border-white/10 text-xs text-emerald-400 font-semibold backdrop-blur-xs">
+                <div className="bg-black/70 px-2.5 py-1 rounded border border-white/10 text-[11px] whitespace-nowrap shrink-0 text-emerald-400 font-semibold backdrop-blur-xs">
                   {clock ? clock.toISOString().replace("T", " ").slice(0, 19) : "2026-10-22 00:00:00"} MYT
                 </div>
               </div>

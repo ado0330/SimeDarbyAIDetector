@@ -395,7 +395,7 @@ export function VideoAnalysisView({
         <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
+              <h3 className="text-base font-semibold text-slate-900 tracking-normal">
                 Extracted Event Candidates (Human Review Required)
               </h3>
               {pendingCount > 0 && (
@@ -404,7 +404,7 @@ export function VideoAnalysisView({
                 </span>
               )}
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-[13px] text-slate-500 mt-0.5">
               Review posture-heuristic detections before they enter the active township incident queue.
             </p>
           </div>
@@ -504,7 +504,7 @@ export function VideoAnalysisView({
                         {formatCategory(c.category)} &bull; Confidence: {c.confidence != null ? `${(c.confidence * 100).toFixed(0)}%` : "Heuristic"}
                       </div>
 
-                      <p className="text-sm text-slate-600 leading-snug">
+                      <p className="text-[13px] text-slate-600 leading-snug">
                         {c.details?.explanation ||
                           "Persistent horizontal bounding box aspect ratio detected without translation."}
                       </p>

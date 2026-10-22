@@ -184,47 +184,49 @@ export function TownshipMapView({
   return (
     <div className="space-y-4">
       {/* Map Header Toolbar */}
-      <div className="bg-white rounded-lg border border-slate-200 p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center space-x-2">
-          <Layers className="w-4 h-4 text-teal-700" />
-          <h3 className="text-lg font-semibold text-slate-800 tracking-normal">
-            Township Security GIS & Schematic Operations Map
-          </h3>
-          <span className="text-xs text-slate-400">&bull; City of Elmina Operations Sector</span>
+      <div className="bg-white rounded-lg border border-slate-200 p-3 xl:p-2 2xl:p-3.5 shadow-2xs flex flex-wrap xl:flex-nowrap items-center gap-2 xl:gap-1">
+        <div className="min-w-0 xl:shrink-0 flex flex-wrap xl:flex-nowrap items-center gap-x-1.5 gap-y-1">
+          <div className="min-w-0 xl:shrink-0 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 shrink-0 text-teal-700" />
+            <h3 className="text-sm xl:text-[11px] min-[1400px]:text-xs 2xl:text-sm font-semibold uppercase text-slate-800 tracking-normal xl:whitespace-nowrap">
+              Township Security GIS & Schematic Operations Map
+            </h3>
+          </div>
+          <span className="text-xs xl:text-[10px] min-[1400px]:text-[11px] 2xl:text-xs text-slate-400 whitespace-nowrap">&bull; City of Elmina Operations Sector</span>
         </div>
 
-        <div className="flex items-center space-x-2 text-xs">
-          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+        <div className="w-full xl:w-auto max-w-full xl:ml-auto flex flex-wrap xl:flex-nowrap shrink-0 items-center gap-1 text-xs">
+          <label className="inline-flex min-h-8 shrink-0 items-center gap-1 whitespace-nowrap cursor-pointer text-slate-600 bg-slate-50 px-2 xl:px-1 2xl:px-2 py-1 rounded border border-slate-200">
             <input
               type="checkbox"
               checked={showCameras}
               onChange={(e) => setShowCameras(e.target.checked)}
-              className="rounded text-teal-600 focus:ring-teal-500"
+              className="w-3 h-3 shrink-0 rounded text-teal-600 focus:ring-teal-500"
             />
-            <span className="text-xs font-medium">Show 10 Cameras</span>
+            <span className="text-xs xl:text-[10px] min-[1400px]:text-[11px] 2xl:text-xs font-medium">Show 10 Cameras</span>
           </label>
 
-          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+          <label className="inline-flex min-h-8 shrink-0 items-center gap-1 whitespace-nowrap cursor-pointer text-slate-600 bg-slate-50 px-2 xl:px-1 2xl:px-2 py-1 rounded border border-slate-200">
             <input
               type="checkbox"
               checked={showPatrolUnits}
               onChange={(e) => setShowPatrolUnits(e.target.checked)}
-              className="rounded text-sky-600 focus:ring-sky-500"
+              className="w-3 h-3 shrink-0 rounded text-sky-600 focus:ring-sky-500"
             />
-            <span className="text-xs font-medium flex items-center gap-1">
-              <Car className="w-3 h-3 text-sky-600" />
+            <span className="text-xs xl:text-[10px] min-[1400px]:text-[11px] 2xl:text-xs font-medium flex items-center gap-1">
+              <Car className="w-2.5 h-2.5 shrink-0 text-sky-600" />
               Emergency Response Fleet (6)
             </span>
           </label>
 
-          <label className="flex items-center space-x-1.5 cursor-pointer text-slate-600 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+          <label className="inline-flex min-h-8 shrink-0 items-center gap-1 whitespace-nowrap cursor-pointer text-slate-600 bg-slate-50 px-2 xl:px-1 2xl:px-2 py-1 rounded border border-slate-200">
             <input
               type="checkbox"
               checked={showIncidents}
               onChange={(e) => setShowIncidents(e.target.checked)}
-              className="rounded text-rose-600 focus:ring-rose-500"
+              className="w-3 h-3 shrink-0 rounded text-rose-600 focus:ring-rose-500"
             />
-            <span className="text-xs font-medium">Show Active Pins ({activeIncidents.length})</span>
+            <span className="text-xs xl:text-[10px] min-[1400px]:text-[11px] 2xl:text-xs font-medium">Show Active Pins ({activeIncidents.length})</span>
           </label>
         </div>
       </div>
@@ -606,10 +608,10 @@ export function TownshipMapView({
                 <MapPin className="w-3.5 h-3.5 text-teal-600" />
                 <span>Selected Sector</span>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mt-1">
+              <h3 className="text-base font-semibold text-slate-900 mt-1">
                 {selectedZone.name}
               </h3>
-              <p className="text-sm text-slate-600 mt-1 leading-normal">
+              <p className="text-[13px] text-slate-600 mt-1 leading-normal">
                 {selectedZone.description || "Designated zone in Sime Darby Property township plan."}
               </p>
             </div>
@@ -730,7 +732,7 @@ export function TownshipMapView({
           </div>
 
           <div className="pt-3 border-t border-slate-200">
-            <p className="text-sm text-slate-400 leading-tight">
+            <p className="text-xs text-slate-400 leading-tight">
               Interactive schematic aligned with Sime Darby Property digital masterplan framework.
             </p>
           </div>

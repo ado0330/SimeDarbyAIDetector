@@ -392,7 +392,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                 Also purge active incidents (complete database reset)
               </span>
             </label>
-            <p className="text-sm text-slate-500 pl-6 leading-relaxed">
+            <p className="text-xs text-slate-500 pl-6 leading-relaxed">
               {includeActiveInClear
                 ? "Warning: All active incident queue alerts and all historical records will be permanently deleted."
                 : "Default: Only resolved, closed, and false-positive records will be cleared. Active incidents in the triage queue will remain untouched."}

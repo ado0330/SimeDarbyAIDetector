@@ -158,7 +158,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4 text-teal-700" />
-              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
+              <h3 className="text-base font-semibold text-slate-900 tracking-normal">
                 Incidents by Category
               </h3>
             </div>
@@ -210,7 +210,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4 text-teal-700" />
-              <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
+              <h3 className="text-base font-semibold text-slate-900 tracking-normal">
                 Priority Tier Distribution
               </h3>
             </div>
@@ -280,7 +280,7 @@ export function AnalyticsView({ analytics, onRefresh }: AnalyticsViewProps) {
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2">
             <TrendingUp className="w-4 h-4 text-teal-700" />
-            <h3 className="text-lg font-semibold text-slate-900 tracking-normal">
+            <h3 className="text-base font-semibold text-slate-900 tracking-normal">
               7-Day Incident Volume & Operational Trend
             </h3>
           </div>

@@ -189,7 +189,7 @@ export function OverviewView({
                 <span className="text-xs font-semibold text-teal-700 tracking-normal">
                   {formatCategory(topIncident.category)}
                 </span>
-                <h3 className="text-lg font-semibold text-slate-900 tracking-tight mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 tracking-tight mt-0.5">
                   {topIncident.title}
                 </h3>
               </div>
@@ -263,7 +263,7 @@ export function OverviewView({
           <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
             <CheckCircle2 className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900">All Clear in Township</h3>
+          <h3 className="text-base font-semibold text-slate-900">All Clear in Township</h3>
           <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
             No active incidents currently require operator attention. All surveillance streams and township sectors are clear.
           </p>
@@ -288,14 +288,14 @@ export function OverviewView({
         {/* Left Column: Active Queue Preview */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight">
               Active Queue Summary ({activeIncidents.length})
             </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={onNavigateToIncidents}
-              className="text-teal-700 hover:text-teal-900 text-sm font-semibold p-0 h-auto"
+              className="text-teal-700 hover:text-teal-900 text-[13px] font-semibold p-0 h-auto"
             >
               View Full Incident Queue &rarr;
             </Button>
@@ -352,7 +352,7 @@ export function OverviewView({
         {/* Right Column: Township Operations & Quick Actions */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900 tracking-tight flex items-center gap-1.5">
+            <h3 className="text-base font-semibold text-slate-900 tracking-tight flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-teal-600" />
               Township Surveillance Operations
             </h3>
@@ -376,12 +376,12 @@ export function OverviewView({
                     size="sm"
                     variant="primary"
                     onClick={onNavigateToVideo}
-                    className="h-7 text-sm px-3"
+                    className="h-7 text-[13px] px-3"
                   >
                     Upload Clip
                   </Button>
                 </div>
-                <p className="text-sm text-slate-600 leading-snug">
+                <p className="text-[13px] text-slate-600 leading-snug">
                   Upload footage clips to analyze posture heuristics, falls, and perimeter security events.
                 </p>
               </div>
@@ -404,12 +404,12 @@ export function OverviewView({
                     size="sm"
                     variant="outline"
                     onClick={onNavigateToMap}
-                    className="h-7 text-sm px-3 text-sky-700 border-sky-200 hover:bg-sky-50"
+                    className="h-7 text-[13px] px-3 text-sky-700 border-sky-200 hover:bg-sky-50"
                   >
                     Open Map
                   </Button>
                 </div>
-                <p className="text-sm text-slate-600 leading-snug">
+                <p className="text-[13px] text-slate-600 leading-snug">
                   Inspect camera network locations, township zones, and live alert clusters across City of Elmina.
                 </p>
               </div>
@@ -421,7 +421,7 @@ export function OverviewView({
                 <UserCheck className="w-3.5 h-3.5 text-teal-700" />
                 Human-in-the-Loop Governance
               </div>
-              <p className="text-sm leading-relaxed text-slate-500">
+              <p className="text-xs leading-relaxed text-slate-500">
                 All algorithmic scoring and vision detections serve as advisory intelligence. Final dispatch and resolution authority remains with control room operators.
               </p>
             </div>

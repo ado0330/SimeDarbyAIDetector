@@ -321,7 +321,7 @@ export function ActiveIncidentsView({
                       </div>
 
                       {/* Dynamic Intelligence Rationale */}
-                      <p className="text-sm text-slate-600 leading-snug line-clamp-2">
+                      <p className="text-[13px] text-slate-600 leading-snug line-clamp-2">
                         {inc.priority_explanation}
                       </p>
 

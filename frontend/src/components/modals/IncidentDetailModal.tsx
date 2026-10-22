@@ -401,7 +401,7 @@ export function IncidentDetailModal({
                   <Activity className="w-4 h-4 text-teal-700" />
                   Dynamic Intelligence Assessment
                 </div>
-                <p className="text-sm text-slate-800 leading-relaxed font-medium">
+                <p className="text-[13px] text-slate-800 leading-relaxed font-medium">
                   {incident.priority_explanation}
                 </p>
                 {incident.override_reason && (
@@ -418,10 +418,10 @@ export function IncidentDetailModal({
                   <Info className="w-4 h-4 text-amber-700" />
                   Recommended Operational Action (Advisory)
                 </div>
-                <p className="text-sm text-amber-950 font-medium">
+                <p className="text-[13px] text-amber-950 font-medium">
                   {incident.recommended_action || "Review video feed and assign a security responder."}
                 </p>
-                <p className="text-sm text-amber-700 mt-1 italic">
+                <p className="text-xs text-amber-700 mt-1 italic">
                   * All recommendations are strictly advisory. The control room supervisor retains full response authority.
                 </p>
               </div>
@@ -963,7 +963,7 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-[13px] text-slate-600">
             Select one or more emergency response services for <strong>{incident.id}</strong> ({incident.title}).
             For major incidents such as vehicle collisions, you can dispatch both an <strong>Ambulance</strong> and <strong>Traffic Police</strong> simultaneously.
           </p>
@@ -1135,7 +1135,7 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-[13px] text-slate-600">
             A manual override takes precedence over the automated prioritization engine. An audit trail entry with your mandatory reason will be recorded.
           </p>
           <div>
@@ -1227,7 +1227,7 @@ export function IncidentDetailModal({
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-[13px] text-slate-600">
             Reopening will place <strong>{incident.id}</strong> back in the active queue with status &quot;Acknowledged&quot;.
           </p>
           <div>
