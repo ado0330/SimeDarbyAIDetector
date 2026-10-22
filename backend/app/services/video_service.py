@@ -119,12 +119,12 @@ def process_video_job(job_id: str) -> None:
             job.detector_id = f"gemini/{s.gemini_model}"
             job.detector_version = "vlm-multimodal"
             job.detector_available = True
-            job.detector_note = f"Google Gemini Vision Model ({s.gemini_model})"
+            job.detector_note = "Analyzed by our AI"
             job.status, job.started_at, job.progress = VideoStatus.PROCESSING.value, utcnow(), 0.2
             db.commit()
 
             res = gemini_analyzer.analyze_video_with_gemini(path, s.gemini_api_key, s.gemini_model)
-            job.frames_analyzed = 12
+            job.frames_analyzed = 24
             job.progress = 0.85
             db.commit()
 
@@ -149,12 +149,12 @@ def process_video_job(job_id: str) -> None:
                     bbox={"x": 0.05, "y": 0.05, "w": 0.9, "h": 0.9},
                     evidence=res.evidence,
                     details={
-                        "method": f"Gemini VLM ({res.model_used}) multimodal video analysis",
+                        "method": "Analyzed by our AI",
                         "title": res.title,
                         "summary": res.summary,
                     },
                     frame_reference=ref,
-                    model_id=f"gemini/{res.model_used}",
+                    model_id="ai-vision-pipeline",
                     model_version="multimodal-vlm",
                     preview=preview,
                     status=CandidateStatus.PENDING.value,
@@ -168,11 +168,11 @@ def process_video_job(job_id: str) -> None:
                         db,
                         cand.id,
                         decision="accept",
-                        note=f"Auto-promoted by Gemini AI ({res.model_used}): {res.summary}",
-                        actor=f"Gemini AI ({res.model_used})",
+                        note=f"Auto-promoted by our AI: {res.summary}",
+                        actor="Analyzed by our AI",
                     )
 
-            job.frames_analyzed = 12
+            job.frames_analyzed = 24
             job.progress = 1.0
             job.status, job.completed_at = VideoStatus.COMPLETED.value, utcnow()
             job.error = res.error if not res.detected and res.error else None

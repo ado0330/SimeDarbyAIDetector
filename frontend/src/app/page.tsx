@@ -494,9 +494,9 @@ export default function Home() {
         camera_id: cam.id,
         status: "processing",
         progress: 0.35,
-        frames_analyzed: 6,
+        frames_analyzed: 24,
         candidate_count: 0,
-        detector_id: "ai-vision-v2",
+        detector_id: "Analyzed by our AI",
         detector_available: true,
         video_available: true,
         video_url: blobUrl,
@@ -505,7 +505,7 @@ export default function Home() {
 
       setVideos((prev) => [newJob, ...prev]);
       showToast(
-        `Sampling video frames & analyzing "${file.name}" with AI vision pipeline...`,
+        `Sampling 24 video frames & analyzing "${file.name}" with AI vision pipeline...`,
         "success"
       );
 
@@ -550,10 +550,10 @@ export default function Home() {
             ...newJob,
             status: "completed",
             progress: 1.0,
-            frames_analyzed: analysis.keyframes.length || 6,
+            frames_analyzed: analysis.keyframes.length || 24,
             candidate_count: 0,
             duration_s: analysis.duration_s || 8.0,
-            detector_id: `gemini-${analysis.modelUsed}`,
+            detector_id: "Analyzed by our AI",
             completed_at: now,
           };
 
@@ -566,17 +566,24 @@ export default function Home() {
           return;
         }
 
-        // 2. Incident detected: Proceed with candidate and incident creation
-        const severity: PriorityLevel = analysis.score >= 90 ? "critical" : analysis.score >= 75 ? "high" : "medium";
+        // 2. Incident detected: Major life safety threats (person fall / unconscious, fire, collision, high score) are critical
+        const isCritical =
+          analysis.score >= 90 ||
+          analysis.category === "person_fall" ||
+          analysis.category === "fire_smoke" ||
+          analysis.category === "road_collision" ||
+          (analysis.isEmergency && analysis.score >= 85);
+
+        const severity: PriorityLevel = isCritical ? "critical" : analysis.score >= 70 ? "high" : "medium";
 
         const completedJob: VideoJob = {
           ...newJob,
           status: "completed",
           progress: 1.0,
-          frames_analyzed: analysis.keyframes.length || 6,
+          frames_analyzed: analysis.keyframes.length || 24,
           candidate_count: 1,
           duration_s: analysis.duration_s || 8.0,
-          detector_id: `gemini-${analysis.modelUsed}`,
+          detector_id: "Analyzed by our AI",
           completed_at: now,
         };
 
@@ -595,20 +602,20 @@ export default function Home() {
           evidence: cleanEvidence,
           details: {
             explanation: analysis.summary,
-            source: "Township Vision AI Engine",
+            source: "Analyzed by our AI",
           },
           frame_url: thumbUrl,
           model_id: "vision-pipeline",
           model_version: "2.4.0",
           preview: {
-            severity: analysis.score >= 90 ? 95 : 75,
-            immediacy: analysis.score >= 90 ? 90 : 70,
+            severity: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
+            immediacy: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
             people_at_risk: 70,
             secondary_hazard: 60,
-            composite_score: analysis.score,
+            composite_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
             score_level: severity,
             level: severity,
-            emergency: analysis.isEmergency,
+            emergency: isCritical || analysis.isEmergency,
             factors: [],
             unknown_fields: [],
             needs_verification: false,
@@ -625,7 +632,7 @@ export default function Home() {
           created_at: now,
           source: "video_analysis",
           source_clip: file.name,
-          urgent_review: analysis.isEmergency,
+          urgent_review: isCritical || analysis.isEmergency,
         };
 
         setCandidates((prev) => [newCandidate, ...prev]);
@@ -648,15 +655,15 @@ export default function Home() {
           created_at: now,
           updated_at: now,
           status: "new",
-          severity_score: analysis.score >= 90 ? 95 : 75,
-          immediacy_score: analysis.score >= 90 ? 90 : 70,
+          severity_score: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
+          immediacy_score: isCritical ? 95 : analysis.score >= 70 ? 80 : 60,
           people_at_risk_score: 70,
           secondary_hazard_score: 60,
-          priority_score: analysis.score,
-          rank_score: analysis.score,
+          priority_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
+          rank_score: isCritical ? Math.max(92, analysis.score) : analysis.score,
           priority_level: severity,
           computed_priority_level: severity,
-          emergency_rule_triggered: analysis.isEmergency,
+          emergency_rule_triggered: isCritical || analysis.isEmergency,
           priority_overridden: false,
           detection_confidence: analysis.confidence,
           verification_status: "unverified",

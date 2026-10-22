@@ -33,6 +33,7 @@ Only if an unmistakable incident is visible, set "detected": true, "is_danger": 
 2. "wildlife_intrusion": Hazardous wild animals (wild boars, large snakes, aggressive monkeys, monitor lizards) in public areas. (NOT domestic pets on leash or common birds).
 3. "restricted_area_intrusion": Unauthorized person climbing onto a rooftop, roof structure, electrical substation, or dangerous height ledge.
 4. "person_fall": A person who ACTUALLY collapsed, fell, tripped, slipped, or is lying prostrate/motionless horizontally on the ground.
+   CRITICAL DIRECTIVE: If a person has fallen, collapsed, is lying on the ground motionless, unresponsive, or unconscious, this is a LIFE-THREATENING CRITICAL EMERGENCY. Mark "detected": true, "is_danger": true, and record "unconscious": true in evidence.
    IMPORTANT: A person walking upright, jogging, standing, bending, or sitting is strictly NORMAL and NEVER a person_fall!
 5. "road_collision": Active vehicle crash, collision, rollover, or vehicle hitting a pedestrian/cyclist.
 6. "parking_obstruction": Vehicle severely blocking an active emergency fire egress route, ambulance path, or fire hydrant.
@@ -48,7 +49,7 @@ CRITICAL RULES FOR "evidence" FIELD:
 - The "evidence" object MUST ONLY contain domain physical parameters describing what actually occurred in the incident.
 - DO NOT mention AI models, Gemini, software algorithms, cameras, or filenames.
 - Extract real visual parameters such as:
-  * For "person_fall": "motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
+  * For "person_fall": "unconscious" (boolean), "motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
   * For "road_collision": "vehicles_involved" (number), "traffic_blocked" (boolean), "motionless_after_impact" (boolean), "persons_involved" (number)
   * For "fire_smoke": "smoke_or_flame_visible" (boolean), "spreading" (boolean), "people_in_vicinity" (boolean), "blocks_emergency_access" (boolean)
   * For "wildlife_intrusion": "animal_species" (string), "pack_size" (number), "proximity_to_pedestrians" (string), "aggressive_behavior" (boolean)
@@ -87,15 +88,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const configuredModel = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
-    const modelsToTry = [
-      configuredModel,
-      "gemini-3.5-flash-lite",
-      "gemini-3.5-flash",
-      "gemini-2.5-flash",
-      "gemini-flash-latest",
-      "gemini-1.5-flash",
-    ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
+    // Strictly use only gemini-3.5-flash-lite
+    const modelsToTry = ["gemini-3.5-flash-lite"];
 
     const parts: any[] = [{ text: GEMINI_VISION_PROMPT }];
     for (const frame of frames) {

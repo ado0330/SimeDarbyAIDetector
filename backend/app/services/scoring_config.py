@@ -154,6 +154,12 @@ MODIFIERS: Tuple[Modifier, ...] = (
        "No bystander assistance observed"),
     _m(C.PERSON_FALL, "hazardous_location", "is_true", None, {"severity": 15, "secondary_hazard": 30},
        "Location is hazardous (e.g. roadway, stairs, water edge)"),
+    _m(C.PERSON_FALL, "unconscious", "is_true", None, {"severity": 40, "immediacy": 35, "people_at_risk": 20},
+       "Person appears unconscious or unresponsive"),
+    _m(C.PERSON_FALL, "person_unconscious", "is_true", None, {"severity": 40, "immediacy": 35, "people_at_risk": 20},
+       "Person appears unconscious or unresponsive"),
+    _m(C.PERSON_FALL, "motionless", "is_true", None, {"severity": 20, "immediacy": 20},
+       "Person is motionless on the ground"),
     _m(C.PERSON_FALL, "fall_from_height", "is_true", None, {"severity": 20}, "Fall from a height"),
     _m(C.PERSON_FALL, "persons_involved", "gte", 2, {"people_at_risk": 10}, "More than one person involved"),
     # --- Parking obstruction ----------------------------------------------------------
@@ -189,9 +195,17 @@ RULES: Tuple[EmergencyRule, ...] = (
         (Condition("smoke_or_flame_visible", "is_true"), Condition("people_in_vicinity", "is_true")),
         "critical", True),
     EmergencyRule(
+        "R-FALL-UNCONSCIOUS",
+        "An unconscious or unresponsive person fall is a life-threatening critical emergency.",
+        (C.PERSON_FALL.value,), (Condition("unconscious", "is_true"),), "critical", True),
+    EmergencyRule(
+        "R-FALL-UNRESPONSIVE",
+        "An unresponsive person fall is a life-threatening critical emergency.",
+        (C.PERSON_FALL.value,), (Condition("person_unconscious", "is_true"),), "critical", True),
+    EmergencyRule(
         "R-FALL-PERSISTENT",
         "A person who has stayed on the ground for 60 s or longer may need urgent help; verify immediately.",
-        (C.PERSON_FALL.value,), (Condition("person_motionless_seconds", "gte", 60),), "high", True),
+        (C.PERSON_FALL.value,), (Condition("person_motionless_seconds", "gte", 60),), "critical", True),
     EmergencyRule(
         "R-FALL-HEIGHT",
         "A fall from a height is potentially life-threatening.",

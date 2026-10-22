@@ -76,7 +76,7 @@ export async function testGeminiApiKey(key: string): Promise<{ valid: boolean; e
   }
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash?key=${encodeURIComponent(key.trim())}`
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite?key=${encodeURIComponent(key.trim())}`
     );
     if (res.ok) {
       return { valid: true };
@@ -101,7 +101,7 @@ export interface ExtractedKeyframesData {
  */
 export function extractVideoKeyframes(
   file: File | string,
-  maxFrames: number = 6
+  maxFrames: number = 24
 ): Promise<ExtractedKeyframesData> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") {
@@ -144,7 +144,7 @@ export function extractVideoKeyframes(
 
       const timer = setTimeout(() => {
         cleanup();
-      }, 9000);
+      }, 18000);
 
       video.onloadedmetadata = () => {
         duration = video.duration || 10;
@@ -152,7 +152,7 @@ export function extractVideoKeyframes(
           duration = 10;
         }
 
-        const count = Math.min(maxFrames, 6);
+        const count = Math.min(maxFrames, 24);
         const interval = duration / (count + 1);
         targetTimes = [];
         for (let i = 1; i <= count; i++) {
@@ -212,8 +212,8 @@ export async function analyzeVideoWithGemini(
 ): Promise<GeminiVisionResult> {
   const apiKey = (customKey || getStoredGeminiApiKey()).trim();
 
-  // Step 1: Extract keyframes and real duration from video
-  const { keyframes, duration } = await extractVideoKeyframes(file, 6);
+  // Step 1: Extract keyframes and real duration from video (24 frames for high accuracy)
+  const { keyframes, duration } = await extractVideoKeyframes(file, 24);
 
   // Step 2: Query serverless vision endpoint
   if (keyframes.length > 0) {
@@ -265,7 +265,7 @@ export async function analyzeVideoWithGemini(
           }
 
           // Real safety or security incident detected:
-          const { score, isEmergency, label } = getCategoryScoring(json.category);
+          const { score, isEmergency, label } = getCategoryScoring(json.category, json.evidence);
           return {
             detected: true,
             category: json.category,
@@ -368,28 +368,42 @@ export function sanitizeIncidentEvidence(
   return clean;
 }
 
-function getCategoryScoring(category: string): {
+function getCategoryScoring(
+  category: string,
+  evidence?: Record<string, any>
+): {
   score: number;
   isEmergency: boolean;
   label: string;
 } {
+  const isUnconscious = Boolean(
+    evidence?.unconscious ||
+    evidence?.person_unconscious ||
+    (typeof evidence?.motionless_seconds === "number" && evidence.motionless_seconds >= 10) ||
+    (typeof evidence?.person_motionless_seconds === "number" && evidence.person_motionless_seconds >= 10)
+  );
+
   switch (category) {
     case "fire_smoke":
-      return { score: 96.5, isEmergency: true, label: "Suspected Fire / Smoke" };
+      return { score: 98.0, isEmergency: true, label: "Suspected Fire / Smoke" };
     case "restricted_area_intrusion":
-      return { score: 94.0, isEmergency: true, label: "Restricted Danger Zone (Rooftop / Height)" };
+      return { score: 95.0, isEmergency: true, label: "Restricted Danger Zone (Rooftop / Height)" };
     case "person_fall":
-      return { score: 91.5, isEmergency: true, label: "Person Fall / Motionless" };
-    case "wildlife_intrusion":
-      return { score: 88.0, isEmergency: true, label: "Wildlife Intrusion (Wild Animal)" };
+      return {
+        score: isUnconscious ? 96.0 : 93.0,
+        isEmergency: true,
+        label: isUnconscious ? "Person Fall / Unconscious" : "Person Fall / Motionless",
+      };
     case "road_collision":
-      return { score: 84.0, isEmergency: false, label: "Road Collision / Vehicle Crash" };
+      return { score: 95.0, isEmergency: true, label: "Road Collision / Vehicle Crash" };
+    case "wildlife_intrusion":
+      return { score: 91.0, isEmergency: true, label: "Wildlife Intrusion (Wild Animal)" };
     case "fallen_tree_storm_damage":
-      return { score: 79.0, isEmergency: false, label: "Fallen Tree / Severe Storm Obstruction" };
+      return { score: 86.0, isEmergency: true, label: "Fallen Tree / Severe Storm Obstruction" };
     case "parking_obstruction":
-      return { score: 42.0, isEmergency: false, label: "Emergency Access Obstruction" };
+      return { score: 55.0, isEmergency: false, label: "Emergency Access Obstruction" };
     default:
-      return { score: 85.0, isEmergency: true, label: formatCategoryName(category) };
+      return { score: 90.0, isEmergency: true, label: formatCategoryName(category) };
   }
 }
 

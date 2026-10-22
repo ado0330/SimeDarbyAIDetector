@@ -21,12 +21,9 @@ log = logging.getLogger("globaleye.gemini")
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
-# Model candidate sequence: user model first, followed by proven production fallbacks
+# Model sequence: strictly gemini-3.5-flash-lite
 FALLBACK_MODELS = [
     "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
 ]
 
 PROMPT = """You are an expert CCTV security and township safety operations AI for Sime Darby Property smart townships.
@@ -62,6 +59,7 @@ Only if an unmistakable incident is visible, set "detected": true and classify i
 2. "wildlife_intrusion": Wild or hazardous animals (wild boars, monkeys, venomous snakes, monitor lizards, stray aggressive packs) entering residential neighborhoods, parks, or pedestrian trails.
 3. "restricted_area_intrusion": Unauthorized persons in high-danger restricted zones (persons on rooftop edges, climbing roof structures, electrical substations, construction perimeters, dangerous heights, retention pond banks).
 4. "person_fall": A person who ACTUALLY collapsed, fell, tripped, slipped, or is lying prostrate/motionless horizontally on the ground.
+   CRITICAL DIRECTIVE: If a person has fallen, collapsed, is lying on the ground motionless, unresponsive, or unconscious, this is a LIFE-THREATENING CRITICAL EMERGENCY. Mark "detected": true and record "unconscious": true in evidence.
    IMPORTANT: A person walking upright, jogging, standing, bending, or sitting is strictly NORMAL and NEVER a person_fall!
 5. "road_collision": Vehicle collision, car crash, motorcycle skid, vehicle hitting pedestrian or cyclist.
 6. "parking_obstruction": Vehicle blocking emergency egress route, fire hydrant, or double parked.
@@ -77,7 +75,7 @@ CRITICAL RULES FOR "evidence" FIELD:
 - The "evidence" object MUST ONLY contain domain physical parameters describing what actually occurred in the incident.
 - DO NOT mention AI models, Gemini, software algorithms, cameras, or filenames.
 - Extract real visual parameters such as:
-  * For "person_fall": "person_motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
+  * For "person_fall": "unconscious" (boolean), "person_motionless_seconds" (number), "hazardous_location" (boolean), "bystander_assisting" (boolean), "person_attempting_to_stand" (boolean)
   * For "road_collision": "vehicles_involved" (number), "traffic_blocked" (boolean), "motionless_after_impact" (boolean), "persons_involved" (number)
   * For "fire_smoke": "smoke_or_flame_visible" (boolean), "spreading" (boolean), "people_in_vicinity" (boolean), "blocks_emergency_access" (boolean)
   * For "wildlife_intrusion": "animal_species" (string), "pack_size" (number), "proximity_to_pedestrians" (string), "aggressive_behavior" (boolean)
@@ -107,7 +105,7 @@ class GeminiAnalysisResult:
     error: Optional[str] = None
 
 
-def extract_sampled_keyframes(video_path: Path, max_frames: int = 12) -> List[Tuple[float, np.ndarray]]:
+def extract_sampled_keyframes(video_path: Path, max_frames: int = 24) -> List[Tuple[float, np.ndarray]]:
     """Extract up to max_frames evenly spaced throughout the video."""
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -185,8 +183,8 @@ def analyze_video_with_gemini(
     api_key: str,
     primary_model: str = "gemini-3.5-flash-lite",
 ) -> GeminiAnalysisResult:
-    """Analyze video frames with Gemini Flash. Handles model fallback gracefully."""
-    keyframes = extract_sampled_keyframes(video_path, max_frames=12)
+    """Analyze video frames with Gemini Flash (gemini-3.5-flash-lite)."""
+    keyframes = extract_sampled_keyframes(video_path, max_frames=24)
     if not keyframes:
         return GeminiAnalysisResult(
             detected=False,
@@ -214,11 +212,8 @@ def analyze_video_with_gemini(
                 }
             })
 
-    # Try requested model first, then fallbacks if 404 (model not found)
+    # Strictly use primary model (gemini-3.5-flash-lite)
     models_to_try = [primary_model]
-    for fb in FALLBACK_MODELS:
-        if fb not in models_to_try:
-            models_to_try.append(fb)
 
     response_data: Optional[Dict[str, Any]] = None
     model_used = primary_model

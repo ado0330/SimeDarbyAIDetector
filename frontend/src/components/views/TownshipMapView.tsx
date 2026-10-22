@@ -405,6 +405,13 @@ export function TownshipMapView({
                 return (
                   <g key={u.id} className="cursor-pointer group">
                     <title>{`${u.callsign} — ${u.officerInCharge} (${u.vehicleModel}) — Status: ${u.status}`}</title>
+                    {/* Stable hit area to prevent hover flickering */}
+                    <circle
+                      cx={u.coordinates.x}
+                      cy={u.coordinates.y}
+                      r="16"
+                      fill="transparent"
+                    />
                     {/* Soft radar pulse ring */}
                     <circle
                       cx={u.coordinates.x}
@@ -418,11 +425,11 @@ export function TownshipMapView({
                     <circle
                       cx={u.coordinates.x}
                       cy={u.coordinates.y}
-                      r={isSelectedZoneUnit ? "9" : "7.5"}
+                      r={isSelectedZoneUnit ? "9.5" : "8"}
                       fill="#0284c7"
                       stroke="#ffffff"
                       strokeWidth="1.5"
-                      className="transition-transform group-hover:scale-110"
+                      className="transition-colors duration-150 group-hover:fill-sky-400 group-hover:stroke-sky-100"
                     />
                     {/* Inner symbol */}
                     <text
