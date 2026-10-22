@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
+  cn,
   getPriorityStyles,
   getStatusStyles,
   formatDateTime,
@@ -314,33 +315,41 @@ export function OverviewView({
                   <div
                     key={inc.id}
                     onClick={() => onSelectIncident(inc.id)}
-                    className="group p-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer flex flex-wrap items-center justify-between gap-3"
+                    className="group px-3.5 sm:px-4 py-3 sm:py-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer flex items-center justify-between gap-3 sm:gap-4 min-h-[64px]"
                   >
-                    <div className="flex items-center space-x-3 min-w-0">
-                      <span className="w-6 text-center tabular-nums text-xs font-bold text-slate-500">
+                    {/* Left: Rank, Severity Badge, Title & Metadata */}
+                    <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+                      <span className="w-5 sm:w-6 text-center tabular-nums text-xs font-bold text-slate-400 shrink-0">
                         #{idx + 1}
                       </span>
-                      <span className={prio.pill}>
+                      <span className={cn(
+                        prio.pill,
+                        "w-[98px] sm:w-[108px] shrink-0 text-center justify-center text-[10px] sm:text-xs px-2 py-1"
+                      )}>
                         {prio.label} ({inc.priority_score.toFixed(0)})
                       </span>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-slate-900 truncate">
+                      <div className="min-w-0 flex-1 flex flex-col justify-center">
+                        <div className="text-xs sm:text-[13px] font-semibold text-slate-900 leading-snug line-clamp-2 break-words group-hover:text-teal-900 transition-colors">
                           {inc.title}
                         </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 truncate">
-                          <span>{inc.location_name || inc.location_id}</span>
-                          <span>&bull;</span>
-                          <span>{formatTimeAgo(inc.detected_at)}</span>
+                        <div className="text-[11px] sm:text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
+                          <span className="truncate">{inc.location_name || inc.location_id}</span>
+                          <span className="text-slate-300">&bull;</span>
+                          <span className="shrink-0">{formatTimeAgo(inc.detected_at)}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="ml-auto flex min-w-[165px] items-center justify-end gap-2 shrink-0">
-                      <span className={status.badge}>
+                    {/* Right: Acknowledgment Status Badge & Navigation Arrow */}
+                    <div className="flex items-center justify-end gap-2 sm:gap-2.5 shrink-0">
+                      <span className={cn(
+                        status.badge,
+                        "w-[104px] sm:w-[116px] shrink-0 justify-center text-[11px] sm:text-xs px-2 py-1"
+                      )}>
                         <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${status.dot}`} />
                         {status.label}
                       </span>
-                      <ArrowRight className="w-7 h-7 shrink-0 rounded-md p-1.5 text-slate-400 transition-colors group-hover:bg-slate-100 group-hover:text-slate-600" />
+                      <ArrowRight className="w-4 h-4 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-700 shrink-0" />
                     </div>
                   </div>
                 );
