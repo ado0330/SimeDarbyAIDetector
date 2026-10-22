@@ -26,7 +26,7 @@ import {
   createFallbackDetail,
   computeDynamicAnalytics,
 } from "@/lib/mockData";
-import { extractVideoThumbnail } from "@/lib/utils";
+import { extractVideoThumbnail, formatIncidentId } from "@/lib/utils";
 import { CriticalAlertCenter } from "@/components/layout/CriticalAlertCenter";
 import { playCriticalAlertSound, registerAudioUnlockListener } from "@/lib/sound";
 import { analyzeVideoWithGemini, sanitizeIncidentEvidence } from "@/lib/geminiVision";
@@ -274,7 +274,7 @@ export default function Home() {
 
     try {
       const res = await api.assign(id, primaryId, note || `Multi-agency response: ${combinedNames}`);
-      showToast(`Assigned ${combinedNames} to ${id}.`);
+      showToast(`Assigned ${combinedNames} to ${formatIncidentId(id)}.`);
       syncFromServer(id, {
         ...res.incident,
         assigned_to: responderId,
@@ -308,7 +308,7 @@ export default function Home() {
           updated_at: now,
         };
       });
-      showToast(`Assigned ${combinedNames} to ${id}.`);
+      showToast(`Assigned ${combinedNames} to ${formatIncidentId(id)}.`);
     }
   };
 
@@ -484,7 +484,15 @@ export default function Home() {
 
       const jobId = `job-${Date.now()}`;
       const candidateId = Math.floor(Date.now() % 900000) + 100000;
-      const incidentId = `INC-VID-${candidateId}`;
+      // Generate sequential incident ID in standard operational format: INC - 001, INC - 002, etc.
+      const existingNums = [...incidents, ...FALLBACK_INCIDENTS]
+        .map((inc) => {
+          const m = inc.id.match(/(?:INC\s*[-–]\s*|INC-VID-?|INC-)(\d+)/i);
+          return m ? parseInt(m[1], 10) : 0;
+        })
+        .filter((n) => !isNaN(n) && n < 10000);
+      const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
+      const incidentId = `INC - ${String(nextNum).padStart(3, "0")}`;
 
       // Step 1: Immediately show processing job in table
       const newJob: VideoJob = {

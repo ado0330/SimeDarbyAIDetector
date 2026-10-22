@@ -12,6 +12,7 @@ import {
   formatDateTime,
   formatTimeAgo,
   formatCategory,
+  formatIncidentId,
 } from "@/lib/utils";
 import { TAXONOMY_CATALOGUE, INCIDENT_DOMAINS } from "@/lib/taxonomy";
 import {
@@ -305,8 +306,8 @@ export function ActiveIncidentsView({
                           </Badge>
                         )}
 
-                        <span className="text-xs tabular-nums text-slate-500">
-                          {inc.id}
+                        <span className="text-xs tabular-nums text-slate-500 font-medium">
+                          {formatIncidentId(inc.id)}
                         </span>
                       </div>
 

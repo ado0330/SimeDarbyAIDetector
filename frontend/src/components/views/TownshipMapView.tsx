@@ -158,6 +158,7 @@ export function TownshipMapView({
   const [showCameras, setShowCameras] = useState(true);
   const [showIncidents, setShowIncidents] = useState(true);
   const [showPatrolUnits, setShowPatrolUnits] = useState(true);
+  const [callingUnitId, setCallingUnitId] = useState<string | null>(null);
 
   // Active incidents
   const activeIncidents = incidents.filter(
@@ -689,15 +690,15 @@ export function TownshipMapView({
               </div>
             </div>
 
-            {/* Zone Assigned Emergency Response Unit */}
+            {/* Zone Assigned PB Patrol Unit */}
             <div>
               <div className="flex items-center justify-between text-xs font-semibold text-slate-800 pb-2 border-b border-slate-100">
                 <span className="flex items-center gap-1.5">
                   <Car className="w-3.5 h-3.5 text-sky-600" />
-                  Assigned Emergency Response Unit
+                  Assigned PB Patrol Unit
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 font-semibold text-xs">
-                  Sector Unit
+                  PB Sector Unit
                 </span>
               </div>
 
@@ -724,13 +725,17 @@ export function TownshipMapView({
                     </div>
                     <div className="pt-1.5 flex items-center justify-between border-t border-slate-200 text-xs">
                       <span className="text-slate-500 tabular-nums text-xs">{sectorUnit.gpsLocation}</span>
-                      <a
-                        href={`tel:${sectorUnit.contactNumber}`}
-                        className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 text-xs"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCallingUnitId(sectorUnit.id);
+                          setTimeout(() => setCallingUnitId(null), 2500);
+                        }}
+                        className="text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 text-xs cursor-pointer transition-colors"
                       >
                         <PhoneCall className="w-3 h-3" />
-                        Call Unit
-                      </a>
+                        {callingUnitId === sectorUnit.id ? "Connecting PB Radio..." : "Call Unit"}
+                      </button>
                     </div>
                   </div>
                 );

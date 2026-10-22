@@ -14,6 +14,7 @@ import {
   formatDateTime,
   formatTimeAgo,
   formatCategory,
+  formatIncidentId,
 } from "@/lib/utils";
 import { getTaxonomyCategory } from "@/lib/taxonomy";
 import { sanitizeIncidentEvidence } from "@/lib/geminiVision";
@@ -294,7 +295,7 @@ export function IncidentDetailModal({
         isOpen={isOpen}
         onClose={onClose}
         maxWidth="3xl"
-        title={`${incident.id} — ${incident.title}`}
+        title={`${formatIncidentId(incident.id)} — ${incident.title}`}
         description={`Detected ${formatDateTime(incident.detected_at)} (${formatTimeAgo(incident.detected_at)})`}
       >
         <div className="space-y-6">
@@ -876,11 +877,12 @@ export function IncidentDetailModal({
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={handleSendWhatsApp}
-                      className="text-emerald-700 hover:text-emerald-800 border-emerald-300 bg-emerald-50/50"
+                      disabled
+                      className="opacity-50 cursor-not-allowed text-slate-400 border-slate-200"
+                      title="WhatsApp dispatch link disabled"
                     >
-                      <Share2 className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                      Send SITREP
+                      <Share2 className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                      Send SITREP (WhatsApp Disabled)
                     </Button>
                   )}
 
@@ -964,9 +966,50 @@ export function IncidentDetailModal({
       >
         <div className="space-y-4">
           <p className="text-[13px] text-slate-600">
-            Select one or more emergency response services for <strong>{incident.id}</strong> ({incident.title}).
-            For major incidents such as vehicle collisions, you can dispatch both an <strong>Ambulance</strong> and <strong>Traffic Police</strong> simultaneously.
+            Select one or more emergency response services for <strong>{formatIncidentId(incident.id)}</strong> ({incident.title}).
+            Control room operators can assign directly to the nearest PB patrol unit or dispatch external emergency services.
           </p>
+
+          {/* Quick Action: Assign to Nearest PB Patrol Unit */}
+          <div className="p-3.5 rounded-lg bg-teal-50 border border-teal-300 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-teal-950 uppercase tracking-wide">
+                <span>🎯</span>
+                <span>Nearest PB Patrol Unit (Recommended)</span>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-teal-200 text-teal-900 border border-teal-300">
+                ETA: {nearestUnitInfo.etaFormatted} ({nearestUnitInfo.distanceMeters}m away)
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div>
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>{nearestUnitInfo.unit.callsign}</span>
+                  <span className="text-slate-400 font-normal">({nearestUnitInfo.unit.unitCode})</span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {nearestUnitInfo.unit.status === "on_patrol" ? "On Patrol" : "Available"}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 mt-0.5">
+                  Officer: <strong className="text-slate-700">{nearestUnitInfo.unit.officerInCharge}</strong> &bull; {nearestUnitInfo.unit.vehicleModel}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="primary"
+                type="button"
+                onClick={() => {
+                  setSelectedResponderIds([nearestUnitInfo.unit.id]);
+                }}
+                className="text-xs font-semibold bg-teal-700 hover:bg-teal-800 cursor-pointer"
+              >
+                {selectedResponderIds.includes(nearestUnitInfo.unit.id)
+                  ? "✓ Nearest Unit Selected"
+                  : "Assign Nearest Unit"}
+              </Button>
+            </div>
+          </div>
 
           {/* Quick Preset Buttons */}
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
@@ -976,27 +1019,27 @@ export function IncidentDetailModal({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => setSelectedResponderIds(["ambulance", "traffic-police"])}
-                className="px-2.5 py-1 rounded text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 transition-colors cursor-pointer flex items-center gap-1.5"
+                onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id])}
+                className="px-2.5 py-1 rounded text-xs font-semibold bg-teal-100 hover:bg-teal-200 text-teal-950 border border-teal-400 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span>🚑 + 🚓</span>
-                <span>Crash Preset: Ambulance + Traffic Police</span>
+                <span>🎯</span>
+                <span>Nearest Unit: {nearestUnitInfo.unit.callsign} ({nearestUnitInfo.distanceMeters}m)</span>
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedResponderIds(["ambulance", "patrol-a"])}
+                onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id, "ambulance"])}
                 className="px-2.5 py-1 rounded text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span>🚑 + 🛡️</span>
-                <span>Fall / Medical: Ambulance + Security Patrol</span>
+                <span>🛡️ + 🚑</span>
+                <span>Medical: Nearest PB Unit + Ambulance</span>
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedResponderIds(["fire-warden", "traffic-police", "ambulance"])}
+                onClick={() => setSelectedResponderIds([nearestUnitInfo.unit.id, "fire-warden"])}
                 className="px-2.5 py-1 rounded text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span>🚒 + 🚓 + 🚑</span>
-                <span>Major Fire / Rescue (All-Services)</span>
+                <span>🛡️ + 🚒</span>
+                <span>Fire / Hazard: Nearest PB Unit + Bomba</span>
               </button>
             </div>
           </div>
@@ -1010,16 +1053,16 @@ export function IncidentDetailModal({
               <div className="flex items-center space-x-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => setSelectedResponderIds(responders.map((r) => r.id))}
-                  className="text-teal-700 hover:text-teal-900 font-medium"
+                  onClick={() => setSelectedResponderIds(AUXILIARY_PATROL_FLEET.map((u) => u.id))}
+                  className="text-teal-700 hover:text-teal-900 font-medium cursor-pointer"
                 >
-                  Select All
+                  Select All PB Units
                 </button>
                 <span>&bull;</span>
                 <button
                   type="button"
                   onClick={() => setSelectedResponderIds([])}
-                  className="text-slate-500 hover:text-slate-700 font-medium"
+                  className="text-slate-500 hover:text-slate-700 font-medium cursor-pointer"
                 >
                   Clear All
                 </button>
@@ -1027,45 +1070,77 @@ export function IncidentDetailModal({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-1">
-              {responders.map((r) => {
-                const isSelected = selectedResponderIds.includes(r.id);
-                return (
-                  <div
-                    key={r.id}
-                    onClick={() => {
-                      setSelectedResponderIds((prev) =>
-                        prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
-                      );
-                    }}
-                    className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex items-start space-x-3 ${
-                      isSelected
-                        ? "bg-teal-50/80 border-teal-500 shadow-xs ring-1 ring-teal-500"
-                        : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
-                    }`}
-                  >
-                    <div className="pt-0.5">
-                      {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-teal-600 shrink-0" />
-                      ) : (
-                        <Square className="w-4 h-4 text-slate-400 shrink-0" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-slate-900 truncate flex items-center justify-between">
-                        <span>{r.name}</span>
-                        {isSelected && (
-                          <span className="px-1.5 py-0.2 rounded text-xs font-bold bg-teal-200 text-teal-900">
-                            Selected
-                          </span>
+              {(() => {
+                const combinedList = [
+                  ...AUXILIARY_PATROL_FLEET.map((u) => ({
+                    id: u.id,
+                    name: `${u.callsign} (${u.unitCode})`,
+                    role: `PB Patrol • Officer: ${u.officerInCharge} • ${u.baseLocation}`,
+                    isNearest: u.id === nearestUnitInfo.unit.id,
+                  })),
+                  ...responders
+                    .filter(
+                      (r) =>
+                        !r.id.startsWith("pb-patrol-") &&
+                        !["patrol-a", "patrol-b", "facilities", "maintenance"].includes(r.id)
+                    )
+                    .map((r) => ({
+                      id: r.id,
+                      name: r.name,
+                      role: r.role,
+                      isNearest: false,
+                    })),
+                ];
+
+                return combinedList.map((r) => {
+                  const isSelected = selectedResponderIds.includes(r.id);
+                  return (
+                    <div
+                      key={r.id}
+                      onClick={() => {
+                        setSelectedResponderIds((prev) =>
+                          prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                        );
+                      }}
+                      className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex items-start space-x-3 ${
+                        isSelected
+                          ? "bg-teal-50/80 border-teal-500 shadow-xs ring-1 ring-teal-500"
+                          : r.isNearest
+                          ? "bg-teal-50/30 border-teal-300 hover:border-teal-400 hover:bg-teal-50/60"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+                      }`}
+                    >
+                      <div className="pt-0.5">
+                        {isSelected ? (
+                          <CheckSquare className="w-4 h-4 text-teal-600 shrink-0" />
+                        ) : (
+                          <Square className="w-4 h-4 text-slate-400 shrink-0" />
                         )}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5 leading-snug">
-                        {r.role}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate flex items-center justify-between gap-1">
+                          <span className="truncate">{r.name}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {r.isNearest && (
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                                Nearest • {nearestUnitInfo.distanceMeters}m
+                              </span>
+                            )}
+                            {isSelected && (
+                              <span className="px-1.5 py-0.2 rounded text-xs font-bold bg-teal-200 text-teal-900">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 leading-snug">
+                          {r.role}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -1228,7 +1303,7 @@ export function IncidentDetailModal({
       >
         <div className="space-y-4">
           <p className="text-[13px] text-slate-600">
-            Reopening will place <strong>{incident.id}</strong> back in the active queue with status &quot;Acknowledged&quot;.
+            Reopening will place <strong>{formatIncidentId(incident.id)}</strong> back in the active queue with status &quot;Acknowledged&quot;.
           </p>
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">Reason for Reopening</label>

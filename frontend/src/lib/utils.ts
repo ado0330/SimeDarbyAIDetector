@@ -43,6 +43,18 @@ export function formatTimeAgo(isoString?: string | null): string {
   }
 }
 
+export function formatIncidentId(id?: string | null): string {
+  if (!id) return "";
+  const m = id.match(/^(?:INC\s*[-–]\s*|INC-VID-?|INC-)(\d+)$/i);
+  if (m) {
+    const num = parseInt(m[1], 10);
+    if (!isNaN(num) && num < 10000) {
+      return `INC - ${String(num).padStart(3, "0")}`;
+    }
+  }
+  return id;
+}
+
 export const PRIORITY_BADGE_LAYOUT = "inline-flex items-center justify-center gap-1 whitespace-nowrap w-max max-w-full shrink-0 px-3 py-1.5 rounded-md text-xs font-bold leading-tight uppercase";
 
 export function getPriorityStyles(level: PriorityLevel) {

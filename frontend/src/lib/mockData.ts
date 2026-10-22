@@ -75,15 +75,15 @@ export const FALLBACK_CAMERAS: Camera[] = [
 ];
 
 export const FALLBACK_RESPONDERS: Responder[] = [
-  { id: "ambulance", name: "Ambulance & Paramedics", role: "Emergency medical & trauma response" },
+  { id: "pb-patrol-01", name: "PB Patrol Unit 01", role: "Auxiliary Police Rapid Response • Gate Sector" },
+  { id: "pb-patrol-02", name: "PB Patrol Unit 02", role: "Auxiliary Police Patrol Car • Boulevard Sector" },
+  { id: "pb-patrol-03", name: "PB Patrol Unit 03", role: "Auxiliary Police Motorcycle • Central Park Beat" },
+  { id: "pb-patrol-04", name: "PB Patrol Unit 04", role: "Auxiliary Police Safety Patrol • Lakeside Promenade" },
+  { id: "pb-patrol-05", name: "PB Patrol Unit 05", role: "Auxiliary Police Patrol Car • Residensi Aman" },
+  { id: "pb-patrol-06", name: "PB Patrol Unit 06", role: "Auxiliary Police Rapid Response • Commercial Depot" },
+  { id: "ambulance", name: "Hospital Ambulance & Paramedics", role: "Emergency medical trauma response (External)" },
+  { id: "fire-warden", name: "Fire & Rescue (Bomba)", role: "Firefighting & heavy extrication (External)" },
   { id: "traffic-police", name: "Traffic Police & Enforcement", role: "Traffic control & accident investigation" },
-  { id: "patrol-a", name: "Security Patrol Alpha", role: "Site security & perimeter patrol" },
-  { id: "patrol-b", name: "Security Patrol Bravo", role: "Site security & rapid response" },
-  { id: "fire-warden", name: "Fire & Rescue (Bomba)", role: "Firefighting & rescue operations" },
-  { id: "first-aid", name: "On-site First-Aid Team", role: "First aid & triage" },
-  { id: "traffic-marshal", name: "Traffic Marshal", role: "Traffic & access control" },
-  { id: "facilities", name: "Township Facilities & Maintenance", role: "Infrastructure & hazard clearing" },
-  { id: "parking-mgmt", name: "Parking Management", role: "Parking enforcement" },
 ];
 
 export const FALLBACK_CONFIG: ScoringConfigData = {

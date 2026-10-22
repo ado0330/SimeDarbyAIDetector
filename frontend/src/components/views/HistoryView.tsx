@@ -14,6 +14,7 @@ import {
   formatTimeAgo,
   formatCategory,
   formatDuration,
+  formatIncidentId,
 } from "@/lib/utils";
 import { TAXONOMY_CATALOGUE, INCIDENT_DOMAINS } from "@/lib/taxonomy";
 import {
@@ -283,7 +284,7 @@ export function HistoryView({ incidents, onSelectIncident, onClearHistory }: His
                       className={`cursor-pointer transition-colors ${inc.priority_level === "critical" ? "bg-red-50/60 hover:bg-red-50" : "hover:bg-slate-50/80"}`}
                     >
                       <td className="p-3 min-w-[115px] whitespace-nowrap tabular-nums text-[13px] font-semibold text-slate-800">
-                        {inc.id}
+                        {formatIncidentId(inc.id)}
                       </td>
 
                       <td className="p-3 min-w-[180px] whitespace-nowrap">
