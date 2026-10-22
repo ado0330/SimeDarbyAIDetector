@@ -1,12 +1,15 @@
 /**
- * Web Audio API Sound Dispatcher for Critical Alerts & Emergency Notifications.
- * Handles browser autoplay policies, AudioContext resumption, and two-tone emergency sirens.
+ * Emergency Alert Sound Dispatcher for Critical Alerts & Emergency Notifications.
+ * Plays the official Sime Darby operations Alarm Sound Effect (MP3) on loop
+ * until the critical incident is acknowledged by the operator.
  */
 
 const STORAGE_KEY = "globaleye_alert_sound_enabled";
 
 let sharedAudioCtx: AudioContext | null = null;
 let gestureListenerRegistered = false;
+let alarmAudio: HTMLAudioElement | null = null;
+let isAlarmPlaying = false;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -17,6 +20,15 @@ function getAudioContext(): AudioContext | null {
     }
   }
   return sharedAudioCtx;
+}
+
+function getOrCreateAlarmAudio(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!alarmAudio) {
+    alarmAudio = new Audio("/samples/alarm.mp3");
+    alarmAudio.preload = "auto";
+  }
+  return alarmAudio;
 }
 
 /**
@@ -36,7 +48,10 @@ export function registerAudioUnlockListener(): void {
         // ignore resume error
       }
     }
-    // Remove listeners once audio context is running
+    const audio = getOrCreateAlarmAudio();
+    if (audio) {
+      audio.load();
+    }
     if (ctx && ctx.state === "running") {
       window.removeEventListener("click", unlock);
       window.removeEventListener("keydown", unlock);
@@ -59,34 +74,91 @@ export function isSoundEnabled(): boolean {
 export function setSoundEnabled(enabled: boolean): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, enabled ? "true" : "false");
+  if (!enabled) {
+    stopCriticalAlertSound();
+  }
 }
 
 /**
- * Play a two-tone critical incident dispatch alert.
- * @param escalated If true, plays a higher-urgency tone (1100Hz / 880Hz).
+ * Play the critical incident MP3 alarm.
+ * Repeats continuously (loop) until acknowledged.
  */
-export async function playCriticalAlertSound(escalated = false): Promise<void> {
+export async function playCriticalAlertSound(loop = true): Promise<void> {
   if (!isSoundEnabled() || typeof window === "undefined") return;
 
   try {
+    const audio = getOrCreateAlarmAudio();
+    if (!audio) return;
+
+    audio.loop = loop;
+    isAlarmPlaying = true;
+
+    if (audio.paused) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        await playPromise.catch((err) => {
+          console.warn("Alarm MP3 playback failed or waiting for user gesture:", err);
+          playFallbackSynth(loop);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Unable to play alarm MP3, using WebAudio fallback:", err);
+    playFallbackSynth(loop);
+  }
+}
+
+/**
+ * Stop the critical alert sound immediately after user acknowledges it.
+ */
+export function stopCriticalAlertSound(): void {
+  isAlarmPlaying = false;
+  if (alarmAudio) {
+    try {
+      alarmAudio.pause();
+      alarmAudio.currentTime = 0;
+      alarmAudio.loop = false;
+    } catch {}
+  }
+  stopFallbackSynth();
+}
+
+let synthInterval: NodeJS.Timeout | null = null;
+
+function playFallbackSynth(loop: boolean): void {
+  stopFallbackSynth();
+  playSynthBeep();
+  if (loop) {
+    synthInterval = setInterval(() => {
+      if (!isAlarmPlaying) {
+        stopFallbackSynth();
+        return;
+      }
+      playSynthBeep();
+    }, 4500);
+  }
+}
+
+function stopFallbackSynth(): void {
+  if (synthInterval) {
+    clearInterval(synthInterval);
+    synthInterval = null;
+  }
+}
+
+function playSynthBeep(): void {
+  try {
     const ctx = getAudioContext();
     if (!ctx) return;
-
     if (ctx.state === "suspended") {
-      await ctx.resume();
+      ctx.resume().catch(() => {});
     }
 
-    const tones = escalated
-      ? [
-          { freq: 1100, start: 0, dur: 0.18 },
-          { freq: 880, start: 0.22, dur: 0.18 },
-          { freq: 1100, start: 0.44, dur: 0.22 },
-        ]
-      : [
-          { freq: 880, start: 0, dur: 0.18 },
-          { freq: 660, start: 0.22, dur: 0.18 },
-          { freq: 880, start: 0.44, dur: 0.22 },
-        ];
+    const tones = [
+      { freq: 960, start: 0, dur: 0.25 },
+      { freq: 720, start: 0.3, dur: 0.25 },
+      { freq: 960, start: 0.6, dur: 0.3 },
+    ];
 
     tones.forEach(({ freq, start, dur }) => {
       const osc = ctx.createOscillator();
@@ -105,7 +177,5 @@ export async function playCriticalAlertSound(escalated = false): Promise<void> {
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + dur + 0.02);
     });
-  } catch (err) {
-    console.warn("Unable to play alert sound:", err);
-  }
+  } catch {}
 }

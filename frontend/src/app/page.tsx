@@ -28,7 +28,7 @@ import {
 } from "@/lib/mockData";
 import { extractVideoThumbnail, formatIncidentId } from "@/lib/utils";
 import { CriticalAlertCenter } from "@/components/layout/CriticalAlertCenter";
-import { playCriticalAlertSound, registerAudioUnlockListener } from "@/lib/sound";
+import { playCriticalAlertSound, registerAudioUnlockListener, stopCriticalAlertSound } from "@/lib/sound";
 import { analyzeVideoWithGemini, sanitizeIncidentEvidence } from "@/lib/geminiVision";
 import { Sidebar, NavView } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
@@ -247,6 +247,12 @@ export default function Home() {
   };
 
   const handleAcknowledge = async (id: string, note?: string) => {
+    const otherUnackedCritical = incidents.some(
+      (inc) => inc.id !== id && inc.status === "new" && inc.priority_level === "critical"
+    );
+    if (!otherUnackedCritical) {
+      stopCriticalAlertSound();
+    }
     try {
       const res = await api.acknowledge(id, note);
       showToast(`Incident ${id} acknowledged.`);

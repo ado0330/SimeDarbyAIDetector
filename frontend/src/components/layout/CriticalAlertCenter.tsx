@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { AlertOctagon, Volume2, VolumeX, ArrowUpRight, BellRing } from "lucide-react";
 import {
   playCriticalAlertSound,
+  stopCriticalAlertSound,
   isSoundEnabled,
   setSoundEnabled,
   registerAudioUnlockListener,
@@ -70,13 +71,17 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
   const hasUnacked = unacked.length > 0;
   const anyEscalated = unacked.some(({ i }) => escalated.has(i.id));
 
-  // Periodic audible siren while critical unacknowledged alerts remain active
+  // Audible siren loops while critical unacknowledged alerts remain active; stops once acknowledged
   useEffect(() => {
-    if (!soundOn || !hasUnacked) return;
-    playCriticalAlertSound(anyEscalated);
-    const t = setInterval(() => playCriticalAlertSound(anyEscalated), 4500);
-    return () => clearInterval(t);
-  }, [soundOn, hasUnacked, anyEscalated]);
+    if (!soundOn || !hasUnacked) {
+      stopCriticalAlertSound();
+      return;
+    }
+    playCriticalAlertSound(true);
+    return () => {
+      stopCriticalAlertSound();
+    };
+  }, [soundOn, hasUnacked]);
 
   // Escalate (once per incident) when the unacknowledged window is exceeded. Only recorded if the server confirms.
   useEffect(() => {
@@ -179,7 +184,10 @@ export function CriticalAlertCenter({ incidents, backendConnected, onAcknowledge
           className="bg-white/10 border-white/40 text-white hover:bg-white/20">
           <ArrowUpRight className="w-3.5 h-3.5 mr-1" /> Open
         </Button>
-        <Button id="banner-acknowledge" size="sm" onClick={() => onAcknowledge(top.id)}
+        <Button id="banner-acknowledge" size="sm" onClick={() => {
+          stopCriticalAlertSound();
+          onAcknowledge(top.id);
+        }}
           className="bg-white text-rose-800 hover:bg-rose-50 font-bold">
           <BellRing className="w-3.5 h-3.5 mr-1" /> Acknowledge
         </Button>
